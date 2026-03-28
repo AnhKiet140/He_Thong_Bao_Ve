@@ -1,0 +1,112 @@
+﻿@model IEnumerable<Quan_Ly_xe_Ra_Vao.Models.TheXe>
+
+@{
+    ViewData["Title"] = "Quản Lý Thẻ Cứng";
+}
+
+<style>
+    .square-box {
+        border-radius: 0 !important;
+    }
+
+    .card-the {
+        border: 2px solid #343a40;
+        transition: 0.2s;
+        position: relative;
+    }
+
+        .card-the:hover {
+            transform: translateY(-5px);
+            box-shadow: 5px 5px 0px #343a40;
+        }
+
+    .btn-action-group {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        display: none;
+    }
+
+    .card-the:hover .btn-action-group {
+        display: block;
+    }
+</style>
+
+<div class="container-fluid mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-dark border-2">
+        <h3 class="fw-bold text-uppercase mb-0">Kho Thẻ Vật Lý</h3>
+
+        <form asp-action="Index" method="get" class="d-flex gap-2">
+            <select name="searchLoaiThe" class="form-select square-box border-dark" style="width: 180px;">
+                <option value="">-- Loại thẻ --</option>
+                <option value="Thẻ Khách" selected="@(ViewData["CurrentLoaiThe"]?.ToString() == "Thẻ Khách")">Thẻ Khách</option>
+                <option value="Thẻ Nhân Viên" selected="@(ViewData["CurrentLoaiThe"]?.ToString() == "Thẻ Nhân Viên")">Thẻ Nhân Viên</option>
+            </select>
+
+            <select name="searchTrangThai" class="form-select square-box border-dark" style="width: 180px;">
+                <option value="">-- Trạng thái --</option>
+                <option value="0" selected="@(ViewData["CurrentTrangThai"]?.ToString() == "0")">Sẵn sàng</option>
+                <option value="1" selected="@(ViewData["CurrentTrangThai"]?.ToString() == "1")">Đang sử dụng</option>
+                <option value="2" selected="@(ViewData["CurrentTrangThai"]?.ToString() == "2")">Đã Khóa/Báo mất</option>
+            </select>
+
+            <button type="submit" class="btn btn-outline-dark square-box fw-bold"><i class="bi bi-funnel"></i> Lọc</button>
+            <a asp-action="Create" class="btn btn-dark square-box fw-bold ms-2"><i class="bi bi-plus-lg"></i> NHẬP THẺ MỚI</a>
+        </form>
+    </div>
+
+    <div class="row g-4">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var the in Model)
+            {
+                // Đổi màu sắc tùy theo trạng thái
+                string borderColor = the.TrangThai == 2 ? "border-danger" : (the.TrangThai == 1 ? "border-primary" : "border-dark");
+                string bgColor = the.TrangThai == 1 ? "bg-light" : "";
+
+                <div class="col-md-3">
+                    <div class="card square-box card-the @bgColor @borderColor h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-3">
+                                @if (the.TrangThai == 0)
+                                {
+                                    <i class="bi bi-credit-card-2-front display-4 text-success"></i>
+                                    <span class="badge bg-success square-box align-self-start px-2 py-1">Sẵn sàng</span>
+                                }
+                                else if (the.TrangThai == 1)
+                                {
+                                    <i class="bi bi-credit-card-2-front display-4 text-primary"></i>
+                                    <span class="badge bg-primary square-box align-self-start px-2 py-1">Đang dùng</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-credit-card-2-front display-4 text-danger"></i>
+                                    <span class="badge bg-danger square-box align-self-start px-2 py-1">Đã Khóa</span>
+                                }
+                            </div>
+
+                            <h4 class="fw-bold @(the.TrangThai == 2 ? "text-danger" : "")">@the.MaThe</h4>
+                            <p class="text-muted small mb-0 fw-bold">@the.LoaiThe</p>
+
+                            @if (!string.IsNullOrEmpty(the.NguoiGiu))
+                            {
+                                <p class="text-dark small mt-2 border-top pt-2">Đang giữ: <strong>@the.NguoiGiu</strong></p>
+                            }
+
+                            <div class="btn-action-group">
+                                <a asp-action="Edit" asp-route-id="@the.Id" class="btn btn-sm btn-dark square-box"><i class="bi bi-pencil"></i></a>
+                                <a asp-action="Delete" asp-route-id="@the.Id" class="btn btn-sm btn-danger square-box" onclick="return confirm('Xóa thẻ này khỏi hệ thống?');"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5">
+                <h5 class="text-muted">Chưa có dữ liệu thẻ vật lý. Hãy nhập thẻ mới!</h5>
+            </div>
+        }
+    </div>
+</div>

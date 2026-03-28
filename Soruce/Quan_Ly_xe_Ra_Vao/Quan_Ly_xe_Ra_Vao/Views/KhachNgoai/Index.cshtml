@@ -1,0 +1,81 @@
+﻿@model IEnumerable<Quan_Ly_xe_Ra_Vao.Models.KhachNgoai>
+
+@{
+    ViewData["Title"] = "Duyệt Khách & Cấp Quyền";
+}
+
+<style>
+    .rounded-0 {
+        border-radius: 0 !important;
+    }
+
+    .table-custom th {
+        background-color: #212529;
+        color: white;
+        border: none;
+        padding: 15px;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    .table-custom td {
+        padding: 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid #dee2e6;
+    }
+</style>
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold border-start border-5 border-primary ps-3 text-uppercase">Danh Sách Chờ Duyệt</h3>
+    </div>
+
+    <div class="card rounded-0 border shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th>Họ Tên Khách</th>
+                        <th>CCCD / SĐT</th>
+                        <th>Mục đích / Phòng ban</th>
+                        <th>Thời gian đăng ký</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold text-primary">@item.HoTen</td>
+                                <td>@item.CCCD<br><small class="text-muted">@item.SoDienThoai</small></td>
+                                <td>@item.PhongBanCanGap</td>
+                                <td>@item.ThoiGianDangKy.ToString("dd/MM/yyyy - HH:mm")</td>
+                                <td><span class="badge bg-warning text-dark rounded-0 px-2 py-1">Đang chờ</span></td>
+                                <td class="text-end">
+                                    <a asp-action="Duyet" asp-route-id="@item.Id" class="btn btn-sm btn-success rounded-0 fw-bold">
+                                        <i class="bi bi-check-lg"></i> DUYỆT
+                                    </a>
+
+                                    <a asp-action="TuChoi" asp-route-id="@item.Id" class="btn btn-sm btn-danger rounded-0 fw-bold ms-1">
+                                        <i class="bi bi-x-lg"></i> TỪ CHỐI
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <h5>Chưa có khách nào đăng ký mới.</h5>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,265 @@
+﻿@model Quan_Ly_xe_Ra_Vao.Models.NhanVien
+
+@{
+    ViewData["Title"] = "Cập Nhật Hồ Sơ Sinh Trắc Học";
+}
+
+<style>
+    .square-box, .form-control, .btn, .card {
+        border-radius: 0 !important;
+    }
+
+        .form-control:focus {
+            border-color: #000;
+            box-shadow: none;
+        }
+
+    .section-title {
+        border-left: 6px solid #212529;
+        padding-left: 10px;
+        font-weight: 800;
+    }
+
+    .scan-box {
+        border: 2px dashed #6c757d;
+        background-color: #f8f9fa;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+        .scan-box:hover {
+            border-color: #0d6efd;
+            background-color: #e9ecef;
+        }
+
+    .nav-tabs .nav-link {
+        color: #495057;
+        font-weight: bold;
+        border-radius: 0;
+    }
+
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            border-bottom: 3px solid #0d6efd;
+        }
+</style>
+
+<div class="container-fluid mt-2">
+    <div class="card square-box border-dark shadow-sm">
+        <div class="card-header bg-dark text-white square-box py-3">
+            <h4 class="mb-0 fw-bold text-uppercase"><i class="bi bi-person-bounding-box"></i> Trạm Thu Nhận Sinh Trắc Học</h4>
+        </div>
+
+        <div class="card-body p-4">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="Id" />
+
+                <div class="row g-5">
+                    <div class="col-md-5 border-end border-2">
+                        <h5 class="section-title text-uppercase mb-4">Thông tin nhân sự</h5>
+
+                        <div class="mb-3">
+                            <label class="fw-bold text-muted small text-uppercase mb-1">Mã NV / Mã Khách</label>
+                            <input asp-for="MaNV" class="form-control form-control-lg border-dark bg-light" readonly />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold text-muted small text-uppercase mb-1">Họ và Tên</label>
+                            <input asp-for="HoTen" class="form-control form-control-lg border-dark" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold text-muted small text-uppercase mb-1">Chức vụ / Bộ phận</label>
+                            <input asp-for="ChucVu" class="form-control form-control-lg border-dark" />
+                        </div>
+
+                        <hr class="my-4 border-dark">
+                        <h5 class="section-title text-uppercase mb-4 text-primary">Cài Đặt Chấm Công</h5>
+
+                        <div class="mb-3">
+                            <label class="fw-bold text-muted small text-uppercase mb-1">Giờ vào ca mặc định</label>
+                            <input asp-for="GioVaoCa" type="time" class="form-control form-control-lg border-dark" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold text-muted small text-uppercase mb-1">Được phép đi muộn đến (Ngoại lệ)</label>
+                            <input asp-for="GioXinDiMuon" type="time" class="form-control form-control-lg border-danger" />
+                            <small class="text-danger fst-italic">* Nếu có dữ liệu ô này, AI sẽ bỏ qua Giờ vào ca mặc định.</small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-7">
+                        <h5 class="section-title text-uppercase mb-4">Thu nhận dữ liệu</h5>
+
+                        <div class="row g-4">
+                            <div class="col-md-6 text-center">
+                                <label class="fw-bold text-dark text-uppercase mb-2">1. Dữ liệu FaceID</label>
+                                <div class="scan-box p-4 h-100 d-flex flex-column justify-content-center align-items-center" id="boxFace" data-bs-toggle="modal" data-bs-target="#cameraModal" onclick="startCamera()">
+
+                                    <img id="faceThumbnail" src="@(Model.FaceDataPath != "chua_co_anh.jpg" ? Model.FaceDataPath : "")" style="@(Model.FaceDataPath != "chua_co_anh.jpg" ? "display:block;" : "display:none;") width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 3px solid #198754;" class="mb-2 shadow-sm" />
+
+                                    <i class="bi bi-camera display-1 text-secondary mb-2" id="iconFace" style="@(Model.FaceDataPath != "chua_co_anh.jpg" ? "display:none;" : "")"></i>
+                                    <h6 class="fw-bold text-primary" id="textFace">@(Model.FaceDataPath != "chua_co_anh.jpg" ? "ĐỔI ẢNH KHÁC" : "BẤM ĐỂ CHỤP / CHỌN ẢNH")</h6>
+
+                                    <input type="hidden" asp-for="FaceDataPath" id="FaceDataPath" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 text-center">
+                                <label class="fw-bold text-dark text-uppercase mb-2">2. Dữ liệu Vân Tay</label>
+                                <div class="scan-box p-4 h-100 d-flex flex-column justify-content-center align-items-center" id="boxFinger" onclick="simulateFingerScan()">
+                                    <i class="bi bi-fingerprint display-1 @(Model.HasFingerprint ? "text-success" : "text-secondary") mb-2" id="iconFinger"></i>
+                                    <h6 class="fw-bold @(Model.HasFingerprint ? "text-success" : "text-primary")" id="textFinger">@(Model.HasFingerprint ? "ĐÃ CÓ VÂN TAY" : "BẤM ĐỂ QUÉT VÂN TAY")</h6>
+
+                                    <div class="d-none">
+                                        <input class="form-check-input" type="checkbox" asp-for="HasFingerprint" id="HasFingerprint">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4 border-dark">
+
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Index" class="btn btn-outline-dark btn-lg square-box fw-bold px-4">QUAY LẠI</a>
+                    <button type="submit" class="btn btn-success btn-lg square-box fw-bold px-5"><i class="bi bi-save"></i> LƯU HỒ SƠ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content square-box border-dark border-2">
+            <div class="modal-header bg-dark text-white square-box py-2">
+                <h5 class="modal-title fw-bold text-uppercase"><i class="bi bi-person-bounding-box"></i> Thu Nhận Khuôn Mặt</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="stopCamera()"></button>
+            </div>
+            <div class="modal-body p-4">
+
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-camera" type="button" role="tab" onclick="startCamera()">Mở Camera Chụp</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-upload" type="button" role="tab" onclick="stopCamera()">Tải ảnh từ máy</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active text-center" id="tab-camera" role="tabpanel">
+                        <video id="webcamVideo" width="100%" height="280" autoplay playsinline style="background:#000; border: 2px solid #ccc; transform: scaleX(-1);"></video>
+                        <canvas id="webcamCanvas" style="display:none;"></canvas>
+                        <button type="button" class="btn btn-primary mt-3 square-box w-100 fw-bold fs-5" onclick="captureImage()">
+                            <i class="bi bi-camera-fill"></i> CHỤP ẢNH NGAY
+                        </button>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-upload" role="tabpanel">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Chọn file ảnh (jpg, png)</label>
+                            <input class="form-control form-control-lg square-box border-dark" type="file" id="fileUpload" accept="image/*" onchange="previewFile()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-3">
+                    <h6 class="fw-bold text-muted d-none" id="previewTitle">KẾT QUẢ THU NHẬN:</h6>
+                    <img id="modalPreview" src="" style="display:none; width: 100%; max-height: 250px; object-fit: contain; border: 2px dashed #198754; padding: 5px;" />
+                </div>
+
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary square-box fw-bold" data-bs-dismiss="modal" onclick="stopCamera()">Hủy Bỏ</button>
+                <button type="button" class="btn btn-success square-box fw-bold px-4" onclick="saveFaceDataToForm()" data-bs-dismiss="modal">
+                    <i class="bi bi-check-lg"></i> XÁC NHẬN ẢNH NÀY
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let video = document.getElementById('webcamVideo');
+    let streamRef = null;
+
+    function startCamera() {
+        navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+            streamRef = stream;
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Không thể mở Camera. Vui lòng cấp quyền hoặc chuyển sang tab Tải Ảnh!");
+        });
+    }
+
+    function stopCamera() {
+        if(streamRef) {
+            streamRef.getTracks().forEach(track => track.stop());
+            streamRef = null;
+        }
+    }
+
+    document.getElementById('cameraModal').addEventListener('hidden.bs.modal', function () {
+        stopCamera();
+    });
+
+    function captureImage() {
+        let canvas = document.getElementById('webcamCanvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Sửa lỗi lật ngược ảnh khi chụp
+        let ctx = canvas.getContext('2d');
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0);
+
+        let dataUrl = canvas.toDataURL('image/jpeg');
+        showPreview(dataUrl);
+    }
+
+    function previewFile() {
+        let file = document.getElementById('fileUpload').files[0];
+        let reader = new FileReader();
+        reader.onloadend = function() {
+            showPreview(reader.result);
+        }
+        if(file) { reader.readAsDataURL(file); }
+    }
+
+    function showPreview(dataUrl) {
+        document.getElementById('modalPreview').src = dataUrl;
+        document.getElementById('modalPreview').style.display = 'block';
+        document.getElementById('previewTitle').classList.remove('d-none');
+    }
+
+    function saveFaceDataToForm() {
+        let dataUrl = document.getElementById('modalPreview').src;
+        if(dataUrl) {
+            document.getElementById('FaceDataPath').value = dataUrl;
+
+            document.getElementById('faceThumbnail').src = dataUrl;
+            document.getElementById('faceThumbnail').style.display = 'block';
+            document.getElementById('iconFace').style.display = 'none';
+
+            document.getElementById('textFace').innerText = "ĐÃ LƯU ẢNH THÀNH CÔNG";
+            document.getElementById('textFace').className = "fw-bold text-success mt-2";
+            document.getElementById('boxFace').style.borderColor = "#198754";
+        }
+        stopCamera();
+    }
+
+    function simulateFingerScan() {
+        document.getElementById("iconFinger").className = "bi bi-check-circle-fill display-1 text-success mb-2";
+        document.getElementById("textFinger").innerText = "ĐÃ LẤY MẪU VÂN TAY";
+        document.getElementById("textFinger").className = "fw-bold text-success";
+        document.getElementById("boxFinger").style.borderColor = "#198754";
+        document.getElementById("HasFingerprint").checked = true;
+    }
+</script>

@@ -1,0 +1,131 @@
+﻿@model IEnumerable<Quan_Ly_xe_Ra_Vao.Models.NhanVien>
+
+@{
+    ViewData["Title"] = "Quản Lý Sinh Trắc Học";
+}
+
+<style>
+    .square-btn {
+        border-radius: 0 !important;
+    }
+
+    .table-square {
+        border-radius: 0 !important;
+        border: 1px solid #000;
+    }
+
+        .table-square th {
+            background-color: #212529;
+            color: white;
+            padding: 15px;
+            border-bottom: none;
+            text-transform: uppercase;
+        }
+
+        .table-square td {
+            vertical-align: middle;
+            padding: 12px 15px;
+            border-bottom: 1px solid #ccc;
+        }
+</style>
+
+<div class="container-fluid mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-dark border-2">
+        <h3 class="fw-bold text-uppercase mb-0">Danh Sách Nhân Sự</h3>
+
+        <div class="d-flex gap-2">
+            <form asp-action="Index" method="get" class="d-flex gap-2">
+                <select name="searchChucVu" class="form-select square-btn border-dark" style="width: 180px;">
+                    <option value="">-- Tất cả chức vụ --</option>
+                    <option value="Khach" selected="@(ViewData["CurrentChucVu"]?.ToString() == "Khach")">Khách vãng lai</option>
+                    @if (ViewBag.ListChucVu != null)
+                    {
+                        foreach (var cv in ViewBag.ListChucVu)
+                        {
+                            if (!string.IsNullOrEmpty(cv))
+                            {
+                                <option value="@cv" selected="@(ViewData["CurrentChucVu"]?.ToString() == cv)">@cv</option>
+                            }
+                        }
+                    }
+                </select>
+
+                <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" class="form-control square-btn border-dark" placeholder="Tìm Tên, Mã NV..." style="width: 200px;">
+                <button type="submit" class="btn btn-dark square-btn fw-bold"><i class="bi bi-search"></i> LỌC</button>
+                <a asp-action="Index" class="btn btn-outline-secondary square-btn" title="Làm mới"><i class="bi bi-arrow-clockwise"></i></a>
+            </form>
+
+            <a asp-action="Create" class="btn btn-primary square-btn fw-bold px-4 ms-2">
+                <i class="bi bi-person-plus-fill"></i> THÊM MỚI
+            </a>
+        </div>
+    </div>
+
+    <table class="table table-hover table-square bg-white shadow-sm">
+        <thead>
+            <tr>
+                <th>Mã NV / Mã Khách</th>
+                <th>Họ Tên</th>
+                <th>Chức Vụ / Ghi Chú</th>
+                <th class="text-center">Dữ Liệu Khuôn Mặt</th>
+                <th class="text-center">Dữ Liệu Vân Tay</th>
+                <th class="text-end">Hành Động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var nv in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">@nv.MaNV</td>
+                        <td class="text-primary fw-bold">@nv.HoTen</td>
+                        <td>@nv.ChucVu</td>
+
+                        <td class="text-center">
+                            @if (!string.IsNullOrEmpty(nv.FaceDataPath) && nv.FaceDataPath != "chua_co_anh.jpg")
+                            {
+                                <span class="badge bg-success square-btn px-3 py-2"><i class="bi bi-check-circle"></i> Đã cập nhật</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger square-btn px-3 py-2"><i class="bi bi-x-circle"></i> Chưa có</span>
+                            }
+                        </td>
+
+                        <td class="text-center">
+                            @if (nv.HasFingerprint)
+                            {
+                                <span class="badge bg-success square-btn px-3 py-2"><i class="bi bi-check-circle"></i> Đã cập nhật</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger square-btn px-3 py-2"><i class="bi bi-x-circle"></i> Chưa có</span>
+                            }
+                        </td>
+
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@nv.Id" class="btn btn-sm btn-info square-btn fw-bold text-dark">
+                                <i class="bi bi-person-vcard"></i> Hồ sơ
+                            </a>
+
+                            <a asp-action="Edit" asp-route-id="@nv.Id" class="btn btn-sm btn-dark square-btn fw-bold mx-1">
+                                <i class="bi bi-pencil-square"></i> Cập nhật
+                            </a>
+
+                            <a asp-action="Delete" asp-route-id="@nv.Id" class="btn btn-sm btn-danger square-btn fw-bold" onclick="return confirm('Bạn có chắc chắn muốn XÓA hồ sơ của người này? Dữ liệu FaceID cũng sẽ bị xóa!');">
+                                <i class="bi bi-trash"></i> Xóa
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">Chưa có dữ liệu nhân sự / khách.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

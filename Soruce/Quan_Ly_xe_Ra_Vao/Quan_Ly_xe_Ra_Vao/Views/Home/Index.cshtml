@@ -1,0 +1,309 @@
+﻿@{
+    ViewData["Title"] = "Trạm Giám Sát Sinh Trắc Học";
+}
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<div class="container-fluid mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+        <h2 class="text-uppercase fw-bold text-primary mb-0">
+            <span class="spinner-grow text-danger spinner-grow-sm" role="status" aria-hidden="true"></span>
+            TRẠM KIỂM SOÁT TỰ ĐỘNG - LÀN VÀO 1
+        </h2>
+        <div class="text-end">
+            <button id="btnScanAI" onclick="scanAI()" class="btn btn-primary me-3 fw-bold shadow-sm px-4">
+                <i class="bi bi-robot"></i> ĐANG TẢI...
+            </button>
+            <span class="badge bg-success fs-6 rounded-pill px-3 py-2 shadow-sm">Hệ thống Đang chạy</span>
+            <span class="badge bg-dark fs-6 rounded-pill px-3 py-2 ms-2 shadow-sm" id="clock">@DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")</span>
+        </div>
+    </div>
+
+    <style>
+        .camera-box-height {
+            height: 450px !important;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .fingerprint-scanner {
+            background: linear-gradient(145deg, #e6f7ff, #ffffff);
+            border-radius: 12px;
+        }
+
+        #plateResultBox {
+            width: 100%;
+            max-width: 320px;
+            height: 80px;
+            background-color: #fff;
+            border: 4px solid blue !important;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+        }
+
+        #plateResult {
+            font-family: 'Courier New', Courier, monospace !important;
+            font-size: 2.3rem !important;
+            font-weight: 900 !important;
+            color: #000 !important;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+
+        #faceResult {
+            width: 150px;
+            height: 180px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* LỆNH LẬT NGƯỢC CAMERA (MIRROR) */
+        #webcam, #faceCanvas {
+            transform: scaleX(-1);
+        }
+    </style>
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card bg-dark text-white shadow h-100 border-0 camera-box-height">
+                        <div class="card-header bg-secondary text-center fw-bold py-2 fs-5">
+                            📷 CAMERA NHẬN DIỆN KHUÔN MẶT (AI)
+                        </div>
+                        <div class="card-body p-0 d-flex justify-content-center align-items-center bg-black" style="position: relative;">
+                            <video id="webcam" width="450" height="380" preload autoplay loop muted style="position: absolute; object-fit: cover;"></video>
+                            <canvas id="faceCanvas" width="450" height="380" style="position: absolute;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card bg-dark text-white shadow h-100 border-0 camera-box-height">
+                        <div class="card-header bg-secondary text-center fw-bold py-2 fs-5">
+                            🚗 CAMERA QUÉT BIỂN SỐ (ALPR)
+                        </div>
+                        <div class="card-body p-0 d-flex justify-content-center align-items-center bg-black" style="position: relative;">
+                            <div id="laser-scanner" style="width: 100%; height: 3px; background-color: red; position: absolute; top: 0; box-shadow: 0 0 15px red; animation: scan 2s infinite linear;"></div>
+                            <span class="text-muted fs-5">Đang chờ xe tiến vào...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-lg border-success h-100">
+                <div class="card-header bg-success text-white text-center fw-bold py-3 fs-4">
+                    KẾT QUẢ CHECK-IN
+                </div>
+                <div class="card-body bg-light">
+                    <div class="d-flex justify-content-center align-items-center flex-column mb-4 gap-3">
+                        <div class="bg-white border text-center d-flex align-items-center justify-content-center" id="faceResult">
+                            <span class="text-muted small">Chưa quét</span>
+                        </div>
+                        <div id="plateResultBox" style="border-style: dashed !important; border-color: #ccc !important;">
+                            <span id="plateResult" class="text-muted">-----</span>
+                        </div>
+                    </div>
+
+                    <table class="table table-sm table-borderless fs-4 mt-3">
+                        <tr><td class="text-muted" width="45%">Đối tượng:</td><td class="fw-bold text-dark" id="nameResult">-----</td></tr>
+                        <tr><td class="text-muted">Chức vụ:</td><td class="fw-bold text-dark" id="roleResult">-----</td></tr>
+                        <tr><td class="text-muted">Trạng thái:</td><td><h3 class="text-secondary fw-bold mb-0" id="statusResult">CHỜ DỮ LIỆU</h3></td></tr>
+                    </table>
+
+                    <div class="d-grid mt-4 pb-3">
+                        <button class="btn btn-secondary btn-lg fw-bold shadow disabled fs-4" id="gateButton" style="padding: 15px;">CỔNG ĐANG ĐÓNG</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Đồng hồ hệ thống
+    setInterval(() => {
+        let now = new Date();
+        document.getElementById('clock').innerText = now.toLocaleDateString('vi-VN') + " " + now.toLocaleTimeString('vi-VN');
+    }, 1000);
+
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('faceCanvas');
+    let faceMatcher = null;
+
+    // 1. BẬT CAMERA VÀ TẢI "NÃO BỘ" AI
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+            video.onloadedmetadata = () => { video.play(); initAI(); };
+        });
+
+    // === HÀM KHỞI TẠO AI ĐÃ ĐƯỢC TỐI ƯU HÓA SIÊU TỐC ===
+    async function initAI() {
+        let btn = document.getElementById('btnScanAI');
+        btn.innerText = "ĐẠNG TẢI MODEL AI...";
+        btn.disabled = true;
+
+        try {
+            // Tải 3 mô hình từ Github
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'),
+                faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'),
+                faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights')
+            ]);
+
+            btn.innerText = "ĐANG ĐỌC DATABASE...";
+
+            // Kéo dữ liệu Base64 từ Database lên
+            const response = await fetch('/Home/GetFaceData');
+            const users = await response.json();
+
+            if (!users || users.length === 0) {
+                btn.innerText = "CHƯA CÓ DATA AI";
+                btn.classList.replace('btn-primary', 'btn-warning');
+                return; // Dừng lại nếu DB trống
+            }
+
+            // Xử lý nạp ảnh SONG SONG để chống đơ máy
+            const labeledFaceDescriptors = await Promise.all(
+                users.map(async (user) => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = async () => {
+                            const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                                                           .withFaceLandmarks()
+                                                           .withFaceDescriptor();
+                            if (detection) {
+                                resolve(new faceapi.LabeledFaceDescriptors(`${user.name}|${user.role}`, [detection.descriptor]));
+                            } else {
+                                console.warn(`⚠️ Bỏ qua ${user.name}: Ảnh quá mờ hoặc không thấy mặt!`);
+                                resolve(null); // Trả về null nếu ảnh bị lỗi
+                            }
+                        };
+                        img.onerror = () => resolve(null); // Bỏ qua nếu link ảnh hỏng
+                        img.src = user.image;
+                    });
+                })
+            );
+
+            // Lọc bỏ những ảnh bị lỗi (null)
+            const validDescriptors = labeledFaceDescriptors.filter(d => d !== null);
+
+            if(validDescriptors.length > 0) {
+                faceMatcher = new faceapi.FaceMatcher(validDescriptors, 0.5);
+                btn.innerHTML = '<i class="bi bi-robot"></i> KÍCH HOẠT QUÉT AI';
+                btn.classList.replace('btn-primary', 'btn-success');
+                btn.disabled = false;
+            } else {
+                btn.innerText = "LỖI: ẢNH TRONG DB QUÁ MỜ";
+                btn.classList.replace('btn-primary', 'btn-danger');
+            }
+
+            // Bật khung xanh bám theo mặt
+            const displaySize = { width: 450, height: 380 };
+            faceapi.matchDimensions(canvas, displaySize);
+            setInterval(async () => {
+                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
+                const context = canvas.getContext('2d');
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                faceapi.resizeResults(detections, displaySize).forEach(det => {
+                    context.strokeStyle = '#00ff00'; context.lineWidth = 4;
+                    context.strokeRect(det.box.x, det.box.y, det.box.width, det.box.height);
+                });
+            }, 100);
+
+        } catch (error) {
+            console.error("Lỗi khởi tạo AI:", error);
+            btn.innerText = "LỖI KẾT NỐI AI";
+        }
+    }
+
+    // 2. HÀM CHỤP LÉN VÀ QUÉT AI SO SÁNH (Giữ nguyên logic chuẩn của bạn)
+    function captureSnapshot() {
+        let snapCanvas = document.createElement('canvas');
+        snapCanvas.width = video.videoWidth;
+        snapCanvas.height = video.videoHeight;
+
+        // Fix lật ảnh lúc lưu
+        let ctx = snapCanvas.getContext('2d');
+        ctx.translate(snapCanvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0);
+
+        return snapCanvas.toDataURL('image/jpeg');
+    }
+
+    async function scanAI() {
+        if(!faceMatcher) {
+            alert("Hệ thống chưa nạp xong dữ liệu!");
+            return;
+        }
+
+        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+
+        if(detection) {
+            const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+            const snapshotBase64 = captureSnapshot();
+
+            let logData = {
+                HoTen: "",
+                LoaiDoiTuong: "",
+                BienSoXe: "59A1-123.45",
+                PhuongThuc: "FaceID + ALPR",
+                Huong: "Đi Vào",
+                TrangThai: "",
+                HinhAnh: snapshotBase64
+            };
+
+            document.getElementById('plateResultBox').style.borderColor = "blue";
+            document.getElementById('plateResultBox').style.borderStyle = "solid";
+            document.getElementById('plateResult').innerText = logData.BienSoXe;
+
+            if(bestMatch.label !== 'unknown') {
+                const info = bestMatch.label.split('|');
+                document.getElementById('nameResult').innerText = info[0];
+                document.getElementById('nameResult').className = "fw-bold text-primary text-uppercase";
+                document.getElementById('roleResult').innerText = info[1];
+                document.getElementById('statusResult').innerText = "HỢP LỆ";
+                document.getElementById('statusResult').className = "text-success fw-bold mb-0";
+                document.getElementById('faceResult').innerHTML = '<span class="text-success fw-bold fs-5 text-center">FaceID<br>Khớp 100%</span>';
+                document.getElementById('gateButton').className = "btn btn-success btn-lg fw-bold shadow fs-4";
+                document.getElementById('gateButton').innerText = "MỞ BARIE (TỰ ĐỘNG)";
+                document.getElementById('gateButton').removeAttribute("disabled");
+
+                logData.HoTen = info[0];
+                logData.LoaiDoiTuong = info[1];
+                logData.TrangThai = "Thành Công";
+
+            } else {
+                document.getElementById('nameResult').innerText = "KHÔNG XÁC ĐỊNH";
+                document.getElementById('nameResult').className = "fw-bold text-danger";
+                document.getElementById('roleResult').innerText = "Người lạ";
+                document.getElementById('statusResult').innerText = "TỪ CHỐI";
+                document.getElementById('statusResult').className = "text-danger fw-bold mb-0";
+                document.getElementById('faceResult').innerHTML = '<span class="text-danger fw-bold fs-5 text-center">Sai<br>Người</span>';
+                document.getElementById('gateButton').className = "btn btn-danger btn-lg fw-bold shadow disabled fs-4";
+                document.getElementById('gateButton').innerText = "CỔNG ĐÓNG";
+
+                logData.HoTen = "Không xác định";
+                logData.LoaiDoiTuong = "Người lạ";
+                logData.PhuongThuc = "Cảnh báo";
+                logData.TrangThai = "Không hợp lệ";
+            }
+
+            fetch('/LichSuCheckIn/GhiNhatKy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(logData)
+            }).then(res => console.log("Hệ thống đã tự động ghi Log!"));
+
+        } else {
+            alert("⚠️ AI không nhìn thấy khuôn mặt nào trước Camera! Vui lòng nhìn thẳng.");
+        }
+    }
+</script>
