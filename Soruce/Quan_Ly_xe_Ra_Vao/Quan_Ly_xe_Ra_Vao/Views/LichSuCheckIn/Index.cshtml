@@ -1,138 +1,162 @@
 ﻿@model IEnumerable<Quan_Ly_xe_Ra_Vao.Models.LichSuCheckIn>
-
 @{
     ViewData["Title"] = "Nhật Ký Lịch Sử Ra Vào";
+    string selectedDate = ViewBag.SelectedDate ?? DateTime.Today.ToString("yyyy-MM-dd");
 }
 
-<style>
-    .rounded-0 {
-        border-radius: 0 !important;
-    }
-
-    .table-custom th {
-        background-color: #f8f9fa;
-        color: #333;
-        font-weight: bold;
-        border-bottom: 2px solid #000;
-        padding: 12px;
-    }
-
-    .table-custom td {
-        padding: 12px;
-        vertical-align: middle;
-        border-bottom: 1px solid #eee;
-    }
-
-    .avatar-sm {
-        width: 45px;
-        height: 45px;
-        object-fit: cover;
-        border: 2px solid #ccc;
-        border-radius: 4px;
-    }
-</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <div class="container-fluid mt-3">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold border-start border-5 border-dark ps-3 text-uppercase">NHẬT KÝ RA VÀO CHI TIẾT</h3>
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-white border-bottom p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold text-primary mb-0">
+                    <i class="bi bi-clock-history me-2"></i> TRUY XUẤT LỊCH SỬ RA VÀO
+                </h4>
+                <button onclick="exportHistoryExcel()" class="btn btn-success fw-bold shadow-sm rounded-3 px-4">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel chi tiết
+                </button>
+            </div>
 
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-dark rounded-0 fw-bold"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</button>
+            <form method="get" asp-action="Index" class="row g-3">
+                <div class="col-md-3">
+                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-calendar-check"></i> Lọc theo ngày</label>
+                    <input type="date" name="selectedDate" value="@selectedDate"
+                           class="form-control shadow-none border-primary-subtle"
+                           onchange="this.form.submit()">
+                </div>
+                <div class="col-md-6">
+                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-person-search"></i> Tìm theo tên hoặc biển số</label>
+                    <div class="input-group">
+                        <input type="text" name="searchName" value="@ViewBag.SearchName"
+                               class="form-control shadow-none border-primary-subtle"
+                               placeholder="Nhập tên nhân viên, biển số xe cần tìm...">
+                        <button class="btn btn-primary px-4 fw-bold" type="submit"><i class="bi bi-search"></i> Tìm kiếm</button>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100 fw-bold">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset bộ lọc
+                    </a>
+                </div>
+            </form>
         </div>
-    </div>
 
-    <div class="card rounded-0 border shadow-sm">
         <div class="card-body p-0">
-            <table class="table table-hover table-custom mb-0 text-center">
-                <thead>
-                    <tr>
-                        <th class="text-start">Thời Gian</th>
-                        <th class="text-start">Đối Tượng Kiểm Soát</th>
-                        <th>Biển Số Xe</th>
-                        <th>Phương Thức</th>
-                        <th>Hướng</th>
-                        <th>Trạng Thái</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model != null && Model.Any())
-                    {
-                        foreach (var log in Model)
+            <div class="table-responsive" style="max-height: 650px; overflow-y: auto;">
+                <table id="historyTable" class="table table-hover align-middle mb-0 text-center custom-table">
+                    <thead class="table-dark text-uppercase small fw-bold sticky-top">
+                        <tr>
+                            <th class="ps-4 text-start">Thời Gian</th>
+                            <th class="text-start">Đối Tượng Kiểm Soát</th>
+                            <th>Loại Xe</th>
+                            <th>Biển Số Xe</th>
+                            <th>Phương Thức</th>
+                            <th>Hướng</th>
+                            <th class="text-end pe-4">Trạng Thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
                         {
-                            <tr>
-                                <td class="text-start fw-bold">@log.ThoiGian.ToString("dd/MM/yyyy HH:mm:ss")</td>
-
-                                <td class="text-start">
-                                    <div class="d-flex align-items-center">
-                                        @if (!string.IsNullOrEmpty(log.HinhAnh))
+                            foreach (var log in Model)
+                            {
+                                <tr>
+                                    <td class="text-start ps-4">
+                                        <div class="fw-bold text-danger fs-6">@log.ThoiGian.ToString("HH:mm:ss")</div>
+                                        <small class="text-muted">@log.ThoiGian.ToString("dd/MM/yyyy")</small>
+                                    </td>
+                                    <td class="text-start">
+                                        <div class="d-flex align-items-center">
+                                            <img src="@(string.IsNullOrEmpty(log.HinhAnh) ? "/images/no-avatar.png" : log.HinhAnh)"
+                                                 class="rounded-circle me-3 shadow-sm border"
+                                                 style="width: 45px; height: 45px; object-fit: cover;"
+                                                 onerror="this.src='/images/no-avatar.png'" />
+                                            <div>
+                                                <span class="fw-bold text-uppercase text-primary">@log.HoTen</span><br>
+                                                <small class="badge bg-light text-dark border-0 p-0">NHÂN VIÊN</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (log.BienSoXe == "---" || log.LoaiXe == "Xe máy")
                                         {
-                                            <img src="@log.HinhAnh" class="avatar-sm me-3 shadow-sm" />
+                                            <span class="badge bg-info bg-opacity-10 text-info border border-info px-3">🛵 XE MÁY</span>
                                         }
                                         else
                                         {
-                                            <div class="avatar-sm me-3 bg-light d-flex align-items-center justify-content-center border">
-                                                <i class="bi bi-person text-secondary fs-4"></i>
-                                            </div>
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3">🚗 Ô TÔ</span>
                                         }
-
-                                        <div>
-                                            <span class="@(log.HoTen == "Không xác định" ? "text-danger fw-bold text-uppercase" : "fw-bold text-primary text-uppercase")">@log.HoTen</span><br>
-                                            <small class="text-muted">@log.LoaiDoiTuong</small>
-                                        </div>
+                                    </td>
+                                    <td class="font-monospace fw-bold">
+                                        @(log.BienSoXe == "---" ? "N/A" : log.BienSoXe)
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border rounded-pill px-2 py-1 small">
+                                            <i class="bi bi-cpu"></i> AI FACE + ALPR
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (log.Huong == "Đi Vào")
+                                        {
+                                            <span class="text-success fw-bold"><i class="bi bi-box-arrow-in-right"></i> Vào</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-warning text-dark fw-bold"><i class="bi bi-box-arrow-left"></i> Ra</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-check-lg"></i> Hợp lệ</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <div class="py-4">
+                                        <i class="bi bi-clipboard-x fs-1 d-block mb-2 opacity-25"></i>
+                                        <h5 class="fw-bold">Dữ liệu trống!</h5>
+                                        <p class="small">Không tìm thấy lịch sử ra vào cho ngày @DateTime.Parse(selectedDate).ToString("dd/MM/yyyy").</p>
                                     </div>
-                                </td>
-
-                                <td>
-                                    <span class="border border-dark px-2 py-1 fw-bold font-monospace">
-                                        @(string.IsNullOrEmpty(log.BienSoXe) ? "Không có" : log.BienSoXe)
-                                    </span>
-                                </td>
-
-                                <td>
-                                    @if (log.PhuongThuc != null && (log.PhuongThuc.Contains("FaceID") || log.PhuongThuc.Contains("Vân Tay")))
-                                    {
-                                        <span class="badge bg-info text-dark rounded-0 px-2 py-1"><i class="bi bi-person-bounding-box"></i> @log.PhuongThuc</span>
-                                    }
-                                    else if (log.PhuongThuc != null && log.PhuongThuc.Contains("Cảnh báo"))
-                                    {
-                                        <span class="badge bg-danger rounded-0 px-2 py-1"><i class="bi bi-exclamation-triangle"></i> @log.PhuongThuc</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary rounded-0 px-2 py-1"><i class="bi bi-credit-card"></i> @log.PhuongThuc</span>
-                                    }
-                                </td>
-
-                                <td>
-                                    @if (log.Huong == "Đi Vào")
-                                    {
-                                        <span class="text-success fw-bold"><i class="bi bi-arrow-right-circle"></i> Đi Vào</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-warning text-dark fw-bold"><i class="bi bi-arrow-left-circle"></i> Đi Ra</span>
-                                    }
-                                </td>
-
-                                <td>
-                                    @if (log.TrangThai == "Thành Công")
-                                    {
-                                        <span class="text-success fw-bold">@log.TrangThai</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-danger fw-bold">@log.TrangThai</span>
-                                    }
                                 </td>
                             </tr>
                         }
-                    }
-                    else
-                    {
-                        <tr><td colspan="6" class="text-muted py-5 fs-5">Hệ thống đang chờ dữ liệu quét... Chưa có ai ra vào.</td></tr>
-                    }
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    .custom-table tbody tr {
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+    }
+
+        .custom-table tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.04);
+            border-left-color: #0d6efd;
+        }
+
+    .sticky-top {
+        top: 0;
+        z-index: 10;
+    }
+
+    .font-monospace {
+        letter-spacing: 1px;
+    }
+</style>
+
+<script>
+    function exportHistoryExcel() {
+        let table = document.getElementById("historyTable");
+        let dateStr = "@selectedDate";
+        let workbook = XLSX.utils.table_to_book(table, { sheet: "Nhat_Ky_Ra_Vao" });
+        XLSX.writeFile(workbook, "NhatKy_LichSu_" + dateStr + ".xlsx");
+    }
+</script>

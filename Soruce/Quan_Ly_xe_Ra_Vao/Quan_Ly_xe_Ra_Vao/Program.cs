@@ -15,8 +15,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Home/Login"; // Nếu chưa đăng nhập sẽ bị đuổi về trang này
-        options.AccessDeniedPath = "/Home/AccessDenied"; // Nếu không đủ quyền
+        options.LoginPath = "/Account/Login"; // Sửa lại: Trỏ về AccountController
+        options.AccessDeniedPath = "/Account/AccessDenied"; // Sửa lại: Trỏ về AccountController
+        options.ExpireTimeSpan = TimeSpan.FromHours(8); // Tự động đăng xuất sau 8 tiếng
     });
 
 // 4. Thêm Session (Để lưu thông báo tạm thời, ví dụ: "Check-in thành công!")
@@ -38,8 +39,8 @@ app.UseRouting();
 
 app.UseSession(); // Bật Session lên
 
-app.UseAuthentication(); // Bật chức năng kiểm tra vé Đăng nhập
-app.UseAuthorization();  // Bật chức năng kiểm tra Quyền (Admin/Nhân viên)
+app.UseAuthentication(); // Bật chức năng kiểm tra vé Đăng nhập (Phải nằm trên Authorization)
+app.UseAuthorization();  // Bật chức năng kiểm tra Quyền (Admin/Nhân viên/Giám đốc)
 
 app.MapControllerRoute(
     name: "default",

@@ -30,5 +30,8 @@ namespace Quan_Ly_xe_Ra_Vao.Models
 
         [Display(Name = "Giờ xin đi muộn")]
         public TimeSpan? GioXinDiMuon { get; set; } // Nullable: Có thể trống. Nếu có, AI sẽ dùng giờ này để chấm công.
+        public string? LoaiXe { get; set; }
+        public string? BienSoXe { get; set; }
+
     }
 }

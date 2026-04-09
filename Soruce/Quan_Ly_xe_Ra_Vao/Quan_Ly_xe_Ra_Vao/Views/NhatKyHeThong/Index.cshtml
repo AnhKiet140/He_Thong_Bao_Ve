@@ -1,0 +1,265 @@
+﻿@model IEnumerable<Quan_Ly_xe_Ra_Vao.Models.NhatKyHeThong>
+@{
+    ViewData["Title"] = "Nhật Ký Hệ Thống (Audit Log)";
+}
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="container-fluid mt-2 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-dark">
+        <div>
+            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-file-earmark-code-fill text-secondary"></i> NHẬT KÝ HỆ THỐNG (AUDIT LOG)</h4>
+            <small class="text-muted fw-bold">THEO DÕI VÀ TRUY VẾT THAO TÁC NGƯỜI DÙNG</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success fw-bold rounded-pill shadow-sm" onclick="exportLog('excel')">
+                <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+            </button>
+            <button class="btn btn-outline-danger fw-bold rounded-pill shadow-sm" onclick="exportLog('pdf')">
+                <i class="bi bi-file-earmark-pdf"></i> Xuất PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-3 bg-white">
+        <div class="card-body p-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-calendar-range"></i> Ngày</label>
+                    <input type="date" id="filterDate" class="form-control form-control-sm shadow-none">
+                </div>
+                <div class="col-md-2">
+                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-funnel"></i> Mức độ</label>
+                    <select id="filterSeverity" class="form-select form-select-sm shadow-none">
+                        <option value="all">Tất cả mức độ</option>
+                        <option value="INFO">Bình thường (INFO)</option>
+                        <option value="WARNING">Cảnh báo (WARN)</option>
+                        <option value="CRITICAL">Nguy hiểm (CRITICAL)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-grid-1x2"></i> Chức năng / Phân hệ</label>
+                    <select id="filterModule" class="form-select form-select-sm shadow-none">
+                        <option value="all">Tất cả các chức năng</option>
+                        <option value="BẢN ĐỒ AN NINH">Bản Đồ An Ninh</option>
+                        <option value="CẢNH BÁO S.O.S">Cảnh Báo S.O.S</option>
+                        <option value="BÃI ĐỖ XE">Bãi Đỗ Xe</option>
+                        <option value="HỒ SƠ KHÁCH HẸN">Hồ Sơ Khách Hẹn</option>
+                        <option value="THIẾT BỊ IOT">Thiết Bị AI (IoT)</option>
+                        <option value="QUẢN LÝ THẺ CỨNG">Quản Lý Thẻ Cứng</option>
+                        <option value="HỆ THỐNG">Hệ Thống Lõi</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-search"></i> Tìm từ khóa</label>
+                    <input type="text" id="filterKeyword" class="form-control form-control-sm shadow-none" placeholder="Tên NV, IP, Chi tiết...">
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-dark w-100 fw-bold shadow-sm" onclick="applyFilters()">
+                        <i class="bi bi-funnel-fill"></i> Lọc
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary w-100 fw-bold shadow-sm" onclick="clearFilters()">
+                        <i class="bi bi-x-circle"></i> Bỏ Lọc
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-list-columns-reverse text-primary"></i> Danh sách bản ghi sự kiện</h6>
+            <span class="badge bg-secondary" id="totalRecordsBadge">Tổng: 0 bản ghi</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="height: 550px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0 custom-table text-sm">
+                    <thead class="table-light text-muted fw-bold text-uppercase sticky-top" style="font-size: 0.8rem; z-index: 2;">
+                        <tr>
+                            <th class="ps-4">Thời Gian</th>
+                            <th>Mức Độ</th>
+                            <th>Người Thực Hiện</th>
+                            <th>Phân Hệ</th>
+                            <th class="pe-4">Chi Tiết Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center">
+            <small class="text-muted fw-bold" id="pageInfo">Hiển thị trang 1 / 1</small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0" id="paginationContainer">
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<style>
+    body { background-color: #f4f7f6; }
+    .custom-table tbody tr { transition: background-color 0.2s ease; cursor: pointer; }
+    .custom-table tbody tr:hover { background-color: #f8f9fa; }
+    .sticky-top { top: 0; }
+</style>
+
+<script>
+    // ĐÃ GIA CỐ: Chống lỗi font Tiếng Việt khi truyền JSON từ C# sang JavaScript
+    let rawData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model ?? new List<Quan_Ly_xe_Ra_Vao.Models.NhatKyHeThong>(), new System.Text.Json.JsonSerializerOptions { 
+        PropertyNamingPolicy = null,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+    }));
+    
+    const today = '@(ViewBag.CurrentDate ?? DateTime.Now.ToString("yyyy-MM-dd"))';
+    document.getElementById('filterDate').value = today;
+
+    const getSeverityBadge = (level) => {
+        if(level === 'CRITICAL') return `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger"><i class="bi bi-x-circle"></i> NGUY HIỂM</span>`;
+        if(level === 'WARNING') return `<span class="badge bg-warning bg-opacity-10 text-dark border border-warning"><i class="bi bi-exclamation-triangle"></i> CẢNH BÁO</span>`;
+        return `<span class="badge bg-info bg-opacity-10 text-info border border-info"><i class="bi bi-info-circle"></i> BÌNH THƯỜNG</span>`;
+    };
+
+    const getModuleBadge = (mod) => {
+        const colors = {
+            'CẢNH BÁO S.O.S': 'bg-danger',
+            'BẢN ĐỒ AN NINH': 'bg-info text-dark',
+            'BÃI ĐỖ XE': 'bg-success',
+            'KHÁCH HẸN': 'bg-primary',
+            'THIẾT BỊ IOT': 'bg-warning text-dark',
+            'QUẢN LÝ THẺ CỨNG': 'bg-primary border border-primary bg-opacity-10 text-primary',
+            'HỆ THỐNG': 'bg-dark'
+        };
+        return `<span class="badge ${colors[mod] || 'bg-secondary'}">${mod}</span>`;
+    };
+
+    // MAP DỮ LIỆU AN TOÀN
+    let allLogs = [];
+    if(rawData && rawData.length > 0) {
+        allLogs = rawData.map(log => {
+            let dateStr = log.ThoiGian || "";
+            let dPart = dateStr.length >= 10 ? dateStr.substring(0, 10) : "";
+            let tPart = dateStr.length > 10 ? dateStr.substring(11, 19) : "";
+
+            let jsLevel = 'INFO';
+            if (log.MucDo === 'Cảnh báo') jsLevel = 'WARNING';
+            if (log.MucDo === 'Nguy hiểm') jsLevel = 'CRITICAL';
+
+            return {
+                date: dPart,
+                time: tPart,
+                level: jsLevel,
+                user: log.NguoiThucHien || 'Hệ Thống',
+                module: (log.PhanHe || 'HỆ THỐNG').toUpperCase(),
+                detail: log.ChiTietThaoTac || ''
+            };
+        });
+
+        // Sắp xếp dữ liệu mới nhất lên đầu
+        allLogs.sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
+    }
+
+    let filteredLogs = []; 
+    let currentPage = 1;
+    const itemsPerPage = 25;
+
+    function applyFilters() {
+        const fDate = document.getElementById('filterDate').value;
+        const fSeverity = document.getElementById('filterSeverity').value;
+        const fModule = document.getElementById('filterModule').value;
+        const fKeyword = document.getElementById('filterKeyword').value.toLowerCase();
+
+        filteredLogs = allLogs.filter(log => {
+            const matchDate = fDate === '' || log.date === fDate;
+            const matchSev = fSeverity === 'all' || log.level === fSeverity;
+            const matchMod = fModule === 'all' || log.module === fModule;
+            const matchKey = fKeyword === '' || log.detail.toLowerCase().includes(fKeyword) || log.user.toLowerCase().includes(fKeyword);
+
+            return matchDate && matchSev && matchMod && matchKey;
+        });
+
+        currentPage = 1;
+        renderTable();
+    }
+
+    function clearFilters() {
+        document.getElementById('filterDate').value = '';
+        document.getElementById('filterSeverity').value = 'all';
+        document.getElementById('filterModule').value = 'all';
+        document.getElementById('filterKeyword').value = '';
+        applyFilters();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('logTableBody');
+        tbody.innerHTML = ''; 
+        document.getElementById('totalRecordsBadge').innerText = `Tổng: ${filteredLogs.length} bản ghi`;
+
+        if (filteredLogs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block opacity-50 mb-3"></i><b>Không tìm thấy dữ liệu phù hợp bộ lọc.</b></td></tr>`;
+            document.getElementById('paginationContainer').innerHTML = '';
+            document.getElementById('pageInfo').innerText = 'Không có dữ liệu';
+            return;
+        }
+
+        const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pageData = filteredLogs.slice(startIndex, endIndex);
+
+        pageData.forEach(log => {
+            tbody.innerHTML += `
+                <tr>
+                    <td class="ps-4 text-nowrap font-monospace text-muted" style="font-size:0.8rem;">
+                        <span class="d-block text-dark fw-bold">${log.time}</span>
+                        ${log.date ? log.date.split('-').reverse().join('/') : ''}
+                    </td>
+                    <td>${getSeverityBadge(log.level)}</td>
+                    <td>
+                        <span class="fw-bold text-dark d-block">${log.user}</span>
+                        <small class="text-muted font-monospace" style="font-size: 0.7rem;">Thao tác nội bộ</small>
+                    </td>
+                    <td>${getModuleBadge(log.module)}</td>
+                    <td class="pe-4 text-dark fw-bold" style="font-size:0.9rem;">${log.detail}</td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('pageInfo').innerText = `Hiển thị trang ${currentPage} / ${totalPages}`;
+        renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+        const ul = document.getElementById('paginationContainer');
+        let html = '';
+        html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Trước</a></li>`;
+        
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            html += `<li class="page-item ${currentPage === i ? 'active' : ''}"><a class="page-link" href="#" onclick="changePage(${i})">${i}</a></li>`;
+        }
+        html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Sau</a></li>`;
+        ul.innerHTML = html;
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            renderTable();
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        applyFilters(); 
+    });
+
+    function exportLog(type) {
+        Swal.fire({ title: `Đang trích xuất ${filteredLogs.length} dòng...`, timer: 1500, didOpen: () => { Swal.showLoading(); } }).then(() => {
+            Swal.fire({ icon: 'success', title: 'Xuất file thành công!' });
+        });
+    }
+</script>

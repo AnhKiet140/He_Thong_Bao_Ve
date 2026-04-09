@@ -1,0 +1,216 @@
+﻿@{
+    ViewData["Title"] = "Đăng Ký Khách Vãng Lai";
+    Layout = null; // Trang này không cần dùng chung menu với Admin
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng ký vào công ty</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="bg-light">
+    <div class="container py-4" style="max-width: 600px;">
+        <div class="card shadow-lg border-0 rounded-3">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-person-badge"></i> ĐĂNG KÝ KHÁCH HẸN</h4>
+            </div>
+            <div class="card-body p-4">
+
+                <form id="guestForm">
+                    <div class="text-center mb-4">
+                        <label class="fw-bold text-danger mb-2">BƯỚC 1: CHỤP ẢNH NHẬN DIỆN (BẮT BUỘC)</label>
+                        <div class="bg-dark rounded-3 overflow-hidden position-relative mx-auto" style="width: 100%; max-width: 300px; height: 300px;">
+                            <video id="guestWebcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+                            <img id="guestSnapshot" style="display: none; width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <button type="button" class="btn btn-warning mt-3 fw-bold shadow-sm" id="btnCapture" onclick="takeSnapshot()">
+                            <i class="bi bi-camera"></i> CHỤP ẢNH FACE-ID
+                        </button>
+                        <button type="button" class="btn btn-secondary mt-3 fw-bold shadow-sm" id="btnRetake" style="display: none;" onclick="retakeSnapshot()">
+                            <i class="bi bi-arrow-counterclockwise"></i> CHỤP LẠI
+                        </button>
+                    </div>
+
+                    <hr />
+
+                    <label class="fw-bold text-primary mb-2">BƯỚC 2: THÔNG TIN ĐĂNG KÝ</label>
+                    <div class="mb-3">
+                        <label class="form-label">Họ và Tên <span class="text-danger">*</span></label>
+                        <input type="text" id="HoTen" class="form-control" required placeholder="Nhập tên của bạn">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Loại xe</label>
+                            <select id="LoaiXe" class="form-select">
+                                <option value="Không có xe">Không có xe (Đi bộ/Grab)</option>
+                                <option value="Xe máy">Xe máy</option>
+                                <option value="Ô tô">Ô tô</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Biển số xe</label>
+                            <input type="text" id="BienSoXe" class="form-control" placeholder="VD: 59A1-123.45">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Bộ phận cần gặp <span class="text-danger">*</span></label>
+                        <select id="BoPhanCanGap" class="form-select" required>
+                            <option value="">-- Chọn phòng ban --</option>
+                            <option value="Phòng Nhân Sự">Phòng Nhân Sự</option>
+                            <option value="Phòng Kế Toán">Phòng Kế Toán</option>
+                            <option value="Ban Giám Đốc">Ban Giám Đốc</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Thời gian đến hẹn <span class="text-danger">*</span></label>
+                        <input type="datetime-local" id="ThoiGianHen" class="form-control" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Lý do vào công ty <span class="text-danger">*</span></label>
+                        <textarea id="LyDo" class="form-control" rows="2" required placeholder="Ghi rõ lý do..."></textarea>
+                    </div>
+
+                    <button type="button" onclick="submitForm()" class="btn btn-success w-100 py-3 fw-bold fs-5 shadow">
+                        <i class="bi bi-send-check"></i> GỬI ĐĂNG KÝ
+                    </button>
+                </form>
+
+                <div id="qrResultSection" style="display: none;" class="text-center py-4">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                    <h3 class="fw-bold mt-2 text-success">ĐĂNG KÝ THÀNH CÔNG</h3>
+                    <p class="text-muted">Hồ sơ của bạn đã được gửi đến bộ phận liên quan để phê duyệt.</p>
+
+                    <div class="bg-white p-3 d-inline-block rounded-4 shadow-sm border mt-3 mb-3">
+                        <div id="qrcode"></div>
+                    </div>
+
+                    <h5 class="fw-bold text-danger animate__animated animate__pulse animate__infinite">VUI LÒNG CHỤP MÀN HÌNH MÃ QR NÀY!</h5>
+                    <p class="small text-muted mb-4">Bạn sẽ dùng mã này để quét tại cổng bảo vệ khi được cấp phép vào công ty.</p>
+
+                    <button class="btn btn-outline-primary fw-bold px-4" onclick="window.location.reload()">
+                        <i class="bi bi-arrow-repeat"></i> Đăng ký người khác
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const video = document.getElementById('guestWebcam');
+        const imgSnapshot = document.getElementById('guestSnapshot');
+        let faceBase64 = "";
+
+        // Tự động mở Camera trước (selfie) trên điện thoại
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { alert("Vui lòng cấp quyền truy cập Camera để đăng ký!"); });
+
+        function takeSnapshot() {
+            let canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            let ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0); ctx.scale(-1, 1); // Lật ảnh cho đúng chiều
+            ctx.drawImage(video, 0, 0);
+
+            faceBase64 = canvas.toDataURL('image/jpeg');
+            imgSnapshot.src = faceBase64;
+
+            video.style.display = 'none';
+            imgSnapshot.style.display = 'block';
+            document.getElementById('btnCapture').style.display = 'none';
+            document.getElementById('btnRetake').style.display = 'inline-block';
+        }
+
+        function retakeSnapshot() {
+            faceBase64 = "";
+            video.style.display = 'block';
+            imgSnapshot.style.display = 'none';
+            document.getElementById('btnCapture').style.display = 'inline-block';
+            document.getElementById('btnRetake').style.display = 'none';
+        }
+
+        function submitForm() {
+            if (!faceBase64) {
+                Swal.fire('Lỗi', 'Vui lòng chụp ảnh khuôn mặt!', 'error'); return;
+            }
+            let hoten = document.getElementById('HoTen').value;
+            let bophan = document.getElementById('BoPhanCanGap').value;
+            let thoigian = document.getElementById('ThoiGianHen').value;
+            let lydo = document.getElementById('LyDo').value;
+
+            if(!hoten || !bophan || !thoigian || !lydo) {
+                Swal.fire('Thiếu thông tin', 'Vui lòng điền đầy đủ các ô có dấu *', 'warning'); return;
+            }
+
+            let data = {
+                HoTen: hoten,
+                FaceDataPath: faceBase64,
+                LoaiXe: document.getElementById('LoaiXe').value,
+                BienSoXe: document.getElementById('BienSoXe').value,
+                BoPhanCanGap: bophan,
+                ThoiGianHen: thoigian,
+                LyDo: lydo
+            };
+
+            Swal.fire({
+                title: 'Đang xử lý...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            fetch('/DangKyKhach/SubmitDangKy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if(result.success) {
+                    Swal.close();
+
+                    document.getElementById('guestForm').style.display = 'none';
+                    document.getElementById('qrResultSection').style.display = 'block';
+
+                    // LẤY ID TỪ C# TRẢ VỀ - KIỂM TRA ĐỀ PHÒNG C# QUÊN TRẢ ID
+                    let qrId = result.khachId ? result.khachId.toString() : "0";
+                    document.getElementById("qrcode").innerHTML = "";
+
+                    if (qrId !== "0") {
+                        // VẼ QR CHUẨN
+                        new QRCode(document.getElementById("qrcode"), {
+                            text: qrId,
+                            width: 250,
+                            height: 250,
+                            colorDark : "#000000",
+                            colorLight : "#ffffff",
+                            correctLevel : QRCode.CorrectLevel.H
+                        });
+                    } else {
+                        // BÁO LỖI NGAY NẾU MÃ ID RỖNG
+                        document.getElementById("qrcode").innerHTML = "<p class='text-danger fw-bold py-5'>Lỗi: Đăng ký thành công nhưng không lấy được mã ID khách. Cần kiểm tra lại Backend!</p>";
+                    }
+
+                } else {
+                    Swal.fire('Lỗi', result.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                Swal.fire('Lỗi Trình Duyệt', err.message, 'error');
+            });
+        }
+    </script>
+</body>
+</html>

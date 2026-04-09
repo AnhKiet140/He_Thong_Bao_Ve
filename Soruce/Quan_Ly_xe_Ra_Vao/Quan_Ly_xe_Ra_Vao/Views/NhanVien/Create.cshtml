@@ -1,52 +1,284 @@
 ﻿@model Quan_Ly_xe_Ra_Vao.Models.NhanVien
 
 @{
-    ViewData["Title"] = "Thêm Nhân Viên Mới";
+    ViewData["Title"] = "Khởi Tạo Sinh Trắc Học Nhân Viên";
+    // Tối ưu định dạng mã nhân viên cho chuyên nghiệp hơn
+    string autoEmpId = "NV-" + DateTime.Now.ToString("yyMMdd-HHmm");
 }
 
-<style>
-    .square-box, .form-control, .btn, .card {
-        border-radius: 0 !important;
-    }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
-        .form-control:focus {
-            border-color: #000;
-            box-shadow: none;
-        }
-</style>
+<div class="container-fluid mt-3 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+        <h4 class="fw-bold text-primary mb-0">
+            <i class="bi bi-person-plus-fill me-2"></i> KHỞI TẠO HỒ SƠ NHÂN SỰ
+        </h4>
+        <a asp-action="Index" class="btn btn-outline-secondary fw-bold shadow-sm">
+            <i class="bi bi-arrow-left"></i> Quay lại danh sách
+        </a>
+    </div>
 
-<div class="container-fluid mt-5">
-    <div class="card square-box border-dark shadow-sm mx-auto" style="max-width: 600px;">
-        <div class="card-header bg-dark text-white square-box py-3">
-            <h5 class="mb-0 fw-bold text-uppercase"><i class="bi bi-person-plus"></i> KHỞI TẠO HỒ SƠ NHÂN SỰ</h5>
+    <form id="formNhanVien" asp-action="Create" method="post" class="row g-3">
+        <div class="col-lg-4 d-flex flex-column gap-3">
+            <div class="card border-0 shadow-sm rounded-3 flex-grow-1">
+                <div class="card-header bg-dark text-white fw-bold py-2 text-center text-uppercase small">
+                    <i class="bi bi-camera-fill text-info"></i> Ảnh chân dung (Face ID)
+                </div>
+                <div class="card-body p-3 d-flex flex-column align-items-center justify-content-center bg-light">
+                    <div class="position-relative bg-black rounded-3 overflow-hidden shadow-sm w-100 mb-3" style="height: 260px;">
+                        <video id="webcam" class="w-100 h-100" style="object-fit: cover; transform: scaleX(-1);" autoplay muted></video>
+                        <img id="capturedPhoto" class="w-100 h-100 position-absolute top-0 start-0 d-none" style="object-fit: cover;" />
+
+                        <div class="position-absolute bottom-0 start-0 w-100 p-2 text-center" style="background: rgba(0,0,0,0.6);">
+                            <span class="text-white small fw-bold" id="camStatus"><i class="bi bi-record-circle text-danger"></i> Camera đang sẵn sàng</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 w-100">
+                        <button type="button" class="btn btn-primary w-100 fw-bold shadow-sm" id="btnCapture" onclick="takeSnapshot()">
+                            <i class="bi bi-camera"></i> Chụp ảnh
+                        </button>
+                        <button type="button" class="btn btn-warning w-100 fw-bold shadow-sm d-none" id="btnRetake" onclick="retakePhoto()">
+                            <i class="bi bi-arrow-counterclockwise"></i> Chụp lại
+                        </button>
+                    </div>
+
+                    <input type="hidden" asp-for="FaceDataPath" id="FaceDataInput" />
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-dark text-white fw-bold py-2 text-center text-uppercase small">
+                    <i class="bi bi-fingerprint text-info"></i> Dữ liệu Vân tay
+                </div>
+                <div class="card-body p-4 text-center bg-light">
+                    <i class="bi bi-fingerprint text-secondary opacity-25" style="font-size: 4rem;"></i>
+                    <p class="text-muted small fw-bold mt-2 mb-3">Chưa kết nối thiết bị quét</p>
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 fw-bold disabled">Đang bảo trì</button>
+                </div>
+            </div>
         </div>
 
-        <div class="card-body p-4 bg-light">
-            <form asp-action="Create" method="post">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="fw-bold text-primary mb-0 text-uppercase"><i class="bi bi-card-text"></i> THÔNG TIN CÁ NHÂN</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small">MÃ NHÂN VIÊN <span class="text-danger">*</span></label>
+                            <input asp-for="MaNV" class="form-control bg-light fw-bold text-primary font-monospace shadow-none" value="@autoEmpId" readonly />
+                            <small class="text-success fw-bold" style="font-size: 0.75rem;"><i class="bi bi-check-circle"></i> Tạo tự động</small>
+                        </div>
 
-                <div class="mb-3">
-                    <label class="fw-bold text-muted small text-uppercase mb-1">Mã Nhân Viên (*)</label>
-                    <input asp-for="MaNV" class="form-control form-control-lg border-dark" placeholder="VD: NV-099" required />
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small">HỌ VÀ TÊN <span class="text-danger">*</span></label>
+                            <input asp-for="HoTen" class="form-control shadow-none fw-bold" placeholder="Nhập họ và tên đầy đủ..." required />
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold text-muted small">PHÒNG BAN / CHỨC VỤ <span class="text-danger">*</span></label>
+                            <select asp-for="ChucVu" class="form-select shadow-none fw-bold text-dark" required>
+                                <option value="" disabled selected>-- Vui lòng chọn phòng ban --</option>
+                                <option value="Ban Giám đốc">Ban Giám đốc</option>
+                                <option value="Phòng Nhân sự">Phòng Nhân sự</option>
+                                <option value="Phòng Kế toán">Phòng Kế toán</option>
+                                <option value="Phòng Công nghệ (IT)">Phòng Công nghệ (IT)</option>
+                                <option value="Phòng Kinh doanh">Phòng Kinh doanh</option>
+                                <option value="Bảo vệ / An ninh">Bảo vệ / An ninh</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12"><hr class="text-muted opacity-25"></div>
+                        <div class="col-12 mb-1"><h6 class="fw-bold text-dark"><i class="bi bi-car-front-fill text-primary"></i> ĐĂNG KÝ PHƯƠNG TIỆN</h6></div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small">LOẠI PHƯƠNG TIỆN</label>
+                            <select asp-for="LoaiXe" id="loaiXeSelect" class="form-select shadow-none fw-bold" onchange="toggleBienSo()">
+                                <option value="Xe máy" selected>🛵 Xe máy</option>
+                                <option value="Ô tô">🚗 Ô tô</option>
+                                <option value="Không có">🚶 Không có phương tiện</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small">BIỂN SỐ XE</label>
+                            <input asp-for="BienSoXe" id="bienSoInput" type="text" class="form-control shadow-none font-monospace fw-bold text-uppercase" placeholder="VD: 59A1-12345">
+                        </div>
+
+                        <div class="col-12"><hr class="text-muted opacity-25 my-1"></div>
+                        <div class="col-12 mb-1"><h6 class="fw-bold text-dark"><i class="bi bi-clock-history text-primary"></i> CÀI ĐẶT CHẤM CÔNG</h6></div>
+
+                        <div class="col-md-6"><label class="form-label fw-bold text-muted small">GIỜ VÀO CA MẶC ĐỊNH</label><input asp-for="GioVaoCa" type="time" class="form-control shadow-none fw-bold" value="08:00" /></div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small">ĐƯỢC PHÉP ĐI MUỘN ĐẾN</label>
+                            <input asp-for="GioXinDiMuon" type="time" class="form-control shadow-none fw-bold text-danger border-danger border-opacity-50" value="08:30" />
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="fw-bold text-muted small text-uppercase mb-1">Họ và Tên (*)</label>
-                    <input asp-for="HoTen" class="form-control form-control-lg border-dark" placeholder="Nhập tên đầy đủ..." required />
-                </div>
-
-                <div class="mb-4">
-                    <label class="fw-bold text-muted small text-uppercase mb-1">Chức vụ / Phòng ban</label>
-                    <input asp-for="ChucVu" class="form-control form-control-lg border-dark" placeholder="VD: Kế toán, IT, Bảo vệ..." />
-                </div>
-
-                <div class="d-flex justify-content-between mt-5">
-                    <a asp-action="Index" class="btn btn-outline-dark square-box fw-bold px-4">HỦY BỎ</a>
-                    <button type="submit" class="btn btn-primary square-box fw-bold px-4">
-                        <i class="bi bi-arrow-right-circle"></i> TẠO & LẤY SINH TRẮC HỌC
+                <div class="card-footer bg-light border-top p-4 text-end">
+                    <button type="reset" class="btn btn-outline-secondary fw-bold px-4 me-2">Hủy nhập</button>
+                    <button type="button" class="btn btn-primary btn-lg fw-bold px-5 shadow-sm" onclick="confirmSave()">
+                        <i class="bi bi-save-fill me-1"></i> LƯU HỒ SƠ
                     </button>
                 </div>
-
-            </form>
+            </div>
         </div>
-    </div>
+    </form>
 </div>
+
+<style>
+    body {
+        background-color: #f4f7f6;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    let localStream = null;
+    const video = document.getElementById('webcam');
+    const capturedPhoto = document.getElementById('capturedPhoto');
+    const faceDataInput = document.getElementById('FaceDataInput');
+    const btnRetake = document.getElementById('btnRetake');
+    const btnCapture = document.getElementById('btnCapture');
+    const camStatus = document.getElementById('camStatus');
+
+    // Khởi động Camera ngay khi load trang
+    window.addEventListener('load', async () => {
+        toggleBienSo();
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
+            video.srcObject = localStream;
+        } catch (error) {
+            camStatus.innerHTML = "<i class='bi bi-exclamation-triangle text-warning'></i> Không tìm thấy Camera";
+        }
+    });
+
+    // Giải phóng camera khi rời trang
+    window.addEventListener('beforeunload', () => {
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+    });
+
+    function takeSnapshot() {
+        if (!video.videoWidth) return;
+
+        let canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        let ctx = canvas.getContext('2d');
+
+        // Lật ảnh lại cho đúng hướng chân dung thực
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        let dataURL = canvas.toDataURL('image/jpeg', 0.9);
+        capturedPhoto.src = dataURL;
+        capturedPhoto.classList.remove('d-none');
+        video.classList.add('d-none');
+
+        faceDataInput.value = dataURL;
+        btnRetake.classList.remove('d-none');
+        btnCapture.classList.add('d-none');
+        camStatus.innerHTML = "<i class='bi bi-check-circle text-success'></i> Đã thu thập khuôn mặt";
+    }
+
+    function retakePhoto() {
+        capturedPhoto.classList.add('d-none');
+        video.classList.remove('d-none');
+        faceDataInput.value = "";
+        btnRetake.classList.add('d-none');
+        btnCapture.classList.remove('d-none');
+        camStatus.innerHTML = "<i class='bi bi-record-circle text-danger'></i> Camera đang sẵn sàng";
+    }
+
+    function toggleBienSo() {
+        const loaiXe = document.getElementById('loaiXeSelect').value;
+        const bienSo = document.getElementById('bienSoInput');
+
+        if (loaiXe === "Không có") {
+            bienSo.value = "";
+            bienSo.placeholder = "Không sử dụng";
+            bienSo.setAttribute('readonly', true);
+            bienSo.classList.add('bg-light', 'text-muted');
+        } else {
+            bienSo.removeAttribute('readonly');
+            bienSo.classList.remove('bg-light', 'text-muted');
+            bienSo.placeholder = (loaiXe === "Ô tô") ? "VD: 30F-123.45" : "VD: 59A1-123.45";
+        }
+    }
+
+    function validateForm() {
+        if (!faceDataInput.value) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Thiếu dữ liệu khuôn mặt',
+                text: 'Hồ sơ nhân sự bắt buộc phải có ảnh Face ID để nhận diện!',
+                confirmButtonColor: '#0d6efd'
+            });
+            return false;
+        }
+
+        // Kiểm tra xem đã chọn chức vụ chưa
+        if (!document.getElementById('ChucVu').value) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Thiếu thông tin',
+                text: 'Vui lòng chọn Phòng ban / Chức vụ!',
+                confirmButtonColor: '#0d6efd'
+            });
+            return false;
+        }
+
+        return true;
+    }
+
+    // ĐÃ THÊM: Hàm xác nhận lưu chuyên nghiệp
+    function confirmSave() {
+        if (!validateForm()) return; // Dừng lại nếu thiếu ảnh hoặc thông tin
+
+        Swal.fire({
+            title: 'LƯU HỒ SƠ NHÂN SỰ?',
+            text: "Hệ thống sẽ khởi tạo dữ liệu Sinh trắc học mới.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Đồng Ý Lưu',
+            confirmButtonColor: '#198754',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Hiện thông báo đang lưu để người dùng biết
+                Swal.fire({
+                    title: 'Đang lưu dữ liệu...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading() }
+                });
+
+                // Submit form
+                document.getElementById('formNhanVien').submit();
+            }
+        });
+    }
+
+    // HIỂN THỊ THÔNG BÁO LỖI TỪ SERVER (Nếu có)
+    document.addEventListener("DOMContentLoaded", function() {
+        var errorMsg = '@Html.Raw(TempData["Error"])';
+        if (errorMsg !== "") {
+            Swal.fire({
+                title: 'Lỗi khởi tạo!',
+                text: errorMsg,
+                icon: 'error',
+                confirmButtonColor: '#dc3545'
+            });
+        }
+    });
+</script>

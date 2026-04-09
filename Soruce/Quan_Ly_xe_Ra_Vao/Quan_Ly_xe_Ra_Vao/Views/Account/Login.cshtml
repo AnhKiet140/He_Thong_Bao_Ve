@@ -1,0 +1,163 @@
+﻿@{
+    Layout = null; // Trang này không dùng chung menu với hệ thống
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng Nhập - CHK-IN PRO</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+    <link rel="shortcut icon" href="/images/app_icon.png" type="image/x-icon" />
+
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* KHUNG NỀN CÓ MÀU DỰ PHÒNG */
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #1c2331; /* Màu dự phòng nếu ảnh load chậm */
+            background-image: url('/images/banner_login.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+
+            /* Phủ tối thêm 1 chút để form nổi bật hơn so với nền */
+            .login-wrapper::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.35);
+            }
+
+        /* KHUNG FORM (Hiệu ứng kính mờ - Glassmorphism) */
+        .login-card {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Làm đẹp các ô nhập liệu */
+        .input-group-text {
+            background-color: transparent;
+            transition: all 0.2s;
+        }
+
+        .form-control {
+            background-color: rgba(255, 255, 255, 0.8);
+            transition: all 0.2s;
+        }
+
+            .form-control:focus {
+                background-color: #fff;
+                box-shadow: none;
+                border-color: #0d6efd;
+            }
+
+        .input-group:focus-within .input-group-text,
+        .input-group:focus-within .form-control {
+            border-color: #0d6efd;
+            color: #0d6efd !important;
+        }
+
+        /* Làm đẹp Nút Đăng nhập */
+        .btn-login {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            border: none;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+        }
+
+            .btn-login:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(13, 110, 253, 0.5) !important;
+            }
+
+        /* Hiệu ứng cho Tài khoản test */
+        .test-account-badge {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+            .test-account-badge:hover {
+                background-color: #0d6efd !important;
+                color: white !important;
+                border-color: #0d6efd !important;
+            }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card animate__animated animate__fadeInUp">
+
+            <div class="text-center mb-4">
+                <img src="/images/app_icon.png" alt="CHK-IN PRO Logo" style="height: 75px;" class="mb-3" onerror="this.style.display='none'" />
+                <h3 class="fw-bold text-primary mb-1" style="letter-spacing: 1px;">CHK-IN PRO</h3>
+                <p class="text-muted small fw-bold">HỆ THỐNG QUẢN LÝ AN NINH</p>
+            </div>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger py-2 text-center small fw-bold animate__animated animate__headShake border-danger border-2">
+                    <i class="bi bi-exclamation-triangle-fill"></i> @ViewBag.Error
+                </div>
+            }
+
+            <form asp-action="Login" method="post">
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark small mb-1">Tài khoản</label>
+                    <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden">
+                        <span class="input-group-text text-muted border-end-0 bg-white"><i class="bi bi-person-fill"></i></span>
+                        <input type="text" name="username" class="form-control border-start-0 ps-0 fs-6" required placeholder="Nhập tài khoản..." />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark small mb-1">Mật khẩu</label>
+                    <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden">
+                        <span class="input-group-text text-muted border-end-0 bg-white"><i class="bi bi-lock-fill"></i></span>
+                        <input type="password" name="password" class="form-control border-start-0 ps-0 fs-6" required placeholder="Nhập mật khẩu..." />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-login btn-lg w-100 fw-bold shadow rounded-pill mt-2">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> ĐĂNG NHẬP
+                </button>
+            </form>
+
+            <div class="mt-4 pt-3 border-top text-center small text-muted">
+                <p class="mb-2 fw-bold opacity-75">Tài khoản test hệ thống:</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <span class="badge bg-light text-dark border test-account-badge px-2 py-2">admin/123</span>
+                    <span class="badge bg-light text-dark border test-account-badge px-2 py-2">baove/123</span>
+                    <span class="badge bg-light text-dark border test-account-badge px-2 py-2">giamdoc/123</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

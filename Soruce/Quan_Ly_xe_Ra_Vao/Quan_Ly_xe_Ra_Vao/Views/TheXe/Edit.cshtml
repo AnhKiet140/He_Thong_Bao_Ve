@@ -1,66 +1,169 @@
 ﻿@model Quan_Ly_xe_Ra_Vao.Models.TheXe
-
 @{
     ViewData["Title"] = "Sửa Thông Tin Thẻ";
 }
 
-<style>
-    .square-box, .form-control, .form-select, .btn {
-        border-radius: 0 !important;
-    }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
-        .form-control:focus, .form-select:focus {
-            border-color: #000;
-            box-shadow: none;
-        }
-</style>
-
-<div class="container mt-5">
-    <div class="card square-box border-dark shadow-sm mx-auto" style="max-width: 600px;">
-        <div class="card-header bg-dark text-white square-box py-3">
-            <h5 class="mb-0 fw-bold text-uppercase"><i class="bi bi-pencil-square"></i> SỬA THÔNG TIN THẺ CỨNG</h5>
+<div class="container-fluid mt-2 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-primary">
+        <div>
+            <h4 class="fw-bold text-primary mb-1"><i class="bi bi-pencil-square"></i> CẬP NHẬT THÔNG TIN THẺ CỨNG</h4>
+            <small class="text-muted fw-bold">CHỈNH SỬA DỮ LIỆU RFID VÀ HỒ SƠ HÌNH ẢNH NHẬN DIỆN</small>
         </div>
-        <div class="card-body p-4 bg-light">
+        <a asp-action="Index" class="btn btn-light fw-bold rounded-pill px-4 shadow-sm border"><i class="bi bi-arrow-left"></i> QUAY LẠI</a>
+    </div>
 
-            <form asp-action="Edit" method="post">
+    <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden">
+        <div class="card-body p-4 p-md-5">
+            <form asp-action="Edit" method="post" id="editCardForm">
                 <input type="hidden" asp-for="Id" />
+                <div class="row g-5">
+                    <div class="col-lg-7 border-end pe-lg-5">
+                        <h6 class="fw-bold text-primary mb-4 text-uppercase border-bottom pb-2"><i class="bi bi-credit-card-2-front"></i> DỮ LIỆU THẺ CỨNG</h6>
 
-                <div class="mb-3">
-                    <label class="fw-bold text-muted small text-uppercase mb-1">Mã Thẻ / UID (*)</label>
-                    <input asp-for="MaThe" class="form-control form-control-lg border-dark" placeholder="VD: THE-KHACH-001" required />
-                </div>
+                        <div class="mb-4">
+                            <label class="fw-bold text-dark small text-uppercase mb-2">Mã Thẻ (Không được sửa) <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden border">
+                                <span class="input-group-text bg-dark border-0 text-white"><i class="bi bi-lock-fill"></i></span>
+                                <input asp-for="MaThe" id="MaTheInput" class="form-control border-0 ps-3 fw-bold text-danger font-monospace bg-light" readonly />
+                            </div>
+                        </div>
 
-                <div class="mb-3">
-                    <label class="fw-bold text-muted small text-uppercase mb-1">Loại Thẻ</label>
-                    <select asp-for="LoaiThe" class="form-select form-select-lg border-dark">
-                        <option value="Thẻ Khách">Thẻ Khách</option>
-                        <option value="Thẻ Nhân Viên">Thẻ Nhân Viên</option>
-                        <option value="Thẻ Quản Trị">Thẻ Quản Trị (Master)</option>
-                    </select>
-                </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="fw-bold text-dark small text-uppercase mb-2">Phân Loại Thẻ</label>
+                                <select asp-for="LoaiThe" class="form-select form-select-lg border rounded-3 shadow-sm text-dark fw-bold">
+                                    <option value="Thẻ Nhân Viên">Thẻ Nhân Viên</option>
+                                    <option value="Thẻ Khách">Thẻ Khách</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold text-dark small text-uppercase mb-2">Trạng Thái Hiện Tại</label>
+                                <select asp-for="TrangThai" class="form-select form-select-lg border rounded-3 shadow-sm text-dark fw-bold">
+                                    <option value="0">Sẵn sàng (Đang ở quầy)</option>
+                                    <option value="1">Đang sử dụng (Đã giao)</option>
+                                    <option value="2">Khóa tạm thời / Báo mất</option>
+                                </select>
+                            </div>
+                        </div>
 
-                <div class="mb-3">
-                    <label class="fw-bold text-muted small text-uppercase mb-1">Trạng Thái Thẻ</label>
-                    <select asp-for="TrangThai" class="form-select form-select-lg border-dark">
-                        <option value="0">Sẵn sàng (Đang ở quầy)</option>
-                        <option value="1">Đang sử dụng (Đã giao khách/NV)</option>
-                        <option value="2">Đã Khóa / Báo Mất</option>
-                    </select>
-                </div>
+                        <div class="mb-4">
+                            <label class="fw-bold text-dark small text-uppercase mb-2">Người đang giữ (Nếu có)</label>
+                            <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden border">
+                                <span class="input-group-text bg-light border-0 text-muted"><i class="bi bi-person-badge"></i></span>
+                                <input asp-for="NguoiGiu" class="form-control border-0 ps-0 text-dark fw-bold" placeholder="Nhập tên người đang giữ thẻ..." />
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="mb-4">
-                    <label class="fw-bold text-muted small text-uppercase mb-1">Người đang giữ (Nếu có)</label>
-                    <input asp-for="NguoiGiu" class="form-control form-control-lg border-dark" placeholder="Nhập tên người giữ..." />
-                </div>
+                    <div class="col-lg-5 ps-lg-4 d-flex flex-column">
+                        <h6 class="fw-bold text-primary mb-4 text-uppercase border-bottom pb-2"><i class="bi bi-camera-fill"></i> CẬP NHẬT NHẬN DIỆN (TÙY CHỌN)</h6>
+                        <div class="border border-3 border-dashed rounded-4 bg-light d-flex align-items-center justify-content-center overflow-hidden position-relative mb-3 shadow-sm" style="height: 280px; width: 100%;">
+                            <video id="cameraFeed" class="w-100 h-100 d-none" autoplay muted style="object-fit: cover; transform: scaleX(-1);"></video>
+                            <img id="photoPreview" src="@(string.IsNullOrEmpty(Model.HinhAnh) ? "/images/face-id.png" : Model.HinhAnh)" onerror="this.src='/images/no-avatar.png'" class="img-fluid w-100 h-100 @(string.IsNullOrEmpty(Model.HinhAnh) ? "p-3" : "")" style="object-fit: @(string.IsNullOrEmpty(Model.HinhAnh) ? "contain" : "cover");" />
+                            <div id="flashEffect" class="position-absolute top-0 start-0 w-100 h-100 bg-white d-none" style="z-index: 10; opacity: 0.8;"></div>
+                        </div>
 
-                <div class="d-flex justify-content-between mt-5">
-                    <a asp-action="Index" class="btn btn-outline-dark square-box fw-bold px-4">HỦY BỎ</a>
-                    <button type="submit" class="btn btn-success square-box fw-bold px-4">
-                        <i class="bi bi-save"></i> CẬP NHẬT DỮ LIỆU
-                    </button>
+                        <div class="d-flex gap-2 justify-content-center mb-4">
+                            <button type="button" id="btnStartCamera" class="btn btn-outline-primary fw-bold rounded-pill px-3" onclick="startCamera()"><i class="bi bi-camera-video-fill"></i> Bật Camera</button>
+                            <button type="button" id="btnCapture" class="btn btn-danger fw-bold rounded-pill px-3 d-none" onclick="takePhoto()"><i class="bi bi-record-circle"></i> Chụp Ngay</button>
+                            <button type="button" class="btn btn-outline-dark fw-bold rounded-pill px-3" onclick="document.getElementById('fileUpload').click()"><i class="bi bi-upload"></i> Đổi Ảnh Mới</button>
+                            <input type="file" id="fileUpload" class="d-none" accept="image/*" onchange="handleFileUpload(event)">
+                            <input type="hidden" name="HinhAnhBase64" id="HinhAnhBase64" value="@Model.HinhAnh" />
+                        </div>
+
+                        <div class="mt-auto text-end">
+                            <hr class="text-muted opacity-25">
+                            <button type="button" onclick="confirmSave()" class="btn btn-primary btn-lg fw-bold rounded-pill px-5 shadow"><i class="bi bi-save2-fill me-2"></i> CẬP NHẬT DỮ LIỆU</button>
+                        </div>
+                    </div>
                 </div>
             </form>
-
         </div>
     </div>
 </div>
+
+<style>
+    body {
+        background-color: #f4f7f6;
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+        border-color: #ced4da !important;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var errorMsg = '@Html.Raw(TempData["Error"])';
+        if (errorMsg !== "") {
+            Swal.fire({ title: 'Lỗi Dữ Liệu!', text: errorMsg, icon: 'error', confirmButtonColor: '#0d6efd', borderRadius: '15px' });
+        }
+    });
+
+    let streamRef = null;
+    async function startCamera() {
+        const video = document.getElementById('cameraFeed');
+        const img = document.getElementById('photoPreview');
+        try {
+            streamRef = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = streamRef;
+            video.classList.remove('d-none'); img.classList.add('d-none');
+            document.getElementById('btnStartCamera').classList.add('d-none'); document.getElementById('btnCapture').classList.remove('d-none');
+        } catch (err) { Swal.fire('Lỗi Camera', 'Vui lòng cấp quyền sử dụng Camera.', 'error'); }
+    }
+
+    function takePhoto() {
+        const video = document.getElementById('cameraFeed');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+
+        document.getElementById('photoPreview').src = dataUrl;
+        document.getElementById('photoPreview').style.objectFit = 'cover';
+        document.getElementById('photoPreview').classList.remove('p-3');
+        document.getElementById('HinhAnhBase64').value = dataUrl;
+        stopCamera();
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('photoPreview').src = e.target.result;
+            document.getElementById('photoPreview').style.objectFit = 'cover';
+            document.getElementById('photoPreview').classList.remove('p-3');
+            document.getElementById('HinhAnhBase64').value = e.target.result;
+            stopCamera();
+        }
+        reader.readAsDataURL(file);
+    }
+
+    function stopCamera() {
+        if (streamRef) { streamRef.getTracks().forEach(track => track.stop()); streamRef = null; }
+        document.getElementById('cameraFeed').classList.add('d-none');
+        document.getElementById('photoPreview').classList.remove('d-none');
+        document.getElementById('btnStartCamera').classList.remove('d-none');
+        document.getElementById('btnCapture').classList.add('d-none');
+    }
+
+    function confirmSave() {
+        Swal.fire({
+            title: 'LƯU THAY ĐỔI?',
+            text: "Dữ liệu mới sẽ được ghi đè lên hệ thống.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Đồng Ý Cập Nhật',
+            confirmButtonColor: '#0d6efd'
+        }).then((result) => {
+            if (result.isConfirmed) document.getElementById('editCardForm').submit();
+        });
+    }
+</script>

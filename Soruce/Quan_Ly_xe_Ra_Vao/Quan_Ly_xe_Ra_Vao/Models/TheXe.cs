@@ -9,17 +9,21 @@ namespace Quan_Ly_xe_Ra_Vao.Models
 
         [Required]
         [Display(Name = "Mã Thẻ (UID)")]
-        public string MaThe { get; set; } // VD: THE-001, THE-NV-05
+        public string MaThe { get; set; }
 
         [Display(Name = "Loại Thẻ")]
-        public string LoaiThe { get; set; } // VD: "Thẻ Nhân Viên", "Thẻ Khách"
+        public string LoaiThe { get; set; }
 
         [Display(Name = "Người đang giữ")]
-        public string NguoiGiu { get; set; } // Trống nếu thẻ đang nằm ở quầy
+        public string NguoiGiu { get; set; }
 
-        // 0 = Sẵn sàng (Nằm ở quầy), 1 = Đang sử dụng, 2 = Khóa / Báo mất
+        // 0 = Sẵn sàng, 1 = Đang sử dụng, 2 = Khóa / Báo mất
         public int TrangThai { get; set; } = 0;
 
         public string GhiChu { get; set; }
+
+        // THÊM DÒNG NÀY ĐỂ LƯU CHUỖI ẢNH TỪ CAMERA
+        [Display(Name = "Hình Ảnh Nhận Diện")]
+        public string? HinhAnh { get; set; }
     }
 }

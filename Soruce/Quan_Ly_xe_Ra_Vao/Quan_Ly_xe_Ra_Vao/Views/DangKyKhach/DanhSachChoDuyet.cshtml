@@ -1,0 +1,208 @@
+﻿@model IEnumerable<Quan_Ly_xe_Ra_Vao.Models.DangKyKhach>
+
+@{
+    var isGiamDoc = ViewBag.UserRole == "GiamDoc";
+    ViewData["Title"] = isGiamDoc ? "Hộp Thư Giám Đốc" : "Bảo Vệ - Duyệt Khách Vãng Lai";
+    
+    // Tách danh sách thành 2 nhóm riêng biệt dựa trên trạng thái
+    var choDuyetList = Model.Where(x => x.TrangThaiDuyet == "Chờ duyệt").ToList();
+    var daDuyetList = Model.Where(x => x.TrangThaiDuyet == "Đã duyệt").ToList();
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-uppercase fw-bold text-primary mb-0">
+            @if (isGiamDoc) {
+                <i class="bi bi-bell-fill text-warning pulse-animation"></i> <span>HỘP THƯ GIÁM ĐỐC: YÊU CẦU XIN GẶP</span>
+            } else {
+                <i class="bi bi-shield-lock"></i> <span>DANH SÁCH KHÁCH TRONG NGÀY</span>
+            }
+        </h2>
+    </div>
+
+    <form method="get" asp-action="DanhSachChoDuyet" class="mb-4 bg-white p-3 rounded shadow-sm border">
+        <div class="row g-2">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input type="text" name="searchName" value="@ViewBag.SearchName" class="form-control" placeholder="Tìm theo tên khách..." />
+                </div>
+            </div>
+            <div class="col-md-5">
+                <select name="filterBoPhan" class="form-select">
+                    <option value="">-- Tất cả phòng ban cần gặp --</option>
+                    @if(ViewBag.BoPhanList != null)
+                    {
+                        foreach (var bp in ViewBag.BoPhanList)
+                        {
+                            if (ViewBag.FilterBoPhan == bp) {
+                                <option value="@bp" selected>@bp</option>
+                            } else {
+                                <option value="@bp">@bp</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="bi bi-funnel"></i> LỌC</button>
+                <a asp-action="DanhSachChoDuyet" class="btn btn-secondary" title="Làm mới"><i class="bi bi-arrow-clockwise"></i></a>
+            </div>
+        </div>
+    </form>
+
+    <ul class="nav nav-tabs fs-5 fw-bold mb-4" id="guestTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active text-warning bg-light" id="cho-duyet-tab" data-bs-toggle="tab" data-bs-target="#choDuyet" type="button" role="tab">
+                <i class="bi bi-hourglass-split"></i> CHỜ DUYỆT (@choDuyetList.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-success bg-light" id="da-duyet-tab" data-bs-toggle="tab" data-bs-target="#daDuyet" type="button" role="tab">
+                <i class="bi bi-check-circle"></i> ĐÃ DUYỆT (@daDuyetList.Count)
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="guestTabsContent">
+        
+        <div class="tab-pane fade show active" id="choDuyet" role="tabpanel">
+            @if (!choDuyetList.Any()) {
+                <div class="alert alert-success fs-5 shadow-sm"><i class="bi bi-emoji-smile"></i> Không có khách nào đang chờ duyệt.</div>
+            } else {
+                <div class="row">
+                    @foreach (var item in choDuyetList) {
+                        RenderGuestCard(item, true); // Gọi hàm vẽ thẻ Card
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="tab-pane fade" id="daDuyet" role="tabpanel">
+            @if (!daDuyetList.Any()) {
+                <div class="alert alert-secondary fs-5 shadow-sm"><i class="bi bi-info-circle"></i> Chưa có khách nào được duyệt trong hôm nay.</div>
+            } else {
+                <div class="row">
+                    @foreach (var item in daDuyetList) {
+                        RenderGuestCard(item, false);
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    void RenderGuestCard(Quan_Ly_xe_Ra_Vao.Models.DangKyKhach item, bool isPending)
+    {
+        // Lấy quyền để xác định xem có phải là bảo vệ không
+        var userRole = ViewBag.UserRole as string;
+        var isBaoVe = userRole == "BaoVe";
+
+        <div class="col-md-6 col-lg-4 mb-4" id="card-@item.Id">
+            <div class="card shadow border-dark h-100">
+                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between">
+                    <span>@item.HoTen</span>
+                    @if(isPending) { <span class="badge bg-warning text-dark pulse-animation">Chờ duyệt</span> }
+                    else { <span class="badge bg-success">Đã duyệt</span> }
+                </div>
+                <div class="card-body bg-light text-center">
+                    <img src="@item.FaceDataPath" class="img-thumbnail rounded-circle mb-3 shadow" style="width: 120px; height: 120px; object-fit: cover;" />
+                    <table class="table table-sm text-start mb-0">
+                        <tr><td class="text-muted" width="40%">Giờ hẹn:</td><td class="fw-bold text-danger">@item.ThoiGianHen.ToString("dd/MM/yyyy HH:mm")</td></tr>
+                        <tr><td class="text-muted">Cần gặp:</td><td class="fw-bold text-primary">@item.BoPhanCanGap</td></tr>
+                        <tr><td class="text-muted">Lý do:</td><td>@item.LyDo</td></tr>
+                        <tr><td class="text-muted">Xe cộ:</td><td>@item.LoaiXe (@item.BienSoXe)</td></tr>
+                    </table>
+                </div>
+                
+                @if(isPending) {
+                    <div class="card-footer bg-white d-flex justify-content-between">
+                        @if (isBaoVe && item.BoPhanCanGap == "Ban Giám Đốc") {
+                            <span class="w-100 text-center text-warning fw-bold p-2 border rounded bg-light" style="font-size: 0.9em;">
+                                <i class="bi bi-lock-fill"></i> ĐANG CHỜ GIÁM ĐỐC DUYỆT
+                            </span>
+                        } else {
+                            <button onclick="xuLyKhach(@item.Id, 'TuChoi')" class="btn btn-outline-danger fw-bold w-50 me-1">TỪ CHỐI</button>
+                            <button onclick="xuLyKhach(@item.Id, 'Duyet')" class="btn btn-success fw-bold w-50 ms-1">DUYỆT VÀO</button>
+                        }
+                    </div>
+                } else {
+                    @if(isBaoVe) {
+                        <div class="card-footer bg-white p-2">
+                            <button onclick="checkInKhach(@item.Id)" class="btn btn-primary w-100 fw-bold shadow-sm">
+                                <i class="bi bi-box-arrow-in-right"></i> XÁC NHẬN VÀO CỔNG
+                            </button>
+                        </div>
+                    } else {
+                        <div class="card-footer bg-white text-center text-success fw-bold">
+                            <i class="bi bi-check2-all"></i> KHÁCH ĐÃ ĐƯỢC CẤP QUYỀN
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+}
+
+<style>
+    .pulse-animation { animation: pulse 1.5s infinite; display: inline-block; }
+    @@keyframes pulse {
+        0% { transform: scale(1); text-shadow: 0 0 0 rgba(255, 193, 7, 0.7); }
+        50% { transform: scale(1.1); text-shadow: 0 0 10px rgba(255, 193, 7, 0.9); }
+        100% { transform: scale(1); text-shadow: 0 0 0 rgba(255, 193, 7, 0); }
+    }
+    .nav-tabs .nav-link { color: #495057; }
+    .nav-tabs .nav-link.active { border-bottom: 3px solid currentColor; background-color: white !important; }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function xuLyKhach(id, hanhDong) {
+        let title = hanhDong === 'Duyet' ? "Cho phép khách vào?" : "Từ chối khách này?";
+        Swal.fire({
+            title: title, icon: 'question', showCancelButton: true,
+            confirmButtonColor: hanhDong === 'Duyet' ? '#198754' : '#dc3545',
+            confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/DangKyKhach/XuLyDuyet?id=${id}&hanhDong=${hanhDong}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        Swal.fire({ title: 'Thành công', text: data.message, icon: 'success', timer: 1500, showConfirmButton: false });
+                        setTimeout(() => { location.reload(); }, 1500); 
+                    } else {
+                        Swal.fire('Lỗi', data.message, 'error'); // Hiển thị lỗi nếu Bảo vệ cố tình hack API
+                    }
+                });
+            }
+        });
+    }
+
+    // Nút bấm liên thông Sổ Trực Ban cho Bảo vệ
+    function checkInKhach(id) {
+        Swal.fire({
+            title: 'Xác nhận khách vào?',
+            text: 'Thông tin sẽ được ghi vào Sổ Trực Ban ngay lập tức!',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#0d6efd',
+            confirmButtonText: 'Xác nhận',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/DangKyKhach/CheckInTaiCong?id=${id}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        Swal.fire({ title: 'Đã vào cổng!', text: data.message, icon: 'success', timer: 1500, showConfirmButton: false });
+                        setTimeout(() => { location.reload(); }, 1500); 
+                    } else {
+                        Swal.fire('Lỗi', data.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+</script>

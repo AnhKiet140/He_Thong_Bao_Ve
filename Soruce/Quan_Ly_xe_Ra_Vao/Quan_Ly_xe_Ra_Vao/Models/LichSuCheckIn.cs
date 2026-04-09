@@ -10,18 +10,28 @@ namespace Quan_Ly_xe_Ra_Vao.Models
 
         public DateTime ThoiGian { get; set; } = DateTime.Now;
 
-        public string LoaiDoiTuong { get; set; } // VD: Nhân sự, Khách ngoài, Người lạ
+        // Thêm dấu ? sau string để cho phép Null, tránh lỗi "chặn cửa" của Database
+        public string? LoaiDoiTuong { get; set; }
 
-        public string HoTen { get; set; }
+        public string? HoTen { get; set; }
 
-        public string BienSoXe { get; set; }
+        public string? BienSoXe { get; set; }
 
-        public string PhuongThuc { get; set; } // VD: FaceID, Vân Tay, Quẹt thẻ, Cảnh báo
+        public string? PhuongThuc { get; set; }
 
-        public string TrangThai { get; set; } // VD: Thành Công, Không hợp lệ
+        public string? TrangThai { get; set; }
 
-        // --- 2 CỘT MỚI THÊM VÀO ---
-        public string Huong { get; set; } // VD: Đi Vào, Đi Ra
-        public string HinhAnh { get; set; } // Lưu ảnh Base64 (đặc biệt hữu ích để bắt quả tang người lạ)
+        public string? Huong { get; set; }
+
+        public string? HinhAnh { get; set; }
+
+        [Display(Name = "Loại phương tiện")]
+        public string? LoaiXe { get; set; }
+
+        [Display(Name = "Hình ảnh toàn cảnh xe")]
+        public string? HinhAnhXe { get; set; }
+
+        public string? ViTriDo { get; set; } // Lưu mã vị trí như A-01, A-02...
+
     }
 }

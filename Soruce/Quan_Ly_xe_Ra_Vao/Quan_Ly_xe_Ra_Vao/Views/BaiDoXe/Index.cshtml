@@ -1,0 +1,364 @@
+﻿@model IEnumerable<Quan_Ly_xe_Ra_Vao.Models.LichSuCheckIn>
+@{
+    ViewData["Title"] = "Quản Lý Bãi Xe Thông Minh";
+
+    string currentTang = ViewBag.CurrentTang ?? "B1";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    string selectedDate = ViewBag.SelectedDate ?? DateTime.Today.ToString("yyyy-MM-dd");
+    string filterStatus = ViewBag.FilterStatus as string ?? "Tất cả";
+    string prefix = (currentTang == "B1") ? "A" : "B";
+
+    // 1. MÁY LỌC DỮ LIỆU
+    var cleanModel = Model.Where(x =>
+        !string.IsNullOrEmpty(x.LoaiXe) &&
+        (x.LoaiXe.ToLower().Contains("tô") || x.LoaiXe.ToLower().Contains("oto")) &&
+        !string.IsNullOrEmpty(x.BienSoXe) &&
+        x.BienSoXe.ToLower() != "undefined" &&
+        x.BienSoXe.ToLower() != "null" &&
+        x.BienSoXe != "---" &&
+        x.BienSoXe != "N/A" &&
+        !x.BienSoXe.ToLower().Contains("máy")
+    ).Select(x =>
+    {
+        x.LoaiXe = "Ô tô";
+        x.BienSoXe = x.BienSoXe.ToUpper();
+        return x;
+    }).ToList();
+
+    // 2. CHỌN LỌC XE ĐANG TRONG BÃI
+    var xeDangTrongBai = cleanModel
+        .GroupBy(x => x.HoTen + "_" + x.BienSoXe)
+        .Select(g => g.OrderByDescending(x => x.ThoiGian).FirstOrDefault())
+        .Where(last => last != null && last.Huong == "Đi Vào")
+        .ToList();
+
+    int totalOccupied = xeDangTrongBai.Count;
+    int availableSlots = 240 - totalOccupied;
+
+    var xeTangNay = xeDangTrongBai.Where(x => string.IsNullOrEmpty(x.ViTriDo) || x.ViTriDo.StartsWith(prefix)).ToList();
+
+    // 3. THUẬT TOÁN TÌM CHỖ THÔNG MINH
+    List<string> usedSlots = xeTangNay.Where(x => !string.IsNullOrEmpty(x.ViTriDo)).Select(x => x.ViTriDo).ToList();
+    foreach (var xe in xeTangNay.Where(x => string.IsNullOrEmpty(x.ViTriDo)))
+    {
+        int seed = $"{xe.HoTen}_{xe.BienSoXe}".GetHashCode();
+        Random rnd = new Random(seed);
+
+        bool assigned = false;
+        for (int i = 0; i < 50; i++)
+        {
+            string slotId = $"{prefix}-{rnd.Next(1, 121):D2}";
+            if (!usedSlots.Contains(slotId))
+            {
+                xe.ViTriDo = slotId;
+                usedSlots.Add(slotId);
+                assigned = true;
+                break;
+            }
+        }
+
+        if (!assigned)
+        {
+            for (int i = 1; i <= 120; i++)
+            {
+                string slotId = $"{prefix}-{i:D2}";
+                if (!usedSlots.Contains(slotId))
+                {
+                    xe.ViTriDo = slotId;
+                    usedSlots.Add(slotId);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 4. KÍCH HOẠT LOGIC LỌC BẢNG (FIX LỖI HIỂN THỊ ĐANG ĐẬU MÀ KHÔNG CÓ CHỖ)
+    var tableData = cleanModel.OrderByDescending(x => x.ThoiGian).ToList();
+    if (filterStatus == "Đang đậu")
+    {
+        // Bắt buộc chỉ lấy xe có Vị Trí thật sự (Đang hiện hữu trong bãi)
+        tableData = xeDangTrongBai.OrderByDescending(x => x.ThoiGian).ToList();
+    }
+    else if (filterStatus == "Đã ra")
+    {
+        tableData = cleanModel.Where(x => x.Huong == "Đi Ra").OrderByDescending(x => x.ThoiGian).ToList();
+    }
+}
+
+<div class="container-fluid mt-3">
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold text-primary mb-0">
+                        <i class="bi bi-grid-3x3-gap"></i> SƠ ĐỒ VỊ TRÍ - TẦNG @currentTang (TRANG @currentPage)
+                    </h5>
+                    <div class="btn-group shadow-sm">
+                        <a href="@Url.Action("Index", new { tang = "B1", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
+                           class="btn btn-sm @(currentTang == "B1" ? "btn-dark" : "btn-outline-secondary")">Tầng B1</a>
+                        <a href="@Url.Action("Index", new { tang = "B2", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
+                           class="btn btn-sm @(currentTang == "B2" ? "btn-dark" : "btn-outline-secondary")">Tầng B2</a>
+                    </div>
+                </div>
+
+                <div class="parking-grid">
+                    @for (int i = 1; i <= 40; i++)
+                    {
+                        int slotNumber = ((currentPage - 1) * 40) + i;
+                        var slotId = prefix + "-" + slotNumber.ToString("D2");
+                        var userInSlot = xeTangNay.FirstOrDefault(x => x.ViTriDo == slotId);
+
+                        <div class="slot @(userInSlot != null ? "occupied" : "available")"
+                             onclick="showSlotInfo('@slotId', '@(userInSlot?.HoTen)', '@(userInSlot?.BienSoXe)', '@(userInSlot?.HinhAnh)')">
+                            <i class="bi @(userInSlot != null ? "bi-car-front-fill" : "bi-plus-circle")"></i>
+                            <span>@slotId</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="d-flex justify-content-center mt-4">
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0 shadow-sm">
+                            @for (int p = 1; p <= 3; p++)
+                            {
+                                <li class="page-item @(currentPage == p ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = p, tang = currentTang, selectedDate = selectedDate, searchName = ViewBag.SearchName, filterStatus = ViewBag.FilterStatus })">@p</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm bg-dark text-white mb-3 overflow-hidden">
+                <div class="card-header bg-black d-flex justify-content-between align-items-center py-2">
+                    <span class="small fw-bold text-info"><i class="bi bi-record-circle text-danger"></i> LIVE CAMERA</span>
+                    <select id="camSelect" class="form-select form-select-sm w-auto bg-dark text-white border-secondary shadow-none" style="font-size: 0.75rem;" onchange="switchCamera()">
+                        <option value="1">Cam 1: Cổng Vào @currentTang</option>
+                        <option value="2">Cam 2: Cổng Ra @currentTang</option>
+                        <option value="3">Cam 3: Khu vực Sảnh chính</option>
+                        <option value="4">Cam 4: Hàng lang góc trái</option>
+                        <option value="5">Cam 5: Toàn cảnh bãi đỗ</option>
+                    </select>
+                </div>
+                <div id="cameraPlaceholder" class="position-relative d-flex align-items-center justify-content-center" style="height: 220px; background: #000; transition: opacity 0.3s;">
+                    <div class="text-center text-muted">
+                        <i class="bi bi-camera-video fs-1 d-block mb-2"></i>
+                        <span id="camNameDisplay" class="fw-bold text-uppercase">Giám sát Cổng Vào @currentTang</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="slotDetailCard" class="card border-0 shadow-lg p-4 bg-white text-center mb-3 d-none animate__animated animate__fadeInRight" style="border-radius: 15px;">
+                <h6 class="fw-bold text-muted border-bottom pb-2 mb-3 text-uppercase">Vị trí <span id="lblSlotId" class="text-primary"></span></h6>
+                <div class="position-relative d-inline-block mb-3">
+                    <img id="slotImg" src="/images/no-avatar.png" class="rounded-circle shadow border border-3 border-primary" style="width: 120px; height: 120px; object-fit: cover;" onerror="this.src='/images/no-avatar.png'">
+                </div>
+                <h4 id="slotUser" class="fw-bold text-dark mb-1 text-capitalize"></h4>
+                <div id="slotPlate" class="badge bg-primary fs-5 mb-3 px-3 py-2 shadow-sm font-monospace"></div>
+                <button class="btn btn-sm btn-outline-secondary w-100 rounded-pill mt-2" onclick="resetSlot()">Đóng xem nhanh</button>
+            </div>
+
+            <div id="emptySlotNotify" class="p-4 bg-light text-center mb-3 rounded-4 border border-2 border-primary border-opacity-10 shadow-sm d-flex flex-column justify-content-center">
+                <h6 class="fw-bold text-muted text-uppercase mb-3">BÃI ĐỖ XE TỔNG HỢP</h6>
+                <h1 class="display-1 fw-bold @(availableSlots < 20 ? "text-danger" : "text-success") mb-0">@availableSlots</h1>
+                <p class="text-muted small fw-bold">CHỖ TRỐNG TRÊN TOÀN HỆ THỐNG</p>
+
+                <div class="progress mb-2" style="height: 12px; border-radius: 10px;">
+                    <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: @((availableSlots / 240.0) * 100)%"></div>
+                </div>
+
+                <small class="text-success fw-bold">TRẠNG THÁI: ĐÃ ĐỒNG BỘ</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-white p-3 border-bottom">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-calendar-date"></i> Ngày xem</label>
+                    <input type="date" name="selectedDate" value="@selectedDate" class="form-control form-control-sm shadow-none" onchange="this.form.submit()">
+                </div>
+                <div class="col-md-4">
+                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-search"></i> Tìm kiếm</label>
+                    <input type="text" name="searchName" value="@ViewBag.SearchName" class="form-control form-control-sm shadow-none" placeholder="Tên hoặc biển số...">
+                </div>
+                <div class="col-md-2">
+                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-filter"></i> Trạng thái</label>
+                    <select name="filterStatus" class="form-select form-select-sm shadow-none" onchange="this.form.submit()">
+                        <option value="Tất cả" selected="@(ViewBag.FilterStatus == "Tất cả")">Tất cả xe</option>
+                        <option value="Đang đậu" selected="@(ViewBag.FilterStatus == "Đang đậu")">Đang đậu</option>
+                        <option value="Đã ra" selected="@(ViewBag.FilterStatus == "Đã ra")">Đã ra</option>
+                    </select>
+                </div>
+                <input type="hidden" name="tang" value="@currentTang" />
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">Lọc dữ liệu</button>
+                </div>
+                <div class="col-md-2 text-end">
+                    <h5 class="fw-bold mb-0 text-primary">NHẬT KÝ BÃI XE</h5>
+                </div>
+            </form>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0 text-center custom-table">
+                    <thead class="table-light small fw-bold text-uppercase sticky-top">
+                        <tr>
+                            <th class="ps-4 text-start">Thời gian</th>
+                            <th class="text-start">Nhân viên</th>
+                            <th>Loại Xe</th>
+                            <th>Biển số</th>
+                            <th>Vị trí</th>
+                            <th class="pe-4 text-end">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!tableData.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy dữ liệu phù hợp với bộ lọc.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in tableData)
+                            {
+                                <tr>
+                                    <td class="ps-4 text-start">
+                                        <div class="fw-bold">@item.ThoiGian.ToString("HH:mm:ss")</div>
+                                        <small class="text-muted">@item.ThoiGian.ToString("dd/MM")</small>
+                                    </td>
+                                    <td class="text-start">
+                                        <div class="d-flex align-items-center">
+                                            <img src="@(string.IsNullOrEmpty(item.HinhAnh) ? "/images/no-avatar.png" : item.HinhAnh)"
+                                                 class="rounded-circle border shadow-sm me-3"
+                                                 style="width: 40px; height: 40px; object-fit: cover;"
+                                                 onerror="this.src='/images/no-avatar.png'">
+                                            <div>
+                                                <div class="fw-bold text-dark text-capitalize">@item.HoTen</div>
+                                                <small class="text-primary fw-bold" style="font-size: 0.7rem;">CHỦ XE</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">🚗 Ô TÔ</span>
+                                    </td>
+                                    <td class="font-monospace fw-bold">@item.BienSoXe</td>
+
+                                    <td class="text-danger fw-bold">@(item.Huong == "Đi Ra" ? "---" : (item.ViTriDo ?? "---"))</td>
+
+                                    <td class="pe-4 text-end">
+                                        @if (item.Huong == "Đi Vào")
+                                        {
+                                            <span class="badge bg-success rounded-pill px-3 shadow-sm">Đang đậu</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark rounded-pill px-3 shadow-sm">Đã ra</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .parking-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+        gap: 12px;
+    }
+
+    .slot {
+        height: 85px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .available {
+        background: #f1f8e9;
+        color: #388e3c;
+        border: 2px dashed #a5d6a7;
+    }
+
+    .occupied {
+        background: #ffebee;
+        color: #d32f2f;
+        border: 2px solid #ef9a9a;
+        box-shadow: 0 4px 10px rgba(211, 47, 47, 0.1);
+    }
+
+    .slot:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .font-monospace {
+        letter-spacing: 1px;
+    }
+
+    .custom-table tbody tr {
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+    }
+
+        .custom-table tbody tr:hover {
+            background-color: #f8f9fa;
+            border-left-color: #0d6efd;
+        }
+
+    .sticky-top {
+        top: 0;
+        z-index: 10;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function showSlotInfo(id, name, plate, img) {
+        if (name && name !== 'null' && name !== '') {
+            document.getElementById('slotDetailCard').classList.remove('d-none');
+            document.getElementById('emptySlotNotify').classList.add('d-none');
+            document.getElementById('lblSlotId').innerText = id;
+            document.getElementById('slotUser').innerText = name;
+            document.getElementById('slotPlate').innerText = plate;
+            document.getElementById('slotImg').src = img || '/images/no-avatar.png';
+        } else {
+            resetSlot();
+            Swal.fire({ title: 'Vị trí ' + id, text: 'Vị trí này hiện đang trống.', icon: 'info', timer: 1500, showConfirmButton: false });
+        }
+    }
+
+    function resetSlot() {
+        document.getElementById('slotDetailCard').classList.add('d-none');
+        document.getElementById('emptySlotNotify').classList.remove('d-none');
+    }
+
+    function switchCamera() {
+        let camSelect = document.getElementById('camSelect');
+        let camName = camSelect.options[camSelect.selectedIndex].text;
+        let camBox = document.getElementById('cameraPlaceholder');
+
+        camBox.style.opacity = '0.1';
+        setTimeout(() => {
+            document.getElementById('camNameDisplay').innerText = "ĐANG PHÁT: " + camName;
+            camBox.style.opacity = '1';
+        }, 300);
+    }
+</script>

@@ -16,5 +16,7 @@ namespace Quan_Ly_xe_Ra_Vao.Data
         public DbSet<LichSuCheckIn> LichSuCheckIns { get; set; }
 
         public DbSet<TheXe> TheXes { get; set; }
+        public DbSet<DangKyKhach> DangKyKhachs { get; set; }
+        public DbSet<NhatKyHeThong> NhatKyHeThongs { get; set; }
     }
 }

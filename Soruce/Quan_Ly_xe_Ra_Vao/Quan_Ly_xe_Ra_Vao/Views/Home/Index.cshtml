@@ -1,309 +1,294 @@
 ﻿@{
-    ViewData["Title"] = "Trạm Giám Sát Sinh Trắc Học";
+    ViewData["Title"] = "Bảng Điều Khiển";
+    var userRole = User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value : "Guest";
 }
 
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<div class="container-fluid mt-2 animate__animated animate__fadeIn">
 
-<div class="container-fluid mt-2">
-    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-        <h2 class="text-uppercase fw-bold text-primary mb-0">
-            <span class="spinner-grow text-danger spinner-grow-sm" role="status" aria-hidden="true"></span>
-            TRẠM KIỂM SOÁT TỰ ĐỘNG - LÀN VÀO 1
-        </h2>
-        <div class="text-end">
-            <button id="btnScanAI" onclick="scanAI()" class="btn btn-primary me-3 fw-bold shadow-sm px-4">
-                <i class="bi bi-robot"></i> ĐANG TẢI...
-            </button>
-            <span class="badge bg-success fs-6 rounded-pill px-3 py-2 shadow-sm">Hệ thống Đang chạy</span>
-            <span class="badge bg-dark fs-6 rounded-pill px-3 py-2 ms-2 shadow-sm" id="clock">@DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")</span>
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-primary">
+        <div>
+            <h4 class="fw-bold text-primary mb-1">
+                @ViewBag.Greeting, Tổ Bảo Vệ!
+            </h4>
+            <div class="text-muted small fw-bold d-flex align-items-center">
+                <i class="bi bi-clock-history me-1"></i> <span id="liveClock" class="me-2 text-dark">--:--:--</span>
+                <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Hệ thống an ninh đang hoạt động ổn định.</span>
+            </div>
+        </div>
+        <div>
+            <form id="dateForm" method="get" asp-action="Index">
+                <div class="input-group shadow-sm rounded-pill overflow-hidden border">
+                    <span class="input-group-text bg-white border-0 text-primary"><i class="bi bi-calendar-event-fill"></i></span>
+                    <input type="date" name="selectedDate" value="@ViewBag.SelectedDate"
+                           class="form-control border-0 fw-bold text-dark shadow-none"
+                           onchange="document.getElementById('dateForm').submit();" style="cursor: pointer;">
+                </div>
+            </form>
         </div>
     </div>
 
-    <style>
-        .camera-box-height {
-            height: 450px !important;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .fingerprint-scanner {
-            background: linear-gradient(145deg, #e6f7ff, #ffffff);
-            border-radius: 12px;
-        }
-
-        #plateResultBox {
-            width: 100%;
-            max-width: 320px;
-            height: 80px;
-            background-color: #fff;
-            border: 4px solid blue !important;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 10px;
-        }
-
-        #plateResult {
-            font-family: 'Courier New', Courier, monospace !important;
-            font-size: 2.3rem !important;
-            font-weight: 900 !important;
-            color: #000 !important;
-            letter-spacing: 2px;
-            margin: 0;
-        }
-
-        #faceResult {
-            width: 150px;
-            height: 180px;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        /* LỆNH LẬT NGƯỢC CAMERA (MIRROR) */
-        #webcam, #faceCanvas {
-            transform: scaleX(-1);
-        }
-    </style>
-
-    <div class="row g-3">
-        <div class="col-lg-8">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="card bg-dark text-white shadow h-100 border-0 camera-box-height">
-                        <div class="card-header bg-secondary text-center fw-bold py-2 fs-5">
-                            📷 CAMERA NHẬN DIỆN KHUÔN MẶT (AI)
-                        </div>
-                        <div class="card-body p-0 d-flex justify-content-center align-items-center bg-black" style="position: relative;">
-                            <video id="webcam" width="450" height="380" preload autoplay loop muted style="position: absolute; object-fit: cover;"></video>
-                            <canvas id="faceCanvas" width="450" height="380" style="position: absolute;"></canvas>
-                        </div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 rounded-4 shadow-sm text-white stat-card" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+                <div class="card-body p-4 position-relative overflow-hidden">
+                    <div class="z-1 position-relative">
+                        <p class="text-uppercase fw-bold mb-1 opacity-75 small">Khách Hôm Nay</p>
+                        <h2 class="display-5 fw-bolder mb-0">@ViewBag.TotalKhachHnay</h2>
                     </div>
+                    <i class="bi bi-people-fill position-absolute stat-bg-icon"></i>
                 </div>
-
-                <div class="col-md-6">
-                    <div class="card bg-dark text-white shadow h-100 border-0 camera-box-height">
-                        <div class="card-header bg-secondary text-center fw-bold py-2 fs-5">
-                            🚗 CAMERA QUÉT BIỂN SỐ (ALPR)
-                        </div>
-                        <div class="card-body p-0 d-flex justify-content-center align-items-center bg-black" style="position: relative;">
-                            <div id="laser-scanner" style="width: 100%; height: 3px; background-color: red; position: absolute; top: 0; box-shadow: 0 0 15px red; animation: scan 2s infinite linear;"></div>
-                            <span class="text-muted fs-5">Đang chờ xe tiến vào...</span>
-                        </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 rounded-4 shadow-sm text-dark stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);">
+                <div class="card-body p-4 position-relative overflow-hidden">
+                    <div class="z-1 position-relative">
+                        <p class="text-uppercase fw-bold mb-1 opacity-75 small">Chờ Duyệt</p>
+                        <h2 class="display-5 fw-bolder mb-0">@ViewBag.TotalChoDuyet</h2>
                     </div>
+                    <i class="bi bi-hourglass-split position-absolute stat-bg-icon text-dark opacity-25"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 rounded-4 shadow-sm text-white stat-card" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
+                <div class="card-body p-4 position-relative overflow-hidden">
+                    <div class="z-1 position-relative">
+                        <p class="text-uppercase fw-bold mb-1 opacity-75 small">Lượt Vào Ra (NV)</p>
+                        <h2 class="display-5 fw-bolder mb-0">@ViewBag.TotalNhanVienVao</h2>
+                    </div>
+                    <i class="bi bi-shield-check position-absolute stat-bg-icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 rounded-4 shadow-sm text-white stat-card" style="background: linear-gradient(135deg, #212529 0%, #121416 100%);">
+                <div class="card-body p-4 position-relative overflow-hidden">
+                    <div class="z-1 position-relative">
+                        <p class="text-uppercase fw-bold mb-1 opacity-75 small text-success">Trạng Thái Server</p>
+                        <h2 class="display-5 fw-bolder mb-0 text-success">ONLINE</h2>
+                    </div>
+                    <i class="bi bi-wifi position-absolute stat-bg-icon text-success opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-8">
+            <h6 class="fw-bold text-muted text-uppercase mb-3"><i class="bi bi-lightning-charge-fill text-warning"></i> Vận Hành Nhanh</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <a href="/Home/Monitoring" class="text-decoration-none">
+                        <div class="card border-0 rounded-4 shadow-sm action-card h-100 p-3">
+                            <div class="d-flex align-items-center text-dark">
+                                <div class="icon-shape bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                                    <i class="bi bi-eye-fill fs-3"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Trung Tâm Kiểm Soát</h6>
+                                    <small class="text-muted">Mở Camera AI</small>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="/LichSuCheckIn/TrucBan" class="text-decoration-none">
+                        <div class="card border-0 rounded-4 shadow-sm action-card h-100 p-3">
+                            <div class="d-flex align-items-center text-dark">
+                                <div class="icon-shape bg-success bg-opacity-10 text-success rounded-3 me-3">
+                                    <i class="bi bi-clipboard-check fs-3"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Trực Ban</h6>
+                                    <small class="text-muted">Bảng giao ca</small>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="/DangKyKhach/Index" class="text-decoration-none">
+                        <div class="card border-0 rounded-4 shadow-sm action-card h-100 p-3">
+                            <div class="d-flex align-items-center text-dark">
+                                <div class="icon-shape bg-info bg-opacity-10 text-info rounded-3 me-3">
+                                    <i class="bi bi-person-lines-fill fs-3"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Danh Bạ Khách Hàng</h6>
+                                    <small class="text-muted">Quản lý thông tin</small>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <h6 class="fw-bold text-muted text-uppercase mt-4 mb-3"><i class="bi bi-grid-1x2-fill text-secondary"></i> Chức Năng Hệ Sinh Thái</h6>
+            <div class="row g-3">
+                <div class="col-6 col-md-4">
+                    <a href="/BaoCao/Index" class="text-decoration-none">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                            <i class="bi bi-graph-up-arrow fs-2 text-primary mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Báo Cáo & Thống Kê</h6>
+                            <small class="text-muted">Dữ liệu an ninh</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a href="/BaiDoXe/Index" class="text-decoration-none">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                            <i class="bi bi-p-square-fill fs-2 text-success mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Bãi Đỗ Xe</h6>
+                            <small class="text-muted">Kiểm soát biển số</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a href="/BanDoAnNinh/Index" class="text-decoration-none">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                            <i class="bi bi-map-fill fs-2 text-info mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Bản Đồ An Ninh</h6>
+                            <small class="text-muted">Vị trí trạm trực</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a href="/ThietBiAI/Index" class="text-decoration-none">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                            <i class="bi bi-cpu-fill fs-2 text-warning mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Quản Lý Thiết Bị</h6>
+                            <small class="text-muted">IoT Hub</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a href="/SuCoCanhBao/Index" class="text-decoration-none">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                            <i class="bi bi-megaphone-fill fs-2 text-danger mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Sự Cố</h6>
+                            <small class="text-muted">Báo động S.O.S</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a href="/NhatKyHeThong/Index" class="text-decoration-none">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                            <i class="bi bi-terminal-fill fs-2 text-secondary mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Lịch Sử Máy Chủ</h6>
+                            <small class="text-muted">Audit Logs</small>
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="card shadow-lg border-success h-100">
-                <div class="card-header bg-success text-white text-center fw-bold py-3 fs-4">
-                    KẾT QUẢ CHECK-IN
-                </div>
-                <div class="card-body bg-light">
-                    <div class="d-flex justify-content-center align-items-center flex-column mb-4 gap-3">
-                        <div class="bg-white border text-center d-flex align-items-center justify-content-center" id="faceResult">
-                            <span class="text-muted small">Chưa quét</span>
+        <div class="col-xl-4">
+            <h6 class="fw-bold text-muted text-uppercase mb-3"><i class="bi bi-bell-fill text-primary"></i> Khách Hẹn Đang Chờ</h6>
+            <div class="card border-0 rounded-4 shadow-sm h-100">
+                <div class="card-body p-0">
+                    @if (ViewBag.ThongBaoGanDay != null && ((IEnumerable<dynamic>)ViewBag.ThongBaoGanDay).Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var tb in ViewBag.ThongBaoGanDay)
+                            {
+                                <li class="list-group-item p-3 border-bottom hover-bg-light">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                <i class="bi bi-person-fill"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="fw-bold mb-0">@tb.HoTen</h6>
+                                                <small class="text-muted">@tb.BoPhanCanGap</small>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold text-danger">@tb.ThoiGianHen.ToString("HH:mm")</div>
+                                            @if (tb.TrangThaiDuyet == "Chờ duyệt")
+                                            {
+                                                <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success">Đã duyệt</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                        <div class="p-3 text-center border-top">
+                            <a href="/DangKyKhach/DanhSachChoDuyet" class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-bold">Xem tất cả</a>
                         </div>
-                        <div id="plateResultBox" style="border-style: dashed !important; border-color: #ccc !important;">
-                            <span id="plateResult" class="text-muted">-----</span>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 p-5 text-muted">
+                            <i class="bi bi-inbox fs-1 mb-2 opacity-50"></i>
+                            <p class="mb-0 fw-bold">Không có khách hẹn mới.</p>
                         </div>
-                    </div>
-
-                    <table class="table table-sm table-borderless fs-4 mt-3">
-                        <tr><td class="text-muted" width="45%">Đối tượng:</td><td class="fw-bold text-dark" id="nameResult">-----</td></tr>
-                        <tr><td class="text-muted">Chức vụ:</td><td class="fw-bold text-dark" id="roleResult">-----</td></tr>
-                        <tr><td class="text-muted">Trạng thái:</td><td><h3 class="text-secondary fw-bold mb-0" id="statusResult">CHỜ DỮ LIỆU</h3></td></tr>
-                    </table>
-
-                    <div class="d-grid mt-4 pb-3">
-                        <button class="btn btn-secondary btn-lg fw-bold shadow disabled fs-4" id="gateButton" style="padding: 15px;">CỔNG ĐANG ĐÓNG</button>
-                    </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+    body {
+        background-color: #f4f7f6;
+    }
+
+    .stat-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+        }
+
+    .stat-bg-icon {
+        font-size: 6rem;
+        right: -10px;
+        bottom: -20px;
+        opacity: 0.2;
+        transform: rotate(-15deg);
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover .stat-bg-icon {
+        transform: rotate(0deg) scale(1.1);
+    }
+
+    .icon-shape {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .action-card, .module-card {
+        transition: all 0.2s ease-in-out;
+        border: 1px solid transparent;
+    }
+
+        .action-card:hover, .module-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+            border-color: rgba(13, 110, 253, 0.2);
+        }
+
+    .hover-bg-light:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+
 <script>
-    // Đồng hồ hệ thống
     setInterval(() => {
-        let now = new Date();
-        document.getElementById('clock').innerText = now.toLocaleDateString('vi-VN') + " " + now.toLocaleTimeString('vi-VN');
+        document.getElementById('liveClock').innerText = new Date().toLocaleTimeString('vi-VN');
     }, 1000);
-
-    const video = document.getElementById('webcam');
-    const canvas = document.getElementById('faceCanvas');
-    let faceMatcher = null;
-
-    // 1. BẬT CAMERA VÀ TẢI "NÃO BỘ" AI
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-            video.srcObject = stream;
-            video.onloadedmetadata = () => { video.play(); initAI(); };
-        });
-
-    // === HÀM KHỞI TẠO AI ĐÃ ĐƯỢC TỐI ƯU HÓA SIÊU TỐC ===
-    async function initAI() {
-        let btn = document.getElementById('btnScanAI');
-        btn.innerText = "ĐẠNG TẢI MODEL AI...";
-        btn.disabled = true;
-
-        try {
-            // Tải 3 mô hình từ Github
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'),
-                faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'),
-                faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights')
-            ]);
-
-            btn.innerText = "ĐANG ĐỌC DATABASE...";
-
-            // Kéo dữ liệu Base64 từ Database lên
-            const response = await fetch('/Home/GetFaceData');
-            const users = await response.json();
-
-            if (!users || users.length === 0) {
-                btn.innerText = "CHƯA CÓ DATA AI";
-                btn.classList.replace('btn-primary', 'btn-warning');
-                return; // Dừng lại nếu DB trống
-            }
-
-            // Xử lý nạp ảnh SONG SONG để chống đơ máy
-            const labeledFaceDescriptors = await Promise.all(
-                users.map(async (user) => {
-                    return new Promise((resolve) => {
-                        const img = new Image();
-                        img.onload = async () => {
-                            const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-                                                           .withFaceLandmarks()
-                                                           .withFaceDescriptor();
-                            if (detection) {
-                                resolve(new faceapi.LabeledFaceDescriptors(`${user.name}|${user.role}`, [detection.descriptor]));
-                            } else {
-                                console.warn(`⚠️ Bỏ qua ${user.name}: Ảnh quá mờ hoặc không thấy mặt!`);
-                                resolve(null); // Trả về null nếu ảnh bị lỗi
-                            }
-                        };
-                        img.onerror = () => resolve(null); // Bỏ qua nếu link ảnh hỏng
-                        img.src = user.image;
-                    });
-                })
-            );
-
-            // Lọc bỏ những ảnh bị lỗi (null)
-            const validDescriptors = labeledFaceDescriptors.filter(d => d !== null);
-
-            if(validDescriptors.length > 0) {
-                faceMatcher = new faceapi.FaceMatcher(validDescriptors, 0.5);
-                btn.innerHTML = '<i class="bi bi-robot"></i> KÍCH HOẠT QUÉT AI';
-                btn.classList.replace('btn-primary', 'btn-success');
-                btn.disabled = false;
-            } else {
-                btn.innerText = "LỖI: ẢNH TRONG DB QUÁ MỜ";
-                btn.classList.replace('btn-primary', 'btn-danger');
-            }
-
-            // Bật khung xanh bám theo mặt
-            const displaySize = { width: 450, height: 380 };
-            faceapi.matchDimensions(canvas, displaySize);
-            setInterval(async () => {
-                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
-                const context = canvas.getContext('2d');
-                context.clearRect(0, 0, canvas.width, canvas.height);
-                faceapi.resizeResults(detections, displaySize).forEach(det => {
-                    context.strokeStyle = '#00ff00'; context.lineWidth = 4;
-                    context.strokeRect(det.box.x, det.box.y, det.box.width, det.box.height);
-                });
-            }, 100);
-
-        } catch (error) {
-            console.error("Lỗi khởi tạo AI:", error);
-            btn.innerText = "LỖI KẾT NỐI AI";
-        }
-    }
-
-    // 2. HÀM CHỤP LÉN VÀ QUÉT AI SO SÁNH (Giữ nguyên logic chuẩn của bạn)
-    function captureSnapshot() {
-        let snapCanvas = document.createElement('canvas');
-        snapCanvas.width = video.videoWidth;
-        snapCanvas.height = video.videoHeight;
-
-        // Fix lật ảnh lúc lưu
-        let ctx = snapCanvas.getContext('2d');
-        ctx.translate(snapCanvas.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0);
-
-        return snapCanvas.toDataURL('image/jpeg');
-    }
-
-    async function scanAI() {
-        if(!faceMatcher) {
-            alert("Hệ thống chưa nạp xong dữ liệu!");
-            return;
-        }
-
-        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-
-        if(detection) {
-            const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
-            const snapshotBase64 = captureSnapshot();
-
-            let logData = {
-                HoTen: "",
-                LoaiDoiTuong: "",
-                BienSoXe: "59A1-123.45",
-                PhuongThuc: "FaceID + ALPR",
-                Huong: "Đi Vào",
-                TrangThai: "",
-                HinhAnh: snapshotBase64
-            };
-
-            document.getElementById('plateResultBox').style.borderColor = "blue";
-            document.getElementById('plateResultBox').style.borderStyle = "solid";
-            document.getElementById('plateResult').innerText = logData.BienSoXe;
-
-            if(bestMatch.label !== 'unknown') {
-                const info = bestMatch.label.split('|');
-                document.getElementById('nameResult').innerText = info[0];
-                document.getElementById('nameResult').className = "fw-bold text-primary text-uppercase";
-                document.getElementById('roleResult').innerText = info[1];
-                document.getElementById('statusResult').innerText = "HỢP LỆ";
-                document.getElementById('statusResult').className = "text-success fw-bold mb-0";
-                document.getElementById('faceResult').innerHTML = '<span class="text-success fw-bold fs-5 text-center">FaceID<br>Khớp 100%</span>';
-                document.getElementById('gateButton').className = "btn btn-success btn-lg fw-bold shadow fs-4";
-                document.getElementById('gateButton').innerText = "MỞ BARIE (TỰ ĐỘNG)";
-                document.getElementById('gateButton').removeAttribute("disabled");
-
-                logData.HoTen = info[0];
-                logData.LoaiDoiTuong = info[1];
-                logData.TrangThai = "Thành Công";
-
-            } else {
-                document.getElementById('nameResult').innerText = "KHÔNG XÁC ĐỊNH";
-                document.getElementById('nameResult').className = "fw-bold text-danger";
-                document.getElementById('roleResult').innerText = "Người lạ";
-                document.getElementById('statusResult').innerText = "TỪ CHỐI";
-                document.getElementById('statusResult').className = "text-danger fw-bold mb-0";
-                document.getElementById('faceResult').innerHTML = '<span class="text-danger fw-bold fs-5 text-center">Sai<br>Người</span>';
-                document.getElementById('gateButton').className = "btn btn-danger btn-lg fw-bold shadow disabled fs-4";
-                document.getElementById('gateButton').innerText = "CỔNG ĐÓNG";
-
-                logData.HoTen = "Không xác định";
-                logData.LoaiDoiTuong = "Người lạ";
-                logData.PhuongThuc = "Cảnh báo";
-                logData.TrangThai = "Không hợp lệ";
-            }
-
-            fetch('/LichSuCheckIn/GhiNhatKy', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(logData)
-            }).then(res => console.log("Hệ thống đã tự động ghi Log!"));
-
-        } else {
-            alert("⚠️ AI không nhìn thấy khuôn mặt nào trước Camera! Vui lòng nhìn thẳng.");
-        }
-    }
 </script>

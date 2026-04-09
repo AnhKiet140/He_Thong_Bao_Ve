@@ -22,6 +22,50 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.DangKyKhach", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BienSoXe")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BoPhanCanGap")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FaceDataPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HoTen")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LoaiXe")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LyDo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ThoiGianHen")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TrangThaiDuyet")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DangKyKhachs");
+                });
+
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.KhachNgoai", b =>
                 {
                     b.Property<int>("Id")
@@ -74,34 +118,36 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("BienSoXe")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("HinhAnh")
-                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HinhAnhXe")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("HoTen")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Huong")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LoaiDoiTuong")
-                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LoaiXe")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhuongThuc")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ThoiGian")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("TrangThai")
-                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ViTriDo")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -116,6 +162,9 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BienSoXe")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ChucVu")
                         .IsRequired()
@@ -138,6 +187,9 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("LoaiXe")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("MaNV")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -145,6 +197,41 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("NhanViens");
+                });
+
+            modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.NhatKyHeThong", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ChiTietThaoTac")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MucDo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("NguoiThucHien")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PhanHe")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("ThoiGian")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NhatKyHeThongs");
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.TheXe", b =>
@@ -157,6 +244,9 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.Property<string>("GhiChu")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HinhAnh")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LoaiThe")

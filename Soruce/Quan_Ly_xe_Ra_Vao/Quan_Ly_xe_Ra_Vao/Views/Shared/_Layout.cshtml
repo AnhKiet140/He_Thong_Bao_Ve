@@ -1,97 +1,260 @@
-﻿<!DOCTYPE html>
+﻿@using Quan_Ly_xe_Ra_Vao.Data
+@inject ApplicationDbContext _context
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - CHK-IN SYSTEM</title>
+    <title>@ViewData["Title"] - CHK-IN PRO</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="shortcut icon" href="~/images/app_icon.png" type="image/x-icon" />
+
+    <script>
+        if (localStorage.getItem('sidebarState') === 'collapsed') {
+            document.documentElement.classList.add('sidebar-collapsed');
+        }
+    </script>
 
     <style>
-        body {
-            background-color: #f4f6f9;
-            overflow-x: hidden;
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-image: url('/images/banner_login.png');
+            background-size: cover;
+            background-position: center;
         }
 
-        /* Cấu trúc chia đôi màn hình: Sidebar bên trái, Nội dung bên phải */
+        .login-form-box {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 420px;
+        }
+
+        html, body {
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
         .wrapper {
             display: flex;
             width: 100%;
-            align-items: stretch;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        /* Sidebar Menu */
         #sidebar {
-            min-width: 250px;
-            max-width: 250px;
-            background: #212529; /* Màu đen tuyền cực ngầu */
+            min-width: 260px;
+            max-width: 260px;
+            background: #1c2331;
             color: #fff;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             display: flex;
             flex-direction: column;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+            z-index: 100;
         }
 
-            #sidebar .sidebar-header {
-                padding: 20px;
-                background: #1a1e21;
-                border-bottom: 1px solid #343a40;
+        /* Mini Sidebar Logic */
+        @@media (min-width: 769px) {
+            .sidebar-collapsed #sidebar {
+                min-width: 80px;
+                max-width: 80px;
             }
 
-            #sidebar ul.components {
-                padding: 20px 0;
-                border-bottom: 1px solid #343a40;
+                .sidebar-collapsed #sidebar .sidebar-header {
+                    padding: 22px 0;
+                    justify-content: center;
+                }
+
+                    .sidebar-collapsed #sidebar .sidebar-header img {
+                        margin-right: 0 !important;
+                    }
+
+                    .sidebar-collapsed #sidebar .sidebar-header .text-start, .sidebar-collapsed #sidebar .sidebar-heading, .sidebar-collapsed #sidebar ul li a span {
+                        display: none;
+                    }
+
+                .sidebar-collapsed #sidebar ul li a {
+                    padding: 12px 0;
+                    justify-content: center;
+                    margin: 4px 10px;
+                }
+
+                    .sidebar-collapsed #sidebar ul li a i {
+                        margin-right: 0;
+                        font-size: 1.4rem;
+                    }
+
+                    .sidebar-collapsed #sidebar ul li a:hover::after {
+                        content: attr(data-title);
+                        position: absolute;
+                        left: 80px;
+                        background: #2c3e50;
+                        color: #fff;
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                        white-space: nowrap;
+                        z-index: 1050;
+                        font-size: 0.85rem;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                    }
+        }
+
+        @@media (max-width: 768px) {
+            #sidebar {
+                margin-left: -260px;
+                position: fixed;
+                height: 100vh;
             }
+
+            .sidebar-collapsed #sidebar {
+                margin-left: 0;
+                min-width: 260px;
+                max-width: 260px;
+            }
+        }
+
+        #sidebar .sidebar-header {
+            padding: 22px 20px;
+            background: rgba(0, 0, 0, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-heading {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #6c757d;
+            text-transform: uppercase;
+            margin: 20px 20px 10px 20px;
+            letter-spacing: 1.2px;
+        }
+
+        #sidebar ul {
+            padding: 0;
+            list-style: none;
+            margin-bottom: 20px;
+        }
 
             #sidebar ul li a {
-                padding: 12px 20px;
-                font-size: 1.1em;
-                display: block;
-                color: #c2c7d0;
+                padding: 12px 18px;
+                margin: 4px 15px;
+                font-size: 0.92rem;
+                display: flex;
+                align-items: center;
+                color: #aeb7c2;
                 text-decoration: none;
-                transition: 0.2s;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                position: relative;
             }
 
                 #sidebar ul li a:hover {
                     color: #fff;
-                    background: #343a40;
-                    border-left: 4px solid #0d6efd;
+                    background: rgba(255, 255, 255, 0.08);
+                    transform: translateX(3px);
                 }
 
                 #sidebar ul li a.active {
                     color: #fff;
-                    background: #0d6efd;
-                    font-weight: bold;
-                    border-left: 4px solid #fff;
+                    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+                    font-weight: 600;
+                    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
                 }
 
                 #sidebar ul li a i {
-                    margin-right: 10px;
-                    font-size: 1.2em;
+                    margin-right: 12px;
+                    font-size: 1.2rem;
+                    width: 25px;
+                    text-align: center;
                 }
 
-        /* Khu vực nội dung chính */
         #content {
-            width: 100%;
+            flex: 1;
             display: flex;
             flex-direction: column;
+            height: 100vh;
+            transition: all 0.3s;
         }
 
         .top-navbar {
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-            padding: 15px 20px;
+            background: #ffffff;
+            padding: 10px 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 99;
+        }
+
+        #btn-sidebar-toggle {
+            background: transparent;
+            border: none;
+            color: #495057;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+            #btn-sidebar-toggle:hover {
+                color: #0d6efd;
+            }
+
+        .user-profile-section {
+            border-left: 1px solid #dee2e6;
+            padding-left: 20px;
         }
 
         .main-body {
-            padding: 20px;
+            padding: 25px;
             flex-grow: 1;
             overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* --- CSS CHO CHUÔNG THÔNG BÁO VÀ AVATAR --- */
+        .header-icon-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: #495057;
+            transition: all 0.2s;
+            position: relative;
+            text-decoration: none;
+        }
+
+            .header-icon-btn:hover {
+                background-color: #f8f9fa;
+                color: #0d6efd;
+            }
+
+        .notification-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            background-color: #dc3545;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            font-size: 9px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -99,89 +262,219 @@
 
     @{
         var currentController = ViewContext.RouteData.Values["Controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
+
+        var userFullName = User.Identity.IsAuthenticated ? User.Identity.Name : "Khách";
+        var userRole = User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value : "Guest";
+
+        // 1. CẬP NHẬT CHỮ VIẾT TẮT TRÊN AVATAR THEO ROLE
+        var avatarText = userRole == "Admin" ? "AD" :
+        (userRole == "BaoVe" ? "BV" :
+        (userRole == "GiamDoc" ? "GĐ" :
+        (userRole == "NhanSu" ? "NS" :
+        (userRole == "KeToan" ? "KT" : "U"))));
+
+        // 2. LOGIC LỌC THÔNG BÁO KHÁCH HẸN THEO TỪNG PHÒNG BAN
+        var today = DateTime.Today;
+        var pendingRequests = new List<Quan_Ly_xe_Ra_Vao.Models.DangKyKhach>();
+        int pendingCount = 0;
+        string notifTitle = "Thông báo";
+        string notifEmpty = "Không có yêu cầu nào.";
+
+        if (userRole == "GiamDoc")
+        {
+            pendingRequests = _context.DangKyKhachs.Where(k => k.TrangThaiDuyet == "Chờ duyệt" && k.BoPhanCanGap == "Ban Giám Đốc").OrderByDescending(k => k.ThoiGianHen).Take(5).ToList();
+            pendingCount = _context.DangKyKhachs.Count(k => k.TrangThaiDuyet == "Chờ duyệt" && k.BoPhanCanGap == "Ban Giám Đốc");
+            notifTitle = "Khách chờ Sếp duyệt";
+            notifEmpty = "Sếp ơi, hiện không có khách nào.";
+        }
+        else if (userRole == "NhanSu")
+        {
+            pendingRequests = _context.DangKyKhachs.Where(k => k.TrangThaiDuyet == "Chờ duyệt" && k.BoPhanCanGap == "Phòng Nhân Sự").OrderByDescending(k => k.ThoiGianHen).Take(5).ToList();
+            pendingCount = _context.DangKyKhachs.Count(k => k.TrangThaiDuyet == "Chờ duyệt" && k.BoPhanCanGap == "Phòng Nhân Sự");
+            notifTitle = "Khách chờ Nhân Sự duyệt";
+            notifEmpty = "Hiện không có ứng viên/khách hẹn.";
+        }
+        else if (userRole == "KeToan")
+        {
+            pendingRequests = _context.DangKyKhachs.Where(k => k.TrangThaiDuyet == "Chờ duyệt" && k.BoPhanCanGap == "Phòng Kế Toán").OrderByDescending(k => k.ThoiGianHen).Take(5).ToList();
+            pendingCount = _context.DangKyKhachs.Count(k => k.TrangThaiDuyet == "Chờ duyệt" && k.BoPhanCanGap == "Phòng Kế Toán");
+            notifTitle = "Khách chờ Kế Toán duyệt";
+            notifEmpty = "Hiện không có đối tác hẹn.";
+        }
+        else if (userRole == "BaoVe" || userRole == "Admin")
+        {
+            pendingRequests = _context.DangKyKhachs.Where(k => k.TrangThaiDuyet == "Chờ duyệt").OrderByDescending(k => k.ThoiGianHen).Take(5).ToList();
+            pendingCount = _context.DangKyKhachs.Count(k => k.TrangThaiDuyet == "Chờ duyệt");
+            notifTitle = "Tất cả khách đang chờ duyệt";
+        }
     }
 
     <div class="wrapper">
-        <nav id="sidebar" class="shadow-lg">
-            <div class="sidebar-header text-center">
-                <h4 class="fw-bold mb-0 text-info"><i class="bi bi-shield-check"></i> CHK-IN PRO</h4>
-                <small class="text-muted">Security System</small>
+        <nav id="sidebar">
+            <div class="sidebar-header d-flex align-items-center px-3">
+                <img src="/images/logo.png" alt="Logo" style="max-height: 40px;" class="me-3" onerror="this.style.display='none'" />
+                <div class="text-start">
+                    <h6 class="fw-bold text-white mb-0">HỆ THỐNG</h6>
+                    <small class="text-primary fw-bold">CHECKIN - PRO</small>
+                </div>
             </div>
 
-            <ul class="list-unstyled components flex-grow-1">
-                <ul class="list-unstyled components flex-grow-1">
-                    <li class="mb-2 text-uppercase text-muted px-3 small fw-bold">Trạm Kiểm Soát</li>
+            <div id="sidebar-scroll" class="flex-grow-1 overflow-auto">
+                <ul>
+                    <li class="sidebar-heading">Tổng quan</li>
                     <li>
-                        <a asp-controller="Home" asp-action="Index" class="@(currentController == "Home" ? "active" : "")">
-                            <i class="bi bi-webcam"></i> Trạm Giám Sát Tự Động
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-controller="KhachNgoai" asp-action="Create" class="@(currentController == "KhachNgoai" && ViewContext.RouteData.Values["Action"]?.ToString() == "Create" ? "active" : "")">
-                            <i class="bi bi-person-plus"></i> Form Đăng Ký Khách
+                        <a asp-controller="Home" asp-action="Index" class="@(currentController == "Home" && currentAction == "Index" ? "active" : "")" data-title="Bảng điều khiển">
+                            <i class="bi bi-speedometer2"></i> <span>Bảng điều khiển</span>
                         </a>
                     </li>
 
-                    <li class="mt-4 mb-2 text-uppercase text-muted px-3 small fw-bold">Quản Lý Hệ Thống</li>
+                    @if (userRole == "Admin" || userRole == "BaoVe")
+                    {
+                        <li class="sidebar-heading">Điều hành an ninh</li>
+                        <li>
+                            <a asp-controller="Home" asp-action="Monitoring" class="@(currentController == "Home" && currentAction == "Monitoring" ? "active" : "")" data-title="Trung Tâm Kiểm Soát">
+                                <i class="bi bi-eye-fill"></i> <span>Trung Tâm Kiểm Soát</span>
+                            </a>
+                        </li>
+                    }
+
+                    <li class="sidebar-heading">Quản lý đối tác</li>
                     <li>
-                        <a asp-controller="KhachNgoai" asp-action="Index" class="@(currentController == "KhachNgoai" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
-                            <i class="bi bi-person-check"></i> Duyệt Khách & Cấp Quyền
+                        <a asp-controller="DangKyKhach" asp-action="DanhSachChoDuyet" class="@(currentController == "DangKyKhach" && currentAction == "DanhSachChoDuyet" ? "active" : "")" data-title="Phê Duyệt Lối Vào">
+                            <i class="bi bi-shield-check"></i> <span>Phê Duyệt Lối Vào</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="NhanVien" asp-action="Index" class="@(currentController == "NhanVien" ? "active" : "")">
-                            <i class="bi bi-people"></i> Quản Lý Sinh Trắc Học
+                        <a asp-controller="DangKyKhach" asp-action="Index" class="@(currentController == "DangKyKhach" && currentAction == "Index" ? "active" : "")" data-title="Danh Bạ Khách Hàng">
+                            <i class="bi bi-person-lines-fill"></i> <span>Danh Bạ Khách Hàng</span>
                         </a>
                     </li>
+
+                    @if (userRole == "Admin" || userRole == "BaoVe")
+                    {
+                        <li class="sidebar-heading">Quản trị nội bộ</li>
+                        <li>
+                            <a asp-controller="LichSuCheckIn" asp-action="TrucBan" class="@(currentController == "LichSuCheckIn" && currentAction == "TrucBan" ? "active" : "")" data-title="Trực Ban">
+                                <i class="bi bi-clipboard-check"></i> <span>Trực Ban</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a asp-controller="NhanVien" asp-action="Index" class="@(currentController == "NhanVien" ? "active" : "")" data-title="Dữ Liệu Nhân Sự">
+                                <i class="bi bi-person-badge-fill"></i> <span>Dữ Liệu Nhân Sự</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a asp-controller="LichSuCheckIn" asp-action="Index" class="@(currentController == "LichSuCheckIn" && currentAction == "Index" ? "active" : "")" data-title="Lịch sử ra vào">
+                                <i class="bi bi-clock-history"></i> <span>Lịch sử ra vào</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a asp-controller="TheXe" asp-action="Index" class="@(currentController == "TheXe" ? "active" : "")" data-title="Quản Lý Thẻ Cứng">
+                                <i class="bi bi-r-circle-fill"></i> <span>Quản Lý Thẻ Cứng</span>
+                            </a>
+                        </li>
+                    }
+
+                    <li class="sidebar-heading">Tiện ích</li>
                     <li>
-                        <a asp-controller="LichSuCheckIn" asp-action="Index" class="@(currentController == "LichSuCheckIn" ? "active" : "")">
-                            <i class="bi bi-clock-history"></i> Lịch Sử Ra Vào
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-controller="TheXe" asp-action="Index" class="@(currentController == "TheXe" ? "active" : "")">
-                            <i class="bi bi-credit-card-2-front"></i> Quản Lý Thẻ Cứng
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-controller="BaoCao" asp-action="Index" class="@(currentController == "BaoCao" ? "active" : "")">
-                            <i class="bi bi-bar-chart-line"></i> Báo Cáo Chấm Công
+                        <a asp-controller="Home" asp-action="Extensions" class="@(currentController == "Home" && currentAction == "Extensions" ? "active" : "")" data-title="Các chức năng khác">
+                            <i class="bi bi-box-seam"></i> <span>Các chức năng khác</span>
                         </a>
                     </li>
                 </ul>
-            </ul>
-
-            <div class="p-3 border-top border-secondary text-center">
-                <div class="d-flex align-items-center justify-content-center">
-                    <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">AD</div>
-                    <div class="ms-2 text-start">
-                        <div class="fw-bold small">Adminstrator</div>
-                        <a href="#" class="text-danger small text-decoration-none"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
-                    </div>
-                </div>
             </div>
         </nav>
 
         <div id="content">
-            <div class="top-navbar">
-                <h5 class="mb-0 text-secondary fw-bold">@ViewData["Title"]</h5>
-                <div>
-                    <span class="badge bg-success rounded-pill px-3 py-2"><i class="bi bi-wifi"></i> Hệ thống Online</span>
+            <header class="top-navbar">
+                <div class="d-flex align-items-center">
+                    <button id="btn-sidebar-toggle" title="Đóng/Mở Menu"><i class="bi bi-list"></i></button>
+                    <h5 class="mb-0 fw-bold text-dark ms-3">@ViewData["Title"]</h5>
                 </div>
-            </div>
 
-            <div class="main-body">
+                <div class="d-flex align-items-center gap-3">
+
+                    <div class="dropdown">
+                        <a href="#" class="header-icon-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo">
+                            <i class="bi bi-bell fs-5"></i>
+                            @if (pendingCount > 0)
+                            {
+                                <span class="notification-badge">@pendingCount</span>
+                            }
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" style="width: 320px;">
+                            <li><h6 class="dropdown-header fw-bold text-dark fs-6 border-bottom pb-2">@notifTitle (@pendingCount)</h6></li>
+                            @if (pendingCount == 0)
+                            {
+                                <li><span class="dropdown-item text-muted small text-center py-4">@notifEmpty</span></li>
+                            }
+                            else
+                            {
+                                foreach (var req in pendingRequests)
+                                {
+                                    <li>
+                                        <a class="dropdown-item py-2 border-bottom" asp-controller="DangKyKhach" asp-action="DanhSachChoDuyet">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="fw-bold text-primary small">@req.HoTen</span>
+                                                <span class="text-muted" style="font-size: 0.7rem;">@req.ThoiGianHen.ToString("dd/MM")</span>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.75rem;">Gặp: @req.BoPhanCanGap</div>
+                                        </a>
+                                    </li>
+                                }
+                                <li><a class="dropdown-item text-center small text-primary fw-bold py-2 bg-light" asp-controller="DangKyKhach" asp-action="DanhSachChoDuyet">Xem tất cả yêu cầu</a></li>
+                            }
+                        </ul>
+                    </div>
+
+                    <div class="user-profile-section d-flex align-items-center">
+                        <div class="text-end me-3 d-none d-sm-block">
+                            <div class="fw-bold text-dark small">@userFullName</div>
+                            <div class="text-muted tiny" style="font-size: 0.7rem;">@userRole</div>
+                        </div>
+
+                        <div class="dropdown">
+                            <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 38px; height: 38px; cursor: pointer;" data-bs-toggle="dropdown" aria-expanded="false">
+                                @avatarText
+                            </div>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                                <li><a class="dropdown-item py-2 text-dark fw-bold" asp-controller="CauHinhHeThong" asp-action="Index"><i class="bi bi-gear me-2"></i> Cài đặt</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a asp-controller="Account" asp-action="Logout" class="dropdown-item py-2 text-danger fw-bold"><i class="bi bi-box-arrow-right me-2"></i> Đăng xuất</a></li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-body">
                 @RenderBody()
-            </div>
+            </main>
 
-            <footer class="text-center text-muted small py-3 bg-white mt-auto border-top">
-                &copy; 2026 - Phát triển bởi Nhóm Đồ Án Agile
+            <footer class="text-center text-muted tiny py-3 bg-white border-top">
+                &copy; @DateTime.Now.Year - Đồ án Agile - Hệ thống CHK-IN PRO
             </footer>
         </div>
     </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const sidebarToggleBtn = document.getElementById('btn-sidebar-toggle');
+            const htmlElement = document.documentElement;
+            sidebarToggleBtn.addEventListener('click', function () {
+                htmlElement.classList.toggle('sidebar-collapsed');
+                if (htmlElement.classList.contains('sidebar-collapsed')) {
+                    localStorage.setItem('sidebarState', 'collapsed');
+                } else {
+                    localStorage.setItem('sidebarState', 'expanded');
+                }
+            });
+        });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

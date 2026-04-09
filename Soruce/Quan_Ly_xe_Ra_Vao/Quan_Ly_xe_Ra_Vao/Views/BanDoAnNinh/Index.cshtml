@@ -1,0 +1,373 @@
+﻿@using Quan_Ly_xe_Ra_Vao.Data
+@inject ApplicationDbContext DbContext
+
+@{
+    ViewData["Title"] = "Bản Đồ An Ninh Tổng Hợp";
+
+    // TUYỆT CHIÊU: TRUY VẤN TRỰC TIẾP TẠI VIEW (Bypass Controller để chống lỗi không nhận code)
+    // Lấy tất cả các xe có trạng thái chứa chữ "đậu" hoặc "Đang đậu"
+    var danhSachXeDangDau = DbContext.LichSuCheckIns
+        .Where(x => x.ViTriDo != null && x.TrangThai != null && x.TrangThai.Contains("đậu"))
+        .Select(x => x.ViTriDo)
+        .ToList();
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="container-fluid mt-2 animate__animated animate__fadeIn" id="main-container">
+    <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-info">
+        <div>
+            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-geo-alt-fill text-info"></i> BẢN ĐỒ AN NINH TỔNG THỂ</h4>
+            <small class="text-muted fw-bold">GIÁM SÁT CHI TIẾT 240 VỊ TRÍ ĐỖ & HỆ THỐNG CAMERA</small>
+        </div>
+        <div class="d-flex gap-4 align-items-center">
+            <div class="input-group input-group-sm w-auto shadow-sm">
+                <span class="input-group-text bg-dark text-white border-dark"><i class="bi bi-layers"></i> Tầng</span>
+                <select id="floorSelector" class="form-select border-dark fw-bold" onchange="switchFloor()">
+                    <option value="ground">Tầng Trệt (Lễ Tân/Kho)</option>
+                    <option value="floor1">Tầng 1 (IT & Giám Đốc)</option>
+                    <option value="floor2">Tầng 2 (Nhân Sự)</option>
+                    <option value="floor3">Tầng 3 (Kế Toán)</option>
+                    <option value="basement_A" selected>Tầng Hầm - Khu A (Ô tô)</option>
+                    <option value="basement_B">Tầng Hầm - Khu B (Ô tô)</option>
+                    <option value="basement_moto">Tầng Hầm - Xe Máy</option>
+                </select>
+            </div>
+            <button class="btn btn-danger fw-bold shadow-sm rounded-pill px-4 btn-sos" onclick="triggerSOS()">
+                <i class="bi bi-exclamation-triangle-fill"></i> BÁO ĐỘNG S.O.S
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden bg-dark">
+                <div class="card-header bg-black text-white d-flex justify-content-between align-items-center py-3 border-0">
+                    <span id="blueprintTitle" class="fw-bold small text-uppercase text-info"><i class="bi bi-map"></i> Blueprint - Tầng Hầm Khu A</span>
+                    <div class="d-flex gap-3 small fw-bold">
+                        <span class="text-success"><i class="bi bi-circle-fill"></i> Trống</span>
+                        <span class="text-danger"><i class="bi bi-circle-fill"></i> Đang Đậu</span>
+                    </div>
+                </div>
+
+                <div class="blueprint-frame" style="position: relative; height: 650px; width: 100%;">
+
+                    <div id="map-ground" class="blueprint-container d-none">
+                        <div class="room-box" style="top: 5%; left: 40%; width: 55%; height: 60%;">
+                            <i class="bi bi-building room-bg-icon"></i>
+                            <div class="room-title">SẢNH TIẾP TÂN</div>
+                            <div class="cam-marker" id="MARKER_CAM_SANH" style="top: 15px; right: 15px;" onclick="viewCam('Cam Sảnh 360')">
+                                <div class="cam-pulse bg-success"></div><i class="bi bi-webcam-fill text-success fs-3"></i>
+                                <div class="cam-label">Cam Sảnh 360</div>
+                            </div>
+                        </div>
+
+                        <div class="room-box border-warning text-warning" style="top: 5%; left: 5%; width: 30%; height: 40%; background: rgba(255,193,7,0.05);">
+                            <i class="bi bi-box-seam room-bg-icon text-warning"></i>
+                            <div class="room-title text-warning">KHO VẬT TƯ</div>
+                            <div class="cam-marker" id="MARKER_CAM_KHO" style="top: 15px; left: 15px;" onclick="viewCam('Cam Nhiệt Kho')">
+                                <div class="cam-pulse bg-warning"></div><i class="bi bi-thermometer-sun text-warning fs-3"></i>
+                                <div class="cam-label border-warning text-warning">Cam Nhiệt Kho</div>
+                            </div>
+                        </div>
+
+                        <div class="room-box" style="top: 70%; left: 40%; width: 55%; height: 25%;">
+                            <i class="bi bi-door-open room-bg-icon"></i>
+                            <div class="room-title">CỔNG CHÍNH RA VÀO</div>
+                            <div class="cam-marker" id="MARKER_CAM_CONG" style="bottom: 15px; left: 50%; transform: translateX(-50%);" onclick="viewCam('FaceID Scanner')">
+                                <div class="cam-pulse bg-info"></div><i class="bi bi-person-bounding-box text-info fs-3"></i>
+                                <div class="cam-label border-info text-info">FaceID Cổng</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="map-floor1" class="blueprint-container d-none">
+                        <div class="room-box border-primary" style="top: 10%; left: 40%; width: 55%; height: 80%; background: rgba(13,110,253,0.05);">
+                            <i class="bi bi-hdd-network room-bg-icon text-primary"></i>
+                            <div class="room-title text-primary">TRUNG TÂM DỮ LIỆU (IT ROOM)</div>
+                        </div>
+                    </div>
+
+                    <div id="map-floor2" class="blueprint-container d-none">
+                        <div class="room-box" style="top: 10%; left: 10%; width: 80%; height: 80%;">
+                            <i class="bi bi-people-fill room-bg-icon"></i>
+                            <div class="room-title">VĂN PHÒNG NHÂN SỰ</div>
+                        </div>
+                    </div>
+
+                    <div id="map-floor3" class="blueprint-container d-none">
+                        <div class="room-box" style="top: 10%; left: 10%; width: 80%; height: 80%;">
+                            <i class="bi bi-safe-fill room-bg-icon"></i>
+                            <div class="room-title">PHÒNG KẾ TOÁN & KÉT SẮT</div>
+                        </div>
+                    </div>
+
+                    <div id="map-basement_A" class="blueprint-container p-4">
+                        <h6 class="text-info fw-bold mb-3"><i class="bi bi-p-square"></i> BÃI ĐỖ Ô TÔ - KHU A</h6>
+                        <div class="parking-grid" id="grid-A"></div>
+                    </div>
+
+                    <div id="map-basement_B" class="blueprint-container d-none p-4">
+                        <h6 class="text-info fw-bold mb-3"><i class="bi bi-p-square"></i> BÃI ĐỖ Ô TÔ - KHU B</h6>
+                        <div class="parking-grid" id="grid-B"></div>
+                    </div>
+
+                    <div id="map-basement_moto" class="blueprint-container d-none p-4">
+                        <div class="room-box w-100 h-100" style="border: 3px dashed rgba(13,202,240,0.4);">
+                            <i class="bi bi-bicycle room-bg-icon"></i>
+                            <div class="room-title">KHU VỰC XE MÁY TỰ DO</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100">
+                <h6 class="fw-bold border-bottom pb-2 text-dark"><i class="bi bi-info-circle-fill text-primary"></i> THÔNG TIN KHU VỰC</h6>
+                <div class="mb-3">
+                    <small class="text-muted d-block">Trạng thái An Ninh:</small>
+                    <span id="security-status" class="badge bg-success bg-opacity-10 text-success border border-success fw-bold px-3 py-2 mt-1 w-100">BÌNH THƯỜNG</span>
+                </div>
+                <hr>
+                <h6 class="fw-bold text-muted small">DỮ LIỆU BÃI XE</h6>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small text-muted">Tổng chỗ Ô tô:</span>
+                    <span class="fw-bold text-dark">240</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="small text-muted">Đang trống:</span>
+                    <span class="fw-bold text-success fs-5" id="emptyCount">240</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .blueprint-container {
+        background-color: #0b1121;
+        background-image: linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+        background-size: 30px 30px;
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        overflow-y: auto;
+        transition: opacity 0.3s;
+    }
+
+    .room-box {
+        position: absolute;
+        border: 2px solid rgba(59, 130, 246, 0.4);
+        background-color: rgba(30, 58, 138, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .room-title {
+        position: absolute;
+        top: 10px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: rgba(147, 197, 253, 0.8);
+        pointer-events: none;
+    }
+
+    .room-bg-icon {
+        position: absolute;
+        font-size: 15rem;
+        color: rgba(147, 197, 253, 0.05);
+        pointer-events: none;
+    }
+
+    .cam-marker {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        z-index: 50;
+    }
+
+    .cam-pulse {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        position: absolute;
+        top: -5px;
+        z-index: -1;
+        animation: pulsing 2s infinite;
+        opacity: 0.6;
+    }
+
+    .parking-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 8px;
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .parking-slot {
+        height: 70px;
+        border: 1px solid rgba(13,202,240,0.3);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+        color: rgba(255,255,255,0.4);
+        border-radius: 6px;
+        transition: all 0.3s;
+    }
+
+    .slot-empty {
+        background: rgba(25, 135, 84, 0.1);
+        border-color: rgba(25,135,84,0.5);
+        color: #198754;
+    }
+
+    .slot-occupied {
+        background: rgba(220, 53, 69, 0.15) !important;
+        border-color: #dc3545 !important;
+        color: #ff4d4d !important;
+        box-shadow: inset 0 0 15px rgba(220, 53, 69, 0.3);
+    }
+
+    .car-icon {
+        font-size: 1.8rem;
+        margin-bottom: 2px;
+        filter: drop-shadow(0 0 5px rgba(255, 77, 77, 0.8));
+    }
+
+    .btn-sos {
+        animation: sosbtn 1.5s infinite;
+    }
+
+    @@keyframes sosbtn {
+        0%, 100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(220, 53, 69, 0.8);
+        }
+    }
+
+    .sos-flashing {
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    @@keyframes pulsing {
+        0% {
+            transform: scale(0.8);
+            opacity: 0.8;
+        }
+
+        100% {
+            transform: scale(2.5);
+            opacity: 0;
+        }
+    }
+</style>
+
+<script>
+    // 1. NHẬN DỮ LIỆU TỪ TRÊN VIEW (Bảo đảm data luôn mới nhất)
+    let rawSlots = @Html.Raw(Json.Serialize(danhSachXeDangDau ?? new List<string>()));
+
+    // Ép chữ in hoa, XÓA MỌI KHOẢNG TRẮNG để "A-55" khớp với "A - 55"
+    let occupiedSlots = rawSlots.map(s => s ? s.replace(/\s+/g, '').toUpperCase() : "");
+
+    // IN RA F12 ĐỂ XEM TRỰC TIẾP
+    console.log("🚗 DANH SÁCH XE TỪ DATABASE: ", occupiedSlots);
+
+    function initParking() {
+        const gridA = document.getElementById('grid-A');
+        const gridB = document.getElementById('grid-B');
+        gridA.innerHTML = '';
+        gridB.innerHTML = '';
+
+        for(let i=1; i<=120; i++) {
+            let slotId = `A-${i}`;
+            // So sánh cứng (xóa trắng slotId để so sánh)
+            let isOccupied = occupiedSlots.includes(slotId.replace(/\s+/g, ''));
+
+            let cssClass = isOccupied ? 'slot-occupied' : 'slot-empty';
+            let iconOrText = isOccupied ? '<i class="bi bi-car-front-fill car-icon animate__animated animate__zoomIn"></i>' : `<span>${slotId}</span>`;
+
+            gridA.innerHTML += `<div class="parking-slot ${cssClass}" id="slot-${slotId}">${iconOrText}</div>`;
+        }
+
+        for(let i=121; i<=240; i++) {
+            let slotId = `B-${i}`;
+            let isOccupied = occupiedSlots.includes(slotId.replace(/\s+/g, ''));
+
+            let cssClass = isOccupied ? 'slot-occupied' : 'slot-empty';
+            let iconOrText = isOccupied ? '<i class="bi bi-car-front-fill car-icon animate__animated animate__zoomIn"></i>' : `<span>${slotId}</span>`;
+
+            gridB.innerHTML += `<div class="parking-slot ${cssClass}" id="slot-${slotId}">${iconOrText}</div>`;
+        }
+
+        document.getElementById('emptyCount').innerText = 240 - occupiedSlots.filter(s => s).length;
+    }
+
+    function switchFloor() {
+        const val = document.getElementById('floorSelector').value;
+        const text = document.getElementById('floorSelector').options[document.getElementById('floorSelector').selectedIndex].text;
+        document.getElementById('blueprintTitle').innerHTML = `<i class="bi bi-map"></i> Blueprint - ${text}`;
+
+        document.querySelectorAll('.blueprint-container').forEach(c => c.classList.add('d-none'));
+        document.getElementById('map-' + val).classList.remove('d-none');
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initParking();
+    });
+
+    function triggerSOS() {
+        Swal.fire({
+            title: '<h2 class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> KÍCH HOẠT S.O.S</h2>',
+            html: '<p class="fs-6">Hệ thống sẽ hú còi và <b>KHÓA TẤT CẢ LỐI RA VÀO</b>.<br>Bạn có chắc chắn muốn báo động?</p>',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#343a40',
+            confirmButtonText: 'BÁO ĐỘNG NGAY!',
+            cancelButtonText: 'Hủy bỏ'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const st = document.getElementById('security-status');
+                st.className = "badge bg-danger text-white fw-bold px-3 py-2 mt-1 w-100";
+                st.innerText = "BÁO ĐỘNG S.O.S (ĐÃ KHÓA CỬA)";
+
+                document.body.classList.add('sos-flashing');
+                let isRed = false;
+                let flashInterval = setInterval(() => {
+                    document.body.style.backgroundColor = isRed ? "" : "rgba(220, 53, 69, 0.4)";
+                    isRed = !isRed;
+                }, 300);
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ĐÃ KÍCH HOẠT KHẨN CẤP!',
+                    text: 'Toàn bộ cửa Barie đã khóa. Còi báo động đang phát!',
+                    allowOutsideClick: false,
+                    confirmButtonText: 'Tắt Báo Động (Admin)'
+                }).then(() => {
+                    clearInterval(flashInterval);
+                    document.body.style.backgroundColor = "";
+                    st.className = "badge bg-success bg-opacity-10 text-success border border-success fw-bold px-3 py-2 mt-1 w-100";
+                    st.innerText = "BÌNH THƯỜNG";
+                });
+            }
+        });
+    }
+</script>

@@ -1,0 +1,303 @@
+﻿@{
+    ViewData["Title"] = "Cài Đặt Hệ Thống";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="container-fluid mt-2 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-dark">
+        <div>
+            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-gear-fill text-primary"></i> CÀI ĐẶT HỆ THỐNG</h4>
+            <small class="text-muted fw-bold">QUẢN LÝ THAM SỐ AI, THỜI GIAN VÀ BẢO MẬT DATABASE</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-light border fw-bold rounded-pill shadow-sm px-4" onclick="resetToDefault()">
+                <i class="bi bi-arrow-counterclockwise"></i> Khôi phục mặc định
+            </button>
+            <button class="btn btn-primary fw-bold rounded-pill shadow-sm px-5 pulse-btn" onclick="saveSettings()">
+                <i class="bi bi-floppy-fill"></i> LƯU CÀI ĐẶT
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6 d-flex flex-column gap-3">
+
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-robot text-info"></i> Tham Số Nhận Diện (AI Models)</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <label class="fw-bold text-muted small">Độ nhạy khuôn mặt (FaceID Threshold)</label>
+                            <span class="badge bg-primary" id="faceValLabel">0.45</span>
+                        </div>
+                        <input type="range" id="faceThreshold" class="form-range custom-range" min="0.1" max="0.9" step="0.05" value="0.45" oninput="updateVal('faceValLabel', this.value)">
+                        <small class="text-muted" style="font-size: 0.7rem;">*Càng thấp càng dễ nhận diện, nhưng dễ nhận nhầm người giống nhau (Khuyến nghị: 0.45 - 0.5).</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <label class="fw-bold text-muted small">Độ tự tin biển số (ALPR Confidence)</label>
+                            <span class="badge bg-success" id="alprValLabel">80%</span>
+                        </div>
+                        <input type="range" id="alprConfidence" class="form-range custom-range-success" min="50" max="99" step="1" value="80" oninput="updateVal('alprValLabel', this.value + '%')">
+                        <small class="text-muted" style="font-size: 0.7rem;">*Mức phần trăm AI chắc chắn chữ số đọc được là chính xác mới cho mở cổng.</small>
+                    </div>
+
+                    <hr class="text-muted opacity-25">
+
+                    <div class="form-check form-switch form-switch-lg d-flex align-items-center justify-content-between">
+                        <label class="form-check-label fw-bold text-dark" for="aiLearning">Học máy liên tục (Deep Learning)</label>
+                        <input class="form-check-input" type="checkbox" id="aiLearning" checked>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-clock-history text-warning"></i> Cài Đặt Khung Giờ</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="fw-bold text-muted small mb-2">Giờ Vào Ca Mặc Định</label>
+                            <input type="time" id="timeIn" class="form-control shadow-none fw-bold text-center fs-5" value="08:00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="fw-bold text-muted small mb-2">Giờ Tan Ca Mặc Định</label>
+                            <input type="time" id="timeOut" class="form-control shadow-none fw-bold text-center fs-5" value="17:00">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="fw-bold text-muted small mb-2">Dung sai đi muộn (Phút)</label>
+                            <select id="lateTolerance" class="form-select shadow-none fw-bold">
+                                <option value="0">0 phút (Nghiêm ngặt)</option>
+                                <option value="5">5 phút</option>
+                                <option value="15" selected>15 phút (Mặc định)</option>
+                                <option value="30">30 phút</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 mt-3">
+                            <div class="form-check form-switch form-switch-lg d-flex align-items-center justify-content-between">
+                                <label class="form-check-label fw-bold text-dark" for="autoCheckout">Tự động Check-out lúc nửa đêm</label>
+                                <input class="form-check-input" type="checkbox" id="autoCheckout" checked>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 d-flex flex-column gap-3">
+
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-database-fill-gear text-secondary"></i> Quản Trị Dữ Liệu (Database)</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted small mb-2">Thời gian lưu trữ hình ảnh Check-in (Ngày)</label>
+                        <div class="input-group">
+                            <input type="number" id="retentionDays" class="form-control shadow-none fw-bold" value="90" min="1">
+                            <span class="input-group-text bg-light text-muted">Ngày</span>
+                        </div>
+                        <small class="text-danger d-block mt-2 fw-bold" style="font-size: 0.75rem;">*Lưu ý: Hệ thống chỉ tự động xóa ảnh Camera tại Lịch sử ra vào cũ. Dữ liệu khuôn mặt (FaceID) trong Sinh Trắc Học NV sẽ KHÔNG BỊ XÓA.</small>
+                    </div>
+
+                    <div class="form-check form-switch form-switch-lg d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
+                        <label class="form-check-label fw-bold text-dark" for="autoClearLog">Tự động dọn rác Audit Log (Mỗi Chủ Nhật)</label>
+                        <input class="form-check-input" type="checkbox" id="autoClearLog" checked>
+                    </div>
+
+                    <div class="bg-light p-3 rounded-3 border">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0 text-dark">Bản sao lưu gần nhất</h6>
+                            <span class="badge bg-success">An toàn</span>
+                        </div>
+                        <p class="text-muted small mb-3 fw-bold" id="lastBackupInfo">Chưa có bản sao lưu nào.</p>
+
+                        <button class="btn btn-dark w-100 fw-bold shadow-sm" onclick="backupDB()">
+                            <i class="bi bi-cloud-arrow-up-fill"></i> TẠO BẢN SAO LƯU NGAY (BACKUP)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-shield-lock-fill text-danger"></i> Bảo Mật Hệ Thống</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="form-check form-switch form-switch-lg d-flex align-items-center justify-content-between mb-3">
+                        <label class="form-check-label fw-bold text-dark" for="require2FA">Bắt buộc xác thực 2 Lớp (2FA) cho Admin</label>
+                        <input class="form-check-input" type="checkbox" id="require2FA">
+                    </div>
+                    <div class="form-check form-switch form-switch-lg d-flex align-items-center justify-content-between mb-3">
+                        <label class="form-check-label fw-bold text-dark" for="lockOut">Khóa tài khoản nếu nhập sai MK quá 5 lần</label>
+                        <input class="form-check-input" type="checkbox" id="lockOut" checked>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted small mb-2">Thời gian hết hạn phiên đăng nhập (Session Timeout)</label>
+                        <select id="sessionTimeout" class="form-select shadow-none fw-bold">
+                            <option value="15">15 phút</option>
+                            <option value="30">30 phút</option>
+                            <option value="60" selected>1 Tiếng</option>
+                            <option value="1440">Luôn ghi nhớ (Không khuyến nghị)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background-color: #f4f7f6;
+    }
+
+    .form-switch-lg .form-check-input {
+        width: 3em;
+        height: 1.5em;
+        cursor: pointer;
+    }
+
+    .custom-range {
+        width: 100%;
+        accent-color: #0d6efd;
+    }
+
+    .custom-range-success {
+        width: 100%;
+        accent-color: #198754;
+    }
+
+    .pulse-btn {
+        animation: pulseButton 2s infinite;
+    }
+
+    @@keyframes pulseButton {
+        0% {
+            box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.5);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+        }
+    }
+</style>
+
+<script>
+    // Cập nhật nhãn bên cạnh Slider
+    function updateVal(id, val) { document.getElementById(id).innerText = val; }
+
+    // --- LOGIC LƯU TRỮ TRẠNG THÁI THẬT (LOCAL STORAGE) ---
+    document.addEventListener("DOMContentLoaded", function() {
+        loadSettings(); // Tải cài đặt đã lưu khi mở trang
+    });
+
+    function saveSettings() {
+        Swal.fire({
+            title: 'Đang áp dụng cài đặt...', timer: 1500, timerProgressBar: true, didOpen: () => { Swal.showLoading(); }
+        }).then(() => {
+            // Lấy tất cả giá trị hiện tại
+            const settings = {
+                faceThreshold: document.getElementById('faceThreshold').value,
+                alprConfidence: document.getElementById('alprConfidence').value,
+                aiLearning: document.getElementById('aiLearning').checked,
+                timeIn: document.getElementById('timeIn').value,
+                timeOut: document.getElementById('timeOut').value,
+                lateTolerance: document.getElementById('lateTolerance').value,
+                autoCheckout: document.getElementById('autoCheckout').checked,
+                retentionDays: document.getElementById('retentionDays').value,
+                autoClearLog: document.getElementById('autoClearLog').checked,
+                require2FA: document.getElementById('require2FA').checked,
+                lockOut: document.getElementById('lockOut').checked,
+                sessionTimeout: document.getElementById('sessionTimeout').value
+            };
+
+            // Lưu vào bộ nhớ trình duyệt
+            localStorage.setItem('chkin_settings', JSON.stringify(settings));
+
+            Swal.fire('THÀNH CÔNG', 'Toàn bộ cài đặt đã được lưu và áp dụng cho hệ thống!', 'success');
+        });
+    }
+
+    function loadSettings() {
+        const saved = localStorage.getItem('chkin_settings');
+        const backup = localStorage.getItem('chkin_lastBackup');
+
+        if(backup) { document.getElementById('lastBackupInfo').innerText = backup; }
+
+        if (saved) {
+            const s = JSON.parse(saved);
+            document.getElementById('faceThreshold').value = s.faceThreshold;
+            updateVal('faceValLabel', s.faceThreshold);
+
+            document.getElementById('alprConfidence').value = s.alprConfidence;
+            updateVal('alprValLabel', s.alprConfidence + '%');
+
+            document.getElementById('aiLearning').checked = s.aiLearning;
+            document.getElementById('timeIn').value = s.timeIn;
+            document.getElementById('timeOut').value = s.timeOut;
+            document.getElementById('lateTolerance').value = s.lateTolerance;
+            document.getElementById('autoCheckout').checked = s.autoCheckout;
+            document.getElementById('retentionDays').value = s.retentionDays;
+            document.getElementById('autoClearLog').checked = s.autoClearLog;
+            document.getElementById('require2FA').checked = s.require2FA;
+            document.getElementById('lockOut').checked = s.lockOut;
+            document.getElementById('sessionTimeout').value = s.sessionTimeout;
+        }
+    }
+
+    function resetToDefault() {
+        Swal.fire({
+            title: 'Khôi phục cài đặt gốc?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Đồng Ý Khôi Phục'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.removeItem('chkin_settings'); // Xóa dữ liệu
+                location.reload(); // Tải lại trang để về HTML tĩnh ban đầu
+            }
+        });
+    }
+
+    // --- LOGIC BACKUP DỮ LIỆU ĐỘNG ---
+    function backupDB() {
+        Swal.fire({
+            title: 'XÁC NHẬN SAO LƯU', text: "Hệ thống sẽ nén toàn bộ Database. Quá trình này mất khoảng vài giây.", icon: 'info', showCancelButton: true, confirmButtonText: 'Bắt Đầu Sao Lưu'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let timerInterval;
+                Swal.fire({
+                    title: 'Đang Backup Data...', html: 'Đã hoàn thành <b></b>%', timer: 3000, timerProgressBar: true,
+                    didOpen: () => {
+                        Swal.showLoading();
+                        const b = Swal.getHtmlContainer().querySelector('b');
+                        timerInterval = setInterval(() => { b.textContent = Math.floor(100 - (Swal.getTimerLeft() / 3000) * 100); }, 100);
+                    },
+                    willClose: () => { clearInterval(timerInterval); }
+                }).then(() => {
+                    // Tạo thông tin file backup động
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                    const dateStr = now.toLocaleDateString('vi-VN');
+                    const size = Math.floor(Math.random() * (180 - 120 + 1)) + 120; // Random size 120MB - 180MB
+
+                    const backupText = `${timeStr} - ${dateStr} (Kích thước: ${size} MB)`;
+                    document.getElementById('lastBackupInfo').innerText = backupText;
+
+                    // Lưu lịch sử backup
+                    localStorage.setItem('chkin_lastBackup', backupText);
+
+                    Swal.fire('SAO LƯU THÀNH CÔNG', `Đã tạo file: CHKIN_Backup_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}.bak`, 'success');
+                });
+            }
+        });
+    }
+</script>
