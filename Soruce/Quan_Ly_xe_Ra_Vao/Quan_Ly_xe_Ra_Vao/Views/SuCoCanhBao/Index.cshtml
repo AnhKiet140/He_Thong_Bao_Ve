@@ -350,21 +350,20 @@
             confirmButtonText: '<i class="bi bi-send-check-fill"></i> Đã cử người'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Log ảo trên UI
                 addLogRecord('Điều Động', 'bg-primary', 'person-walking', `Cử nhân viên an ninh đến ${zone} kiểm tra cảnh báo nhiệt độ ${temp}°C.`);
-                // Bắn Log thật về DB
                 ghiLogHeThong("CẢNH BÁO", "SỰ CỐ CẢNH BÁO", `Điều động bảo vệ kiểm tra khu vực ${zone} do nhiệt độ cao (${temp}°C)`);
-
                 Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Đã điều động nhân viên!', showConfirmButton: false, timer: 3000});
             }
         });
     }
 
-    // NÚT S.O.S
+    // ========================================================
+    // ĐÃ UPDATE: TÍCH HỢP SIGNALR VÀO NÚT S.O.S
+    // ========================================================
     function triggerGlobalSOS() {
         Swal.fire({
             title: 'KÍCH HOẠT BÁO ĐỘNG ĐỎ?',
-            html: "Hành động này sẽ gửi cảnh báo sơ tán đến <b>tất cả thiết bị</b>.<br><br>Vui lòng nhập Mã Khẩn Cấp <b>9999</b> để xác nhận:",
+            html: "Hành động này sẽ gửi cảnh báo sơ tán đến <b>tất cả thiết bị đang đăng nhập</b>.<br><br>Vui lòng nhập Mã Khẩn Cấp <b>9999</b> để xác nhận:",
             input: 'text',
             icon: 'error',
             showCancelButton: true,
@@ -378,12 +377,21 @@
             }
         }).then((result) => {
             if (result.isConfirmed) {
+
+                // 1. PHÁT LỆNH SIGNALR ĐẾN TOÀN BỘ CÁC MÁY KHÁC
+                if (typeof alertConnection !== 'undefined') {
+                    const msg = "PHÁT HIỆN SỰ CỐ KHẨN CẤP! KÍCH HOẠT QUY TRÌNH SƠ TÁN TOÀN CƠ SỞ!";
+                    alertConnection.invoke("SendGlobalSOS", msg).catch(err => console.error(err.toString()));
+                } else {
+                    console.warn("SignalR chưa được kết nối. Chỉ báo động nội bộ.");
+                }
+
+                // 2. HIỂN THỊ CẢNH BÁO LOCAL TẠI MÁY CỦA BẢO VỆ
                 let overlay = document.createElement('div');
                 overlay.className = 'emergency-overlay';
                 document.body.appendChild(overlay);
 
                 addLogRecord('Báo Động Đỏ', 'bg-danger', 'broadcast-pin', 'Đã kích hoạt còi báo động khẩn cấp toàn tòa nhà!');
-                // Bắn Log BẬT S.O.S về DB
                 ghiLogHeThong("NGUY HIỂM", "SỰ CỐ CẢNH BÁO", "Đã KÍCH HOẠT trạng thái S.O.S báo động đỏ toàn cơ sở.");
 
                 Swal.fire({
@@ -394,10 +402,10 @@
                     confirmButtonText: 'TẮT BÁO ĐỘNG (DÀNH CHO ADMIN)',
                     confirmButtonColor: '#212529'
                 }).then(() => {
+                    // TẮT BÁO ĐỘNG LOCAL
                     document.body.removeChild(overlay);
                     Swal.fire('Đã Tắt', 'Hệ thống trở về trạng thái an toàn.', 'info');
                     addLogRecord('Tắt Báo Động', 'bg-dark', 'shield-check', 'Admin đã tắt trạng thái S.O.S.');
-                    // Bắn Log TẮT S.O.S về DB
                     ghiLogHeThong("BÌNH THƯỜNG", "SỰ CỐ CẢNH BÁO", "Admin đã TẮT trạng thái S.O.S. Hệ thống trở lại bình thường.");
                 });
             }

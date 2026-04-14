@@ -54,6 +54,13 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("NhanVienCanGap")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SoLuongNguoi")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("ThoiGianHen")
                         .HasColumnType("datetime2");
 
@@ -63,7 +70,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DangKyKhachs");
+                    b.ToTable("DangKyKhachs", (string)null);
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.KhachNgoai", b =>
@@ -90,6 +97,18 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("LoaiXe")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LyDo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NhanVienCanGap")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("PhongBanCanGap")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -98,7 +117,13 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("SoLuongNguoi")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("ThoiGianDangKy")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ThoiGianHen")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("TrangThai")
@@ -106,7 +131,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("KhachNgoais");
+                    b.ToTable("KhachNgoais", (string)null);
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.LichSuCheckIn", b =>
@@ -152,7 +177,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("LichSuCheckIns");
+                    b.ToTable("LichSuCheckIns", (string)null);
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.NhanVien", b =>
@@ -196,7 +221,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("NhanViens");
+                    b.ToTable("NhanViens", (string)null);
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.NhatKyHeThong", b =>
@@ -231,7 +256,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("NhatKyHeThongs");
+                    b.ToTable("NhatKyHeThongs", (string)null);
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.TheXe", b =>
@@ -266,7 +291,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TheXes");
+                    b.ToTable("TheXes", (string)null);
                 });
 #pragma warning restore 612, 618
         }

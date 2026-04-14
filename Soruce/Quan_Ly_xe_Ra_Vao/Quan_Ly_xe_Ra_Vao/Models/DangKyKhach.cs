@@ -29,6 +29,19 @@ namespace Quan_Ly_xe_Ra_Vao.Models
         [Display(Name = "Bộ phận cần gặp")]
         public string BoPhanCanGap { get; set; }
 
+        // ==========================================
+        // ĐÃ THÊM 2 TRƯỜNG MỚI KHỚP VỚI GIAO DIỆN
+        // ==========================================
+        [Required(ErrorMessage = "Vui lòng chọn nhân viên cần gặp")]
+        [Display(Name = "Người cần gặp")]
+        public string NhanVienCanGap { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập số lượng người")]
+        [Range(1, 10, ErrorMessage = "Số lượng người chỉ được phép từ 1 đến 10 người")]
+        [Display(Name = "Số lượng người đi cùng")]
+        public int SoLuongNguoi { get; set; } = 1;
+        // ==========================================
+
         [Display(Name = "Ngày giờ hẹn")]
         public DateTime ThoiGianHen { get; set; }
 

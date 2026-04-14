@@ -9,7 +9,7 @@ using Quan_Ly_xe_Ra_Vao.Models;
 
 namespace Quan_Ly_xe_Ra_Vao.Controllers
 {
-    [Authorize] // KHÓA TỔNG: Bắt buộc đăng nhập để vào Controller này
+    [Authorize]
     public class DangKyKhachController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -20,16 +20,16 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
         }
 
         // =======================================================
-        // 1. KHU VỰC DÀNH CHO KHÁCH NGOÀI (Không cần đăng nhập)
+        // 1. KHU VỰC DÀNH CHO KHÁCH NGOÀI (AllowAnonymous)
         // =======================================================
 
-        [AllowAnonymous] // MỞ KHÓA: Cho phép khách lạ (chưa đăng nhập) vào xem trang Form QR
+        [AllowAnonymous]
         public IActionResult DangKyOnline()
         {
             return View();
         }
 
-        [AllowAnonymous] // MỞ KHÓA: Cho phép khách lạ bấm gửi Form
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> SubmitDangKy([FromBody] DangKyKhach model)
         {
@@ -40,19 +40,11 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
                     return Json(new { success = false, message = "Lỗi: Chưa có ảnh nhận diện khuôn mặt!" });
                 }
 
-                model.TrangThaiDuyet = "Chờ duyệt"; // Mặc định phải chờ duyệt
-
+                model.TrangThaiDuyet = "Chờ duyệt";
                 _context.DangKyKhachs.Add(model);
                 await _context.SaveChangesAsync();
 
-                // LƯU Ý QUAN TRỌNG: Trả về KhachId để Frontend có dữ liệu vẽ mã QR!
-                // Phải đảm bảo model.Id (hoặc tên cột khóa chính) tồn tại và được SQL tự sinh ra
-                return Json(new
-                {
-                    success = true,
-                    message = "Đăng ký thành công! Vui lòng chờ bộ phận liên quan phê duyệt.",
-                    khachId = model.Id
-                });
+                return Json(new { success = true, message = "Đăng ký thành công!", khachId = model.Id });
             }
             catch (Exception ex)
             {
@@ -60,44 +52,43 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
             }
         }
 
-
         // =======================================================
-        // 2. KHU VỰC DÀNH CHO NỘI BỘ (Phải đăng nhập)
+        // 2. KHU VỰC NỘI BỘ (Phân quyền duyệt linh hoạt)
         // =======================================================
 
-        // GET: Màn hình hiển thị danh sách khách đang chờ
         public IActionResult DanhSachChoDuyet(string searchName, string filterBoPhan)
         {
             var userRole = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+            var currentName = User.Identity.Name ?? "";
             var homNay = DateTime.Today;
 
-            // 1. Lấy khách "Chờ duyệt" VÀ "Đã duyệt" của ngày hôm nay trở đi
             var query = _context.DangKyKhachs.Where(x =>
                 (x.TrangThaiDuyet == "Chờ duyệt" || x.TrangThaiDuyet == "Đã duyệt") &&
                 x.ThoiGianHen.Date >= homNay);
 
-            // 2. PHÂN LUỒNG THÔNG BÁO TỚI ĐÚNG NGƯỜI
-            if (userRole == "GiamDoc") query = query.Where(x => x.BoPhanCanGap == "Ban Giám Đốc");
-            else if (userRole == "NhanSu") query = query.Where(x => x.BoPhanCanGap == "Phòng Nhân Sự");
-            else if (userRole == "KeToan") query = query.Where(x => x.BoPhanCanGap == "Phòng Kế Toán");
-            else if (userRole == "BaoVe") query = query.Where(x => false); // Bảo Vệ bị ẩn danh sách này
+            // CẬP NHẬT LOGIC HIỂN THỊ:
+            // Bảo vệ thấy tất cả khách trong ngày.
+            // Các Sếp thấy khách của phòng mình hoặc khách đích danh gặp mình.
+            if (userRole != "Admin" && userRole != "BaoVe")
+            {
+                if (userRole == "GiamDoc")
+                    query = query.Where(x => x.BoPhanCanGap == "BOD" || x.BoPhanCanGap == "Ban Giám Đốc" || x.NhanVienCanGap == currentName);
+                else if (userRole == "NhanSu")
+                    query = query.Where(x => x.BoPhanCanGap == "HR" || x.BoPhanCanGap == "Phòng Nhân Sự" || x.NhanVienCanGap == currentName);
+                else if (userRole == "KeToan")
+                    query = query.Where(x => x.BoPhanCanGap == "ACCOUNTING" || x.BoPhanCanGap == "Phòng Kế Toán" || x.NhanVienCanGap == currentName);
+                else
+                    // Người dùng bình thường chỉ thấy khách hẹn gặp đúng tên mình
+                    query = query.Where(x => x.NhanVienCanGap == currentName);
+            }
 
-            // 3. Lấy danh sách các phòng ban đang có khách để đổ vào Dropdown lọc
             ViewBag.BoPhanList = query.Select(x => x.BoPhanCanGap).Distinct().ToList();
 
-            // 4. XỬ LÝ TÌM KIẾM & LỌC THEO YÊU CẦU
-            if (!string.IsNullOrEmpty(searchName))
-            {
-                query = query.Where(x => x.HoTen.Contains(searchName)); // Tìm theo tên
-            }
-            if (!string.IsNullOrEmpty(filterBoPhan))
-            {
-                query = query.Where(x => x.BoPhanCanGap == filterBoPhan); // Lọc theo bộ phận
-            }
+            if (!string.IsNullOrEmpty(searchName)) query = query.Where(x => x.HoTen.Contains(searchName));
+            if (!string.IsNullOrEmpty(filterBoPhan)) query = query.Where(x => x.BoPhanCanGap == filterBoPhan);
 
             var danhSach = query.OrderByDescending(x => x.ThoiGianHen).ToList();
 
-            // Lưu lại các từ khóa để hiển thị lại trên giao diện
             ViewBag.UserRole = userRole;
             ViewBag.SearchName = searchName;
             ViewBag.FilterBoPhan = filterBoPhan;
@@ -105,127 +96,102 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
             return View(danhSach);
         }
 
-        // POST: Nút bấm Duyệt hoặc Từ chối
         [HttpPost]
         public async Task<IActionResult> XuLyDuyet(int id, string hanhDong)
         {
             var khach = await _context.DangKyKhachs.FindAsync(id);
-            if (khach == null)
-            {
-                return Json(new { success = false, message = "Không tìm thấy hồ sơ khách!" });
-            }
+            if (khach == null) return Json(new { success = false, message = "Không tìm thấy hồ sơ khách!" });
 
-            // BẢO MẬT KÉP - CHỐNG HACK API CHÉO PHÒNG BAN
             var userRole = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+            var currentName = User.Identity.Name ?? "";
 
-            if (userRole == "BaoVe" && khach.BoPhanCanGap == "Ban Giám Đốc")
-                return Json(new { success = false, message = "CẢNH BÁO: Bạn không có thẩm quyền duyệt khách của Ban Giám Đốc!" });
+            // CẬP NHẬT LOGIC DUYỆT:
+            bool coQuyenDuyet = false;
 
-            if (userRole == "GiamDoc" && khach.BoPhanCanGap != "Ban Giám Đốc")
-                return Json(new { success = false, message = "Lỗi: Không thể thao tác hồ sơ của phòng ban khác!" });
+            if (userRole == "Admin" || userRole == "BaoVe")
+                coQuyenDuyet = true; // Bảo vệ có quyền duyệt nhanh tại cổng
+            else if (khach.NhanVienCanGap == currentName)
+                coQuyenDuyet = true; // Người được hẹn có quyền duyệt khách của mình
+            else if (userRole == "GiamDoc" && (khach.BoPhanCanGap == "BOD" || khach.BoPhanCanGap == "Ban Giám Đốc"))
+                coQuyenDuyet = true;
+            else if (userRole == "NhanSu" && (khach.BoPhanCanGap == "HR" || khach.BoPhanCanGap == "Phòng Nhân Sự"))
+                coQuyenDuyet = true;
 
-            if (userRole == "NhanSu" && khach.BoPhanCanGap != "Phòng Nhân Sự")
-                return Json(new { success = false, message = "Lỗi: Không thể thao tác hồ sơ của phòng ban khác!" });
+            if (!coQuyenDuyet)
+                return Json(new { success = false, message = "Bạn không có thẩm quyền duyệt hồ sơ này!" });
 
-            if (userRole == "KeToan" && khach.BoPhanCanGap != "Phòng Kế Toán")
-                return Json(new { success = false, message = "Lỗi: Không thể thao tác hồ sơ của phòng ban khác!" });
-
-            // Xử lý trạng thái
-            if (hanhDong == "Duyet")
-            {
-                khach.TrangThaiDuyet = "Đã duyệt";
-            }
-            else
-            {
-                khach.TrangThaiDuyet = "Từ chối";
-            }
+            khach.TrangThaiDuyet = (hanhDong == "Duyet") ? "Đã duyệt" : "Từ chối";
 
             await _context.SaveChangesAsync();
             return Json(new { success = true, message = "Đã xử lý thành công!" });
         }
 
-        // =======================================================
-        // BẢO VỆ XÁC NHẬN KHÁCH VÀO CỔNG (CHUYỂN DỮ LIỆU SANG SỔ TRỰC BAN)
-        // =======================================================
         [HttpPost]
-        [Authorize(Roles = "Admin,BaoVe")] // Chỉ Bảo vệ và Admin mới được phép bấm
+        [Authorize(Roles = "Admin,BaoVe")]
         public async Task<IActionResult> CheckInTaiCong(int id)
         {
             try
             {
-                // 1. Tìm thông tin khách hẹn
                 var khach = await _context.DangKyKhachs.FindAsync(id);
                 if (khach == null) return Json(new { success = false, message = "Không tìm thấy dữ liệu khách!" });
 
                 if (khach.TrangThaiDuyet != "Đã duyệt")
-                    return Json(new { success = false, message = "Khách chưa được duyệt, không thể cho vào!" });
+                    return Json(new { success = false, message = "Khách chưa được duyệt!" });
 
-                // 2. Tạo bản ghi mới bên Sổ Trực Ban (Lịch Sử Check-in)
+                string tenPhongBan = khach.BoPhanCanGap == "BOD" ? "Ban Giám Đốc" : (khach.BoPhanCanGap == "HR" ? "Phòng Nhân Sự" : khach.BoPhanCanGap);
+
                 var nhatKy = new LichSuCheckIn
                 {
                     HoTen = khach.HoTen,
                     ThoiGian = DateTime.Now,
                     BienSoXe = khach.BienSoXe,
                     HinhAnh = khach.FaceDataPath,
-                    LoaiDoiTuong = "Khách Hẹn (" + khach.BoPhanCanGap + ")",
-                    PhuongThuc = "Bảo vệ mở",
+                    LoaiDoiTuong = "Khách Hẹn (" + tenPhongBan + ")",
+                    PhuongThuc = "Bảo vệ xác nhận",
                     Huong = "Đi Vào",
                     TrangThai = "Thành Công"
                 };
 
-                // 3. Đổi trạng thái của khách
                 khach.TrangThaiDuyet = "Đã vào bãi";
-
-                // 4. Lưu cả 2 thay đổi vào Database
                 _context.LichSuCheckIns.Add(nhatKy);
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Đã chuyển dữ liệu sang Sổ Trực Ban thành công!" });
+                return Json(new { success = true, message = "Đã xác nhận khách vào cổng!" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
             }
         }
 
-        // =======================================================
-        // LỌC DANH SÁCH HỒ SƠ THEO ROLE TẠI DANH BẠ TỔNG
-        // =======================================================
-        // GET: Bảng danh sách toàn bộ khách hẹn
-        [HttpGet]
         public async Task<IActionResult> Index(string searchString, DateTime? selectedDate)
         {
             var query = _context.DangKyKhachs.AsQueryable();
             var userRole = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+            var currentName = User.Identity.Name ?? "";
 
-            // Lọc dữ liệu hiển thị theo Role
-            if (userRole == "GiamDoc") query = query.Where(x => x.BoPhanCanGap == "Ban Giám Đốc");
-            else if (userRole == "NhanSu") query = query.Where(x => x.BoPhanCanGap == "Phòng Nhân Sự");
-            else if (userRole == "KeToan") query = query.Where(x => x.BoPhanCanGap == "Phòng Kế Toán");
+            // Đồng bộ bộ lọc hiển thị cho trang danh bạ khách
+            if (userRole != "Admin" && userRole != "BaoVe")
+            {
+                if (userRole == "GiamDoc")
+                    query = query.Where(x => x.BoPhanCanGap == "BOD" || x.BoPhanCanGap == "Ban Giám Đốc" || x.NhanVienCanGap == currentName);
+                else if (userRole == "NhanSu")
+                    query = query.Where(x => x.BoPhanCanGap == "HR" || x.BoPhanCanGap == "Phòng Nhân Sự" || x.NhanVienCanGap == currentName);
+                else
+                    query = query.Where(x => x.NhanVienCanGap == currentName);
+            }
 
-            // Lọc theo Ngày
             if (selectedDate.HasValue)
-            {
                 query = query.Where(k => k.ThoiGianHen.Date == selectedDate.Value.Date);
-                ViewBag.SelectedDate = selectedDate.Value.ToString("yyyy-MM-dd");
-            }
             else
-            {
                 query = query.Where(k => k.ThoiGianHen.Date >= DateTime.Today);
-            }
 
-            // Lọc theo Tên Khách
             if (!string.IsNullOrEmpty(searchString))
-            {
                 query = query.Where(k => k.HoTen.Contains(searchString));
-                ViewBag.SearchString = searchString;
-            }
 
-            var result = await query.OrderByDescending(k => k.ThoiGianHen).ToListAsync();
-            return View(result);
+            return View(await query.OrderByDescending(k => k.ThoiGianHen).ToListAsync());
         }
 
-        // GET: Xem chi tiết 1 hồ sơ
         public IActionResult Details(int id)
         {
             var khach = _context.DangKyKhachs.Find(id);
@@ -233,7 +199,6 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
             return View(khach);
         }
 
-        // Xóa hồ sơ khách 
         public async Task<IActionResult> Delete(int id)
         {
             var khach = await _context.DangKyKhachs.FindAsync(id);

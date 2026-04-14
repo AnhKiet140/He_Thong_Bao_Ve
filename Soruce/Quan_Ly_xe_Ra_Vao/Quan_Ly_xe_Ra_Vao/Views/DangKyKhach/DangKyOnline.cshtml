@@ -11,12 +11,11 @@
     <title>Đăng ký vào công ty</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 </head>
 <body class="bg-light">
     <div class="container py-4" style="max-width: 600px;">
-        <div class="card shadow-lg border-0 rounded-3">
+        <div class="card shadow-lg border-0 rounded-3 animate__animated animate__fadeInUp">
             <div class="card-header bg-primary text-white text-center py-3">
                 <h4 class="mb-0 fw-bold"><i class="bi bi-person-badge"></i> ĐĂNG KÝ KHÁCH HẸN</h4>
             </div>
@@ -25,82 +24,82 @@
                 <form id="guestForm">
                     <div class="text-center mb-4">
                         <label class="fw-bold text-danger mb-2">BƯỚC 1: CHỤP ẢNH NHẬN DIỆN (BẮT BUỘC)</label>
-                        <div class="bg-dark rounded-3 overflow-hidden position-relative mx-auto" style="width: 100%; max-width: 300px; height: 300px;">
+                        <div class="bg-dark rounded-3 overflow-hidden position-relative mx-auto border border-3 border-dark shadow-sm" style="width: 100%; max-width: 300px; height: 300px;">
                             <video id="guestWebcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
                             <img id="guestSnapshot" style="display: none; width: 100%; height: 100%; object-fit: cover;" />
                         </div>
-                        <button type="button" class="btn btn-warning mt-3 fw-bold shadow-sm" id="btnCapture" onclick="takeSnapshot()">
-                            <i class="bi bi-camera"></i> CHỤP ẢNH FACE-ID
+                        <button type="button" class="btn btn-warning mt-3 fw-bold shadow-sm rounded-pill px-4" id="btnCapture" onclick="takeSnapshot()">
+                            <i class="bi bi-camera-fill"></i> CHỤP ẢNH FACE-ID
                         </button>
-                        <button type="button" class="btn btn-secondary mt-3 fw-bold shadow-sm" id="btnRetake" style="display: none;" onclick="retakeSnapshot()">
+                        <button type="button" class="btn btn-secondary mt-3 fw-bold shadow-sm rounded-pill px-4" id="btnRetake" style="display: none;" onclick="retakeSnapshot()">
                             <i class="bi bi-arrow-counterclockwise"></i> CHỤP LẠI
                         </button>
                     </div>
 
-                    <hr />
+                    <hr class="text-muted opacity-25 mb-4" />
 
-                    <label class="fw-bold text-primary mb-2">BƯỚC 2: THÔNG TIN ĐĂNG KÝ</label>
+                    <label class="fw-bold text-primary mb-3">BƯỚC 2: THÔNG TIN ĐĂNG KÝ</label>
+
                     <div class="mb-3">
-                        <label class="form-label">Họ và Tên <span class="text-danger">*</span></label>
-                        <input type="text" id="HoTen" class="form-control" required placeholder="Nhập tên của bạn">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Họ và Tên đại diện <span class="text-danger">*</span></label>
+                        <input type="text" id="HoTen" class="form-control bg-light" required placeholder="Nhập tên của bạn">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Số lượng người đi cùng <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-people-fill"></i></span>
+                            <input type="number" id="SoLuongNguoi" class="form-control bg-light" value="1" min="1" max="10" oninput="validateGuestCount(this)" required>
+                        </div>
+                        <small class="text-danger fw-bold mt-1 d-block" id="guestCountError"></small>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Loại xe</label>
-                            <select id="LoaiXe" class="form-select">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Loại xe</label>
+                            <select id="LoaiXe" class="form-select bg-light">
                                 <option value="Không có xe">Không có xe (Đi bộ/Grab)</option>
                                 <option value="Xe máy">Xe máy</option>
                                 <option value="Ô tô">Ô tô</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Biển số xe</label>
-                            <input type="text" id="BienSoXe" class="form-control" placeholder="VD: 59A1-123.45">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Biển số xe</label>
+                            <input type="text" id="BienSoXe" class="form-control bg-light text-uppercase font-monospace" placeholder="VD: 59A1-123.45">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Bộ phận cần gặp <span class="text-danger">*</span></label>
+                            <select id="BoPhanCanGap" class="form-select bg-light" onchange="loadEmployees()" required>
+                                <option value="" selected disabled>-- Chọn phòng ban --</option>
+                                <option value="BOD">Ban Giám Đốc</option>
+                                <option value="HR">Phòng Nhân Sự</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Người cần gặp <span class="text-danger">*</span></label>
+                            <select id="NhanVienCanGap" class="form-select bg-light" disabled required>
+                                <option value="" selected disabled>-- Chọn bộ phận trước --</option>
+                            </select>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Bộ phận cần gặp <span class="text-danger">*</span></label>
-                        <select id="BoPhanCanGap" class="form-select" required>
-                            <option value="">-- Chọn phòng ban --</option>
-                            <option value="Phòng Nhân Sự">Phòng Nhân Sự</option>
-                            <option value="Phòng Kế Toán">Phòng Kế Toán</option>
-                            <option value="Ban Giám Đốc">Ban Giám Đốc</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Thời gian đến hẹn <span class="text-danger">*</span></label>
-                        <input type="datetime-local" id="ThoiGianHen" class="form-control" required>
+                        <label class="form-label fw-bold small text-muted text-uppercase">Thời gian đến hẹn <span class="text-danger">*</span></label>
+                        <input type="datetime-local" id="ThoiGianHen" class="form-control bg-light" required>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">Lý do vào công ty <span class="text-danger">*</span></label>
-                        <textarea id="LyDo" class="form-control" rows="2" required placeholder="Ghi rõ lý do..."></textarea>
+                        <label class="form-label fw-bold small text-muted text-uppercase">Lý do vào công ty <span class="text-danger">*</span></label>
+                        <textarea id="LyDo" class="form-control bg-light" rows="2" required placeholder="Ghi rõ lý do..."></textarea>
                     </div>
 
-                    <button type="button" onclick="submitForm()" class="btn btn-success w-100 py-3 fw-bold fs-5 shadow">
-                        <i class="bi bi-send-check"></i> GỬI ĐĂNG KÝ
+                    <button type="button" onclick="submitForm()" class="btn btn-success w-100 py-3 fw-bold fs-5 shadow rounded-pill">
+                        <i class="bi bi-send-check-fill me-1"></i> GỬI ĐĂNG KÝ HỒ SƠ
                     </button>
                 </form>
-
-                <div id="qrResultSection" style="display: none;" class="text-center py-4">
-                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
-                    <h3 class="fw-bold mt-2 text-success">ĐĂNG KÝ THÀNH CÔNG</h3>
-                    <p class="text-muted">Hồ sơ của bạn đã được gửi đến bộ phận liên quan để phê duyệt.</p>
-
-                    <div class="bg-white p-3 d-inline-block rounded-4 shadow-sm border mt-3 mb-3">
-                        <div id="qrcode"></div>
-                    </div>
-
-                    <h5 class="fw-bold text-danger animate__animated animate__pulse animate__infinite">VUI LÒNG CHỤP MÀN HÌNH MÃ QR NÀY!</h5>
-                    <p class="small text-muted mb-4">Bạn sẽ dùng mã này để quét tại cổng bảo vệ khi được cấp phép vào công ty.</p>
-
-                    <button class="btn btn-outline-primary fw-bold px-4" onclick="window.location.reload()">
-                        <i class="bi bi-arrow-repeat"></i> Đăng ký người khác
-                    </button>
-                </div>
 
             </div>
         </div>
@@ -108,20 +107,58 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // --- 1. DỮ LIỆU ĐỘNG: BỘ PHẬN -> TÀI KHOẢN TEST ---
+        const departmentData = {
+            "BOD": ["Sếp (Test Giám Đốc)"],
+            "HR": ["Quản Lý (Test Nhân Sự)"]
+        };
+
+        function loadEmployees() {
+            const dept = document.getElementById('BoPhanCanGap').value;
+            const empSelect = document.getElementById('NhanVienCanGap');
+
+            empSelect.innerHTML = '<option value="" selected disabled>-- Chọn người cần gặp --</option>';
+
+            if (dept && departmentData[dept]) {
+                departmentData[dept].forEach(name => {
+                    empSelect.innerHTML += `<option value="${name}">${name}</option>`;
+                });
+                empSelect.disabled = false;
+            } else {
+                empSelect.disabled = true;
+            }
+        }
+
+        // --- 2. KIỂM TRA SỐ LƯỢNG NGƯỜI (MAX 10) ---
+        function validateGuestCount(input) {
+            const errorSpan = document.getElementById('guestCountError');
+            let val = parseInt(input.value);
+
+            if (val > 10) {
+                input.value = 10;
+                errorSpan.innerText = "Giới hạn tối đa 10 người/lượt đăng ký!";
+            } else if (val < 1 || isNaN(val)) {
+                input.value = 1;
+                errorSpan.innerText = "Phải có ít nhất 1 người!";
+            } else {
+                errorSpan.innerText = "";
+            }
+        }
+
+        // --- 3. CAMERA FACE ID ---
         const video = document.getElementById('guestWebcam');
         const imgSnapshot = document.getElementById('guestSnapshot');
         let faceBase64 = "";
 
-        // Tự động mở Camera trước (selfie) trên điện thoại
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
             .then(stream => { video.srcObject = stream; })
-            .catch(err => { alert("Vui lòng cấp quyền truy cập Camera để đăng ký!"); });
+            .catch(err => { Swal.fire("Lỗi Camera", "Vui lòng cấp quyền truy cập Camera để đăng ký!", "error"); });
 
         function takeSnapshot() {
             let canvas = document.createElement('canvas');
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             let ctx = canvas.getContext('2d');
-            ctx.translate(canvas.width, 0); ctx.scale(-1, 1); // Lật ảnh cho đúng chiều
+            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0);
 
             faceBase64 = canvas.toDataURL('image/jpeg');
@@ -141,16 +178,19 @@
             document.getElementById('btnRetake').style.display = 'none';
         }
 
+        // --- 4. GỬI DỮ LIỆU ĐĂNG KÝ VỀ C# ---
         function submitForm() {
             if (!faceBase64) {
                 Swal.fire('Lỗi', 'Vui lòng chụp ảnh khuôn mặt!', 'error'); return;
             }
             let hoten = document.getElementById('HoTen').value;
+            let soluong = document.getElementById('SoLuongNguoi').value;
             let bophan = document.getElementById('BoPhanCanGap').value;
+            let nhanvien = document.getElementById('NhanVienCanGap').value;
             let thoigian = document.getElementById('ThoiGianHen').value;
             let lydo = document.getElementById('LyDo').value;
 
-            if(!hoten || !bophan || !thoigian || !lydo) {
+            if(!hoten || !bophan || !nhanvien || !thoigian || !lydo) {
                 Swal.fire('Thiếu thông tin', 'Vui lòng điền đầy đủ các ô có dấu *', 'warning'); return;
             }
 
@@ -159,13 +199,15 @@
                 FaceDataPath: faceBase64,
                 LoaiXe: document.getElementById('LoaiXe').value,
                 BienSoXe: document.getElementById('BienSoXe').value,
-                BoPhanCanGap: bophan,
+                PhongBanCanGap: bophan, // Sửa tên trường cho khớp với Backend nếu cần
+                NhanVienCanGap: nhanvien,
+                SoLuongNguoi: parseInt(soluong),
                 ThoiGianHen: thoigian,
                 LyDo: lydo
             };
 
             Swal.fire({
-                title: 'Đang xử lý...',
+                title: 'Đang xử lý hồ sơ...',
                 allowOutsideClick: false,
                 didOpen: () => { Swal.showLoading(); }
             });
@@ -178,37 +220,31 @@
             .then(res => res.json())
             .then(result => {
                 if(result.success) {
-                    Swal.close();
-
-                    document.getElementById('guestForm').style.display = 'none';
-                    document.getElementById('qrResultSection').style.display = 'block';
-
-                    // LẤY ID TỪ C# TRẢ VỀ - KIỂM TRA ĐỀ PHÒNG C# QUÊN TRẢ ID
-                    let qrId = result.khachId ? result.khachId.toString() : "0";
-                    document.getElementById("qrcode").innerHTML = "";
-
-                    if (qrId !== "0") {
-                        // VẼ QR CHUẨN
-                        new QRCode(document.getElementById("qrcode"), {
-                            text: qrId,
-                            width: 250,
-                            height: 250,
-                            colorDark : "#000000",
-                            colorLight : "#ffffff",
-                            correctLevel : QRCode.CorrectLevel.H
-                        });
-                    } else {
-                        // BÁO LỖI NGAY NẾU MÃ ID RỖNG
-                        document.getElementById("qrcode").innerHTML = "<p class='text-danger fw-bold py-5'>Lỗi: Đăng ký thành công nhưng không lấy được mã ID khách. Cần kiểm tra lại Backend!</p>";
-                    }
-
+                    Swal.fire({
+                        title: 'ĐĂNG KÝ THÀNH CÔNG!',
+                        html: `
+                            <p class="text-muted mb-3">Hồ sơ của bạn đã được gửi đến bộ phận liên quan để chờ phê duyệt.</p>
+                            <div class="bg-danger bg-opacity-10 p-3 rounded-3 border border-danger mb-3">
+                                <h6 class="fw-bold text-danger mb-2"><i class="bi bi-camera"></i> CHỤP LẠI MÀN HÌNH NÀY!</h6>
+                                <p class="small text-dark fw-bold mb-0">Hãy chụp lại màn hình đăng ký này và xuất trình cho bảo vệ quét sinh trắc học.</p>
+                            </div>
+                        `,
+                        icon: 'success',
+                        confirmButtonText: '<i class="bi bi-arrow-repeat"></i> Xong & Đăng ký mới',
+                        confirmButtonColor: '#198754',
+                        allowOutsideClick: false
+                    }).then((res) => {
+                        if (res.isConfirmed) {
+                            window.location.reload(); // Reset sạch sẽ form cho người tiếp theo
+                        }
+                    });
                 } else {
                     Swal.fire('Lỗi', result.message, 'error');
                 }
             })
             .catch(err => {
                 console.error(err);
-                Swal.fire('Lỗi Trình Duyệt', err.message, 'error');
+                Swal.fire('Lỗi Trình Duyệt', 'Không thể kết nối đến máy chủ', 'error');
             });
         }
     </script>
