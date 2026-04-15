@@ -10,8 +10,12 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="shortcut icon" href="~/images/app_icon.png" type="image/x-icon" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
     <script>
+        const savedTheme = localStorage.getItem('chkInTheme') || 'light';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+
         if (localStorage.getItem('sidebarState') === 'collapsed') {
             document.documentElement.classList.add('sidebar-collapsed');
         }
@@ -44,6 +48,7 @@
             margin: 0;
             background-color: #f0f2f5;
             font-family: 'Segoe UI', sans-serif;
+            transition: background-color 0.3s ease;
         }
 
         .wrapper {
@@ -56,7 +61,7 @@
         #sidebar {
             min-width: 260px;
             max-width: 260px;
-            background: #1c2331;
+            background: #1c2331; /* Màu xanh đen gốc cho Light Mode */
             color: #fff;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             display: flex;
@@ -67,62 +72,68 @@
 
         /* Mini Sidebar Logic */
         @@media (min-width: 769px) {
-            .sidebar-collapsed #sidebar {
-                min-width: 80px;
-                max-width: 80px;
+            .sidebar-collapsed #sidebar
+
+        {
+            min-width: 80px;
+            max-width: 80px;
+        }
+
+        .sidebar-collapsed #sidebar .sidebar-header {
+            padding: 22px 0;
+            justify-content: center;
+        }
+
+            .sidebar-collapsed #sidebar .sidebar-header img {
+                margin-right: 0 !important;
             }
 
-                .sidebar-collapsed #sidebar .sidebar-header {
-                    padding: 22px 0;
-                    justify-content: center;
-                }
+            .sidebar-collapsed #sidebar .sidebar-header .text-start, .sidebar-collapsed #sidebar .sidebar-heading, .sidebar-collapsed #sidebar ul li a span {
+                display: none;
+            }
 
-                    .sidebar-collapsed #sidebar .sidebar-header img {
-                        margin-right: 0 !important;
-                    }
+        .sidebar-collapsed #sidebar ul li a {
+            padding: 12px 0;
+            justify-content: center;
+            margin: 4px 10px;
+        }
 
-                    .sidebar-collapsed #sidebar .sidebar-header .text-start, .sidebar-collapsed #sidebar .sidebar-heading, .sidebar-collapsed #sidebar ul li a span {
-                        display: none;
-                    }
+            .sidebar-collapsed #sidebar ul li a i {
+                margin-right: 0;
+                font-size: 1.4rem;
+            }
 
-                .sidebar-collapsed #sidebar ul li a {
-                    padding: 12px 0;
-                    justify-content: center;
-                    margin: 4px 10px;
-                }
+            .sidebar-collapsed #sidebar ul li a:hover::after {
+                content: attr(data-title);
+                position: absolute;
+                left: 80px;
+                background: #2c3e50;
+                color: #fff;
+                padding: 6px 12px;
+                border-radius: 4px;
+                white-space: nowrap;
+                z-index: 1050;
+                font-size: 0.85rem;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
 
-                    .sidebar-collapsed #sidebar ul li a i {
-                        margin-right: 0;
-                        font-size: 1.4rem;
-                    }
-
-                    .sidebar-collapsed #sidebar ul li a:hover::after {
-                        content: attr(data-title);
-                        position: absolute;
-                        left: 80px;
-                        background: #2c3e50;
-                        color: #fff;
-                        padding: 6px 12px;
-                        border-radius: 4px;
-                        white-space: nowrap;
-                        z-index: 1050;
-                        font-size: 0.85rem;
-                        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-                    }
         }
 
         @@media (max-width: 768px) {
-            #sidebar {
-                margin-left: -260px;
-                position: fixed;
-                height: 100vh;
-            }
+            #sidebar
 
-            .sidebar-collapsed #sidebar {
-                margin-left: 0;
-                min-width: 260px;
-                max-width: 260px;
-            }
+        {
+            margin-left: -260px;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .sidebar-collapsed #sidebar {
+            margin-left: 0;
+            min-width: 260px;
+            max-width: 260px;
+        }
+
         }
 
         #sidebar .sidebar-header {
@@ -167,9 +178,9 @@
 
                 #sidebar ul li a.active {
                     color: #fff;
-                    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+                    background: rgba(255, 255, 255, 0.15);
                     font-weight: 600;
-                    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
+                    box-shadow: none;
                 }
 
                 #sidebar ul li a i {
@@ -177,6 +188,14 @@
                     font-size: 1.2rem;
                     width: 25px;
                     text-align: center;
+                    color: #8a9bb1 !important;
+                    transition: all 0.3s ease;
+                }
+
+                #sidebar ul li a:hover i,
+                #sidebar ul li a.active i {
+                    color: #ffffff !important;
+                    transform: scale(1.15);
                 }
 
         #content {
@@ -195,6 +214,7 @@
             align-items: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             z-index: 99;
+            transition: background-color 0.3s ease;
         }
 
         #btn-sidebar-toggle {
@@ -221,7 +241,6 @@
             overflow-x: hidden;
         }
 
-        /* --- CSS CHO CHUÔNG THÔNG BÁO VÀ AVATAR --- */
         .header-icon-btn {
             width: 40px;
             height: 40px;
@@ -256,6 +275,112 @@
             justify-content: center;
             font-weight: bold;
         }
+
+        /* =========================================
+                   SIÊU CSS ÉP DARK MODE TOÀN BỘ HỆ THỐNG
+                ========================================= */
+        [data-bs-theme="dark"] body,
+        [data-bs-theme="dark"] html {
+            background-color: #121212 !important;
+        }
+
+        /* Đồng bộ Sidebar mất màu xanh */
+        [data-bs-theme="dark"] #sidebar {
+            background-color: #181818 !important;
+            border-right: 1px solid #333 !important;
+        }
+
+        /* Đồng bộ Navbar & Footer */
+        [data-bs-theme="dark"] .top-navbar {
+            background-color: #1e1e1e !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            border-bottom: 1px solid #333;
+        }
+
+        [data-bs-theme="dark"] footer.bg-white {
+            background-color: #1e1e1e !important;
+            border-top: 1px solid #333 !important;
+            color: #888 !important;
+        }
+
+        /* ÉP MẢNG TRẮNG Ở CÁC TRANG CON (.bg-white, .card) VỀ DARK */
+        [data-bs-theme="dark"] .bg-white,
+        [data-bs-theme="dark"] .card {
+            background-color: #1e1e1e !important;
+            border-color: #333 !important;
+        }
+
+        /* Ép Text đen thành Trắng */
+        [data-bs-theme="dark"] .text-dark,
+        [data-bs-theme="dark"] h1, [data-bs-theme="dark"] h2, [data-bs-theme="dark"] h3,
+        [data-bs-theme="dark"] h4, [data-bs-theme="dark"] h5, [data-bs-theme="dark"] h6 {
+            color: #e0e0e0 !important;
+        }
+
+        /* Form Controls (Ô nhập, Select) */
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select,
+        [data-bs-theme="dark"] .input-group-text {
+            background-color: #2c2c2c !important;
+            color: #e0e0e0 !important;
+            border-color: #444 !important;
+        }
+
+            [data-bs-theme="dark"] .form-control::placeholder {
+                color: #888 !important;
+            }
+
+        /* Dropdown & List Groups */
+        [data-bs-theme="dark"] .dropdown-menu {
+            background-color: #1e1e1e !important;
+            border: 1px solid #333 !important;
+        }
+
+        [data-bs-theme="dark"] .dropdown-item {
+            color: #e0e0e0 !important;
+        }
+
+            [data-bs-theme="dark"] .dropdown-item:hover {
+                background-color: #2c2c2c !important;
+                color: #fff !important;
+            }
+
+        [data-bs-theme="dark"] .dropdown-divider {
+            border-color: #333 !important;
+        }
+
+        [data-bs-theme="dark"] .dropdown-header {
+            color: #ccc !important;
+            border-bottom-color: #333 !important;
+        }
+
+        [data-bs-theme="dark"] .list-group-item {
+            background-color: #1e1e1e !important;
+            border-color: #333 !important;
+            color: #e0e0e0 !important;
+        }
+
+        /* Fix nút bấm trên Navbar */
+        [data-bs-theme="dark"] #btn-sidebar-toggle,
+        [data-bs-theme="dark"] .header-icon-btn {
+            color: #e0e0e0;
+        }
+
+            [data-bs-theme="dark"] .header-icon-btn:hover {
+                background-color: #2c2c2c;
+            }
+
+        [data-bs-theme="dark"] .user-profile-section {
+            border-left-color: #444;
+        }
+
+        [data-bs-theme="dark"] .notification-badge {
+            border-color: #1e1e1e;
+        }
+
+        [data-bs-theme="dark"] .bg-light {
+            background-color: #2c2c2c !important;
+        }
     </style>
 </head>
 <body>
@@ -267,14 +392,12 @@
         var userFullName = User.Identity.IsAuthenticated ? User.Identity.Name : "Khách";
         var userRole = User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value : "Guest";
 
-        // 1. CẬP NHẬT CHỮ VIẾT TẮT TRÊN AVATAR THEO ROLE
         var avatarText = userRole == "Admin" ? "AD" :
         (userRole == "BaoVe" ? "BV" :
         (userRole == "GiamDoc" ? "GĐ" :
         (userRole == "NhanSu" ? "NS" :
         (userRole == "KeToan" ? "KT" : "U"))));
 
-        // 2. LOGIC LỌC THÔNG BÁO KHÁCH HẸN THEO TỪNG PHÒNG BAN
         var today = DateTime.Today;
         var pendingRequests = new List<Quan_Ly_xe_Ra_Vao.Models.DangKyKhach>();
         int pendingCount = 0;
@@ -320,26 +443,48 @@
                 </div>
             </div>
 
-            <div id="sidebar-scroll" class="flex-grow-1 overflow-auto">
+            <div id="sidebar-scroll" class="flex-grow-1 overflow-auto custom-scrollbar">
                 <ul>
-                    <li class="sidebar-heading">Tổng quan</li>
+                    <li class="sidebar-heading mt-2">TỔNG QUAN</li>
                     <li>
                         <a asp-controller="Home" asp-action="Index" class="@(currentController == "Home" && currentAction == "Index" ? "active" : "")" data-title="Bảng điều khiển">
                             <i class="bi bi-speedometer2"></i> <span>Bảng điều khiển</span>
                         </a>
                     </li>
+                    <li>
+                        <a asp-controller="BaoCao" asp-action="Index" class="@(currentController == "BaoCao" ? "active" : "")" data-title="Báo cáo & Thống kê">
+                            <i class="bi bi-graph-up-arrow"></i> <span>Báo cáo & Thống kê</span>
+                        </a>
+                    </li>
 
                     @if (userRole == "Admin" || userRole == "BaoVe")
                     {
-                        <li class="sidebar-heading">Điều hành an ninh</li>
+                        <li class="sidebar-heading mt-3">ĐIỀU HÀNH AN NINH</li>
+
                         <li>
                             <a asp-controller="Home" asp-action="Monitoring" class="@(currentController == "Home" && currentAction == "Monitoring" ? "active" : "")" data-title="Trung Tâm Kiểm Soát">
                                 <i class="bi bi-eye-fill"></i> <span>Trung Tâm Kiểm Soát</span>
                             </a>
                         </li>
+
+                        <li>
+                            <a asp-controller="BanDoAnNinh" asp-action="Index" class="@(currentController == "BanDoAnNinh" ? "active" : "")" data-title="Bản Đồ An Ninh">
+                                <i class="bi bi-map"></i> <span>Bản Đồ An Ninh</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a asp-controller="BaiDoXe" asp-action="Index" class="@(currentController == "BaiDoXe" ? "active" : "")" data-title="Quản Lý Bãi Đỗ Xe">
+                                <i class="bi bi-p-circle"></i> <span>Quản Lý Bãi Đỗ Xe</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a asp-controller="SuCoCanhBao" asp-action="Index" class="@(currentController == "SuCoCanhBao" ? "active" : "")" data-title="Cảnh Báo Khẩn Cấp">
+                                <i class="bi bi-megaphone-fill"></i> <span>Cảnh Báo Khẩn Cấp</span>
+                            </a>
+                        </li>
                     }
 
-                    <li class="sidebar-heading">Quản lý đối tác</li>
+                    <li class="sidebar-heading mt-3">QUẢN LÝ KHÁCH VÀO RA</li>
                     <li>
                         <a asp-controller="DangKyKhach" asp-action="DanhSachChoDuyet" class="@(currentController == "DangKyKhach" && currentAction == "DanhSachChoDuyet" ? "active" : "")" data-title="Phê Duyệt Lối Vào">
                             <i class="bi bi-shield-check"></i> <span>Phê Duyệt Lối Vào</span>
@@ -353,7 +498,7 @@
 
                     @if (userRole == "Admin" || userRole == "BaoVe")
                     {
-                        <li class="sidebar-heading">Quản trị nội bộ</li>
+                        <li class="sidebar-heading mt-3">QUẢN TRỊ NỘI BỘ</li>
                         <li>
                             <a asp-controller="LichSuCheckIn" asp-action="TrucBan" class="@(currentController == "LichSuCheckIn" && currentAction == "TrucBan" ? "active" : "")" data-title="Trực Ban">
                                 <i class="bi bi-clipboard-check"></i> <span>Trực Ban</span>
@@ -371,17 +516,27 @@
                         </li>
                         <li>
                             <a asp-controller="TheXe" asp-action="Index" class="@(currentController == "TheXe" ? "active" : "")" data-title="Quản Lý Thẻ Cứng">
-                                <i class="bi bi-r-circle-fill"></i> <span>Quản Lý Thẻ Cứng</span>
+                                <i class="bi bi-credit-card-2-front"></i> <span>Quản Lý Thẻ Cứng</span>
+                            </a>
+                        </li>
+
+                        <li class="sidebar-heading mt-3">HỆ THỐNG & THIẾT BỊ</li>
+                        <li>
+                            <a asp-controller="ThietBiAI" asp-action="Index" class="@(currentController == "ThietBiAI" ? "active" : "")" data-title="Quản Lý Thiết Bị">
+                                <i class="bi bi-cpu"></i> <span>Quản Lý Thiết Bị (IoT)</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a asp-controller="NhatKyHeThong" asp-action="Index" class="@(currentController == "NhatKyHeThong" ? "active" : "")" data-title="Nhật Ký Máy Chủ">
+                                <i class="bi bi-terminal"></i> <span>Nhật Ký Máy Chủ (Log)</span>
+                            </a>
+                        </li>
+                        <li class="mb-4">
+                            <a asp-controller="CauHinhHeThong" asp-action="Index" class="@(currentController == "CauHinhHeThong" ? "active" : "")" data-title="Cài Đặt Hệ Thống">
+                                <i class="bi bi-sliders"></i> <span>Cài Đặt Hệ Thống</span>
                             </a>
                         </li>
                     }
-
-                    <li class="sidebar-heading">Tiện ích</li>
-                    <li>
-                        <a asp-controller="Home" asp-action="Extensions" class="@(currentController == "Home" && currentAction == "Extensions" ? "active" : "")" data-title="Các chức năng khác">
-                            <i class="bi bi-box-seam"></i> <span>Các chức năng khác</span>
-                        </a>
-                    </li>
                 </ul>
             </div>
         </nav>
@@ -395,6 +550,10 @@
 
                 <div class="d-flex align-items-center gap-3">
 
+                    <a href="#" class="header-icon-btn" id="navThemeToggle" title="Đổi giao diện Sáng/Tối">
+                        <i class="bi bi-moon-stars fs-5" id="navThemeIcon"></i>
+                    </a>
+
                     <div class="dropdown">
                         <a href="#" class="header-icon-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo">
                             <i class="bi bi-bell fs-5"></i>
@@ -403,7 +562,7 @@
                                 <span class="notification-badge">@pendingCount</span>
                             }
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" style="width: 320px;">
+                        <ul class="dropdown-menu dropdown-menu-end shadow mt-2" style="width: 320px;">
                             <li><h6 class="dropdown-header fw-bold text-dark fs-6 border-bottom pb-2">@notifTitle (@pendingCount)</h6></li>
                             @if (pendingCount == 0)
                             {
@@ -438,7 +597,7 @@
                             <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 38px; height: 38px; cursor: pointer;" data-bs-toggle="dropdown" aria-expanded="false">
                                 @avatarText
                             </div>
-                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                            <ul class="dropdown-menu dropdown-menu-end shadow mt-2">
                                 <li><a class="dropdown-item py-2 text-dark fw-bold" asp-controller="CauHinhHeThong" asp-action="Index"><i class="bi bi-gear me-2"></i> Cài đặt</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a asp-controller="Account" asp-action="Logout" class="dropdown-item py-2 text-danger fw-bold"><i class="bi bi-box-arrow-right me-2"></i> Đăng xuất</a></li>
@@ -449,7 +608,7 @@
                 </div>
             </header>
 
-            <main class="main-body">
+            <main class="main-body custom-scrollbar">
                 @RenderBody()
             </main>
 
@@ -459,10 +618,13 @@
         </div>
     </div>
 
+    <partial name="_SecurityAIWidget" />
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // Sidebar Logic
             const sidebarToggleBtn = document.getElementById('btn-sidebar-toggle');
             const htmlElement = document.documentElement;
             sidebarToggleBtn.addEventListener('click', function () {
@@ -473,6 +635,44 @@
                     localStorage.setItem('sidebarState', 'expanded');
                 }
             });
+
+            // GIAO DIỆN TỐI ƯU DARK MODE - NAVBAR TOGGLE
+            const navThemeToggle = document.getElementById('navThemeToggle');
+            const navThemeIcon = document.getElementById('navThemeIcon');
+
+            function applyTheme(theme) {
+                document.documentElement.setAttribute('data-bs-theme', theme);
+                localStorage.setItem('chkInTheme', theme);
+
+                if (theme === 'dark') {
+                    navThemeIcon.classList.replace('bi-moon-stars', 'bi-sun');
+                } else {
+                    navThemeIcon.classList.replace('bi-sun', 'bi-moon-stars');
+                }
+
+                const themeToggleSettings = document.getElementById('themeToggle');
+                if (themeToggleSettings) themeToggleSettings.checked = (theme === 'dark');
+            }
+
+            const initTheme = document.documentElement.getAttribute('data-bs-theme');
+            if (initTheme === 'dark') {
+                navThemeIcon.classList.replace('bi-moon-stars', 'bi-sun');
+            }
+
+            navThemeToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                applyTheme(newTheme);
+            });
+
+            const themeToggleSettings = document.getElementById('themeToggle');
+            if (themeToggleSettings) {
+                themeToggleSettings.addEventListener('change', function () {
+                    const newTheme = this.checked ? 'dark' : 'light';
+                    applyTheme(newTheme);
+                });
+            }
         });
     </script>
     @await RenderSectionAsync("Scripts", required: false)

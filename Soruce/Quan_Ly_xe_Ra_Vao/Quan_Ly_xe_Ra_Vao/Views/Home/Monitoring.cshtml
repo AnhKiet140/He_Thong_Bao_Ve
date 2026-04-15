@@ -1,6 +1,5 @@
 ﻿@{
     ViewData["Title"] = "Trạm Giám Sát Sinh Trắc Học";
-    // Đã trả lại tổng số 240 chỗ cho toàn hệ thống
     int occupied = ViewBag.OccupiedOto ?? 0;
     int available = 240 - occupied;
 }
@@ -24,16 +23,13 @@
 
     <div class="row g-3">
         <div class="col-md-6 d-flex flex-column gap-3">
-
             <div class="card bg-black border-0 shadow-sm rounded-4 overflow-hidden position-relative" style="height: 38vh;">
                 <div class="position-absolute top-0 start-0 p-2 text-white fw-bold small bg-primary bg-opacity-75 rounded-bottom-end-3 shadow" style="z-index:10">
                     <i class="bi bi-1-circle-fill"></i> LỚP 1: FACE ID SCANNER
                 </div>
                 <video id="webcam" class="w-100 h-100" style="object-fit: cover; transform: scaleX(-1);" autoplay muted></video>
                 <canvas id="faceCanvas" class="position-absolute top-0 start-0 w-100 h-100" style="z-index:9; transform: scaleX(-1);"></canvas>
-
                 <div id="ai-scanner-line" class="scan-overlay d-none"><div class="scan-line"></div></div>
-
                 <div id="faceDoneOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center text-white bg-dark bg-opacity-75 d-none" style="z-index: 11;">
                     <div class="text-center p-4">
                         <i class="bi bi-check-circle-fill d-block mb-2 text-primary" style="font-size: 3rem;"></i>
@@ -47,17 +43,14 @@
                 <div class="position-absolute top-0 start-0 p-2 text-white fw-bold small bg-success bg-opacity-75 rounded-bottom-end-3 shadow" style="z-index:10">
                     <i class="bi bi-2-circle-fill"></i> LỚP 2: ALPR BIỂN SỐ
                 </div>
-
                 <video id="alprVideo" class="w-100 h-100" style="object-fit: cover; transform: scaleX(-1); filter: grayscale(30%) contrast(130%) brightness(90%);" autoplay muted></video>
                 <canvas id="alprCanvas" class="position-absolute top-0 start-0 w-100 h-100" style="z-index:9; transform: scaleX(-1);"></canvas>
-
                 <div id="alprWaiting" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center text-secondary bg-dark bg-opacity-50" style="z-index: 8;">
                     <div class="text-center pulse-bg-slow p-4 rounded-circle">
                         <i class="bi bi-car-front fs-1 text-success opacity-50"></i>
                         <p class="small mt-2 fw-bold text-success opacity-75 letter-spacing-1">ĐANG CHỜ LỆNH TỪ LỚP 1...</p>
                     </div>
                 </div>
-
                 <div id="alprOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-none" style="z-index: 9;">
                     <div class="focus-box"></div>
                     <div class="laser-beam" id="alprLaser"></div>
@@ -68,22 +61,18 @@
         <div class="col-md-6">
             <div class="card border-0 shadow-sm h-100 rounded-4 p-4 bg-white">
                 <div class="row h-100">
-
                     <div class="col-md-5 text-center border-end pe-4 d-flex flex-column">
                         <div class="avatar-container border border-3 border-primary border-opacity-25 rounded-4 bg-white mb-3 d-flex align-items-center justify-content-center overflow-hidden shadow-inner position-relative p-2" style="height: 260px;">
                             <img id="resAvatar" src="/images/face-id.png" onerror="this.src='/images/no-avatar.png'" class="img-fluid w-100 h-100" style="object-fit: contain;">
                             <div class="position-absolute top-0 start-0 w-100 h-100 border border-4 border-primary rounded-4 pulse-border d-none" id="scanningBorder"></div>
                         </div>
-
                         <h6 class="text-muted text-uppercase fw-bold small mb-1">Kết quả định danh</h6>
                         <h2 id="resName" class="fw-bold text-dark mb-1">ĐANG CHỜ...</h2>
                         <p id="resChucVu" class="text-primary fs-5 mb-auto fw-bold">-----</p>
-
                         <div id="resLoaiXe" class="badge bg-dark fs-6 w-100 py-3 mt-3 text-uppercase shadow-sm rounded-pill letter-spacing-1">LOẠI XE: ---</div>
                     </div>
 
                     <div class="col-md-7 ps-4 d-flex flex-column justify-content-between">
-
                         <div class="row g-3 p-3 bg-light rounded-4 border shadow-sm mb-3">
                             <div class="col-6 mb-2">
                                 <small class="text-muted d-block fw-bold small text-uppercase"><i class="bi bi-tag-fill"></i> Phân Loại</small>
@@ -93,9 +82,7 @@
                                 <small class="text-muted d-block fw-bold small text-uppercase"><i class="bi bi-123"></i> Biển Số</small>
                                 <span id="resPlate" class="fw-bold fs-3 text-dark font-monospace d-inline-block border-bottom border-3 border-primary pb-1">---------</span>
                             </div>
-
                             <div class="col-12"><hr class="m-0 text-muted opacity-25"></div>
-
                             <div class="col-6 mt-3">
                                 <small class="text-muted d-block fw-bold small text-uppercase"><i class="bi bi-sign-turn-right-fill"></i> Hướng</small>
                                 <span id="resHuong" class="fw-bold fs-4 text-primary">--</span>
@@ -119,11 +106,9 @@
                                 <span id="resParkingSlot" class="badge bg-danger fs-5 shadow-sm rounded-pill px-3">--</span>
                             </div>
                         </div>
-
                         <button id="gateButton" class="btn btn-secondary py-3 fw-bold disabled fs-4 shadow-sm rounded-4 letter-spacing-1">
                             <i class="bi bi-door-closed-fill"></i> CỔNG ĐANG ĐÓNG
                         </button>
-
                     </div>
                 </div>
             </div>
@@ -174,7 +159,7 @@
     }
 
     @@keyframes pulseSlow {
-        0% {
+        0%, 100% {
             transform: scale(1);
             opacity: 0.8;
         }
@@ -182,11 +167,6 @@
         50% {
             transform: scale(1.05);
             opacity: 1;
-        }
-
-        100% {
-            transform: scale(1);
-            opacity: 0.8;
         }
     }
 
@@ -238,16 +218,12 @@
     }
 
     @@keyframes scanMove {
-        0% {
+        0%, 100% {
             top: 25%;
         }
 
         50% {
             top: 75%;
-        }
-
-        100% {
-            top: 25%;
         }
     }
 </style>
@@ -256,8 +232,6 @@
     let faceMatcher = null;
     let totalSlots = 240;
     let occupiedOto = @occupied;
-
-    // Biến trạng thái để điều khiển logic vẽ Canvas (IDLE, FACE_SCAN, ALPR_SCAN)
     let scanState = 'IDLE';
 
     const video = document.getElementById('webcam');
@@ -301,13 +275,11 @@
                             try {
                                 const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
                                 if (det) {
-                                    // ĐÃ FIX: Xử lý dữ liệu Null để tránh sập AI
-                                    const bs = (user.bienso && user.bienso !== 'null' && user.bienso !== 'undefined') ? user.bienso : "---";
-                                    const lx = (user.loaixe && user.loaixe !== 'null' && user.loaixe !== 'undefined') ? user.loaixe : "KHÔNG CÓ";
-                                    const cv = (user.role && user.role !== 'null' && user.role !== 'undefined') ? user.role : "Nhân viên";
-                                    const gv = (user.gioVaoCa && user.gioVaoCa !== 'null' && user.gioVaoCa !== 'undefined') ? user.gioVaoCa : "";
-                                    const gm = (user.gioXinDiMuon && user.gioXinDiMuon !== 'null' && user.gioXinDiMuon !== 'undefined') ? user.gioXinDiMuon : "";
-
+                                    const bs = (user.bienso && user.bienso !== 'null') ? user.bienso : "---";
+                                    const lx = (user.loaixe && user.loaixe !== 'null') ? user.loaixe : "KHÔNG CÓ";
+                                    const cv = (user.role && user.role !== 'null') ? user.role : "Nhân viên";
+                                    const gv = (user.gioVaoCa && user.gioVaoCa !== 'null') ? user.gioVaoCa : "";
+                                    const gm = (user.gioXinDiMuon && user.gioXinDiMuon !== 'null') ? user.gioXinDiMuon : "";
                                     const labelStr = `${user.name}|${cv}|${user.manv}|${bs}|${lx}|${gv}|${gm}`;
                                     resolve(new faceapi.LabeledFaceDescriptors(labelStr, [det.descriptor]));
                                 } else resolve(null);
@@ -324,127 +296,89 @@
                 btn.innerHTML = '<i class="bi bi-shield-lock-fill"></i> BẮT ĐẦU QUY TRÌNH QUÉT';
                 btn.classList.replace('btn-primary', 'btn-success');
                 btn.classList.remove('disabled');
-            } else {
-                btn.innerHTML = '<i class="bi bi-exclamation-triangle"></i> KHÔNG CÓ DỮ LIỆU KHUÔN MẶT';
             }
 
             const displaySize = { width: video.clientWidth, height: video.clientHeight };
             faceapi.matchDimensions(canvas, displaySize);
             faceapi.matchDimensions(alprCanvas, displaySize);
 
-            // Vòng lặp vẽ nhận diện
             setInterval(async () => {
                 const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
-
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
                 const alprCtx = alprCanvas.getContext('2d');
                 alprCtx.clearRect(0, 0, alprCanvas.width, alprCanvas.height);
 
                 faceapi.resizeResults(detections, displaySize).forEach(d => {
-                    // Chỉ vẽ mặt khi ở trạng thái IDLE hoặc FACE_SCAN
                     if (scanState === 'IDLE' || scanState === 'FACE_SCAN') {
                         ctx.strokeStyle = '#0d6efd'; ctx.lineWidth = 3;
                         ctx.strokeRect(d.box.x, d.box.y, d.box.width, d.box.height);
                     }
-
-                    // Chỉ vẽ biển số ảo khi ở trạng thái quét biển số
                     if (scanState === 'ALPR_SCAN') {
-                        const plateWidth = 140;
-                        const plateHeight = 45;
+                        const plateWidth = 140; const plateHeight = 45;
                         const plateX = d.box.x + (d.box.width / 2) - (plateWidth / 2);
                         const plateY = Math.min(d.box.y + d.box.height + 120, displaySize.height - plateHeight - 15);
-
-                        alprCtx.strokeStyle = '#198754';
-                        alprCtx.lineWidth = 3;
+                        alprCtx.strokeStyle = '#198754'; alprCtx.lineWidth = 3;
                         alprCtx.strokeRect(plateX, plateY, plateWidth, plateHeight);
-
-                        alprCtx.save();
-                        alprCtx.translate(plateX + plateWidth/2, plateY);
-                        alprCtx.scale(-1, 1);
-                        alprCtx.fillStyle = '#198754';
-                        alprCtx.font = 'bold 12px Arial';
-                        alprCtx.fillText('PLATE DETECTED', -45, -5);
-                        alprCtx.restore();
                     }
                 });
             }, 100);
         } catch (e) { console.error(e); }
     }
 
-    // THUẬT TOÁN QUÉT TUẦN TỰ (FACE ID -> ALPR -> MỞ CỔNG)
     async function startSequentialScan() {
         if(!faceMatcher) return;
         let btn = document.getElementById('btnScanAI');
         btn.classList.add('disabled');
 
-        // BƯỚC 1: QUÉT KHUÔN MẶT
         scanState = 'FACE_SCAN';
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> [1/2] ĐANG QUÉT KHUÔN MẶT...';
-
         document.getElementById('ai-scanner-line').classList.remove('d-none');
         document.getElementById('faceDoneOverlay').classList.add('d-none');
-        document.getElementById('resAvatar').style.filter = "blur(3px)";
 
         setTimeout(async () => {
             const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-
             document.getElementById('ai-scanner-line').classList.add('d-none');
-            document.getElementById('resAvatar').style.filter = "none";
 
             if(detection) {
                 const match = faceMatcher.findBestMatch(detection.descriptor);
                 if(match.label !== 'unknown') {
                     const info = match.label.split('|');
                     const snapshot = captureSnapshot();
-
-                    // Hiện thông tin Khuôn mặt trước
                     document.getElementById('resAvatar').src = snapshot;
                     document.getElementById('resAvatar').style.objectFit = "cover";
                     document.getElementById('resName').innerText = info[0].toUpperCase();
-                    document.getElementById('resChucVu').innerText = (info[1] !== 'undefined' && info[1]) ? info[1] : "Nhân viên";
-
-                    // CHE CAM FACE ID BÁO HIỆU ĐÃ XONG LỚP 1
+                    document.getElementById('resChucVu').innerText = info[1];
                     document.getElementById('faceDoneOverlay').classList.remove('d-none');
 
-                    // BƯỚC 2: QUÉT BIỂN SỐ (ALPR)
                     scanState = 'ALPR_SCAN';
                     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> [2/2] ĐANG QUÉT BIỂN SỐ...';
-
                     document.getElementById('alprWaiting').classList.add('d-none');
                     document.getElementById('alprOverlay').classList.remove('d-none');
-                    document.getElementById('alprLaser').style.background = '#198754';
-                    document.getElementById('alprLaser').style.boxShadow = '0 0 10px 2px rgba(25, 135, 84, 0.8)';
 
                     setTimeout(() => {
-                        // TÌM THẤY BIỂN SỐ (Đổi laser sang Xanh Dương)
-                        document.getElementById('alprLaser').style.background = '#0d6efd';
-                        document.getElementById('alprLaser').style.boxShadow = '0 0 10px 2px rgba(13, 110, 253, 0.8)';
-
-                        setTimeout(() => {
-                            // Tắt Overlay ALPR
-                            document.getElementById('alprOverlay').classList.add('d-none');
-                            document.getElementById('alprWaiting').classList.remove('d-none');
-
-                            // BƯỚC 3: GHI LOG & MỞ BARIE
-                            processCheckInOut({
-                                hoTen: info[0], chucVu: info[1], maNV: info[2], bienSo: info[3], loaiXe: info[4], gioVaoCa: info[5], gioXinDiMuon: info[6], hinhAnh: snapshot
-                            });
-
-                            btn.innerHTML = '<i class="bi bi-shield-lock-fill"></i> BẮT ĐẦU QUY TRÌNH QUÉT';
-                            btn.classList.remove('disabled');
-                            scanState = 'IDLE';
-
-                        }, 1000);
-                    }, 1500);
-
+                        document.getElementById('alprOverlay').classList.add('d-none');
+                        document.getElementById('alprWaiting').classList.remove('d-none');
+                        processCheckInOut({
+                            hoTen: info[0], chucVu: info[1], maNV: info[2], bienSo: info[3], loaiXe: info[4], gioVaoCa: info[5], gioXinDiMuon: info[6], hinhAnh: snapshot
+                        });
+                        btn.innerHTML = '<i class="bi bi-shield-lock-fill"></i> BẮT ĐẦU QUY TRÌNH QUÉT';
+                        btn.classList.remove('disabled');
+                        scanState = 'IDLE';
+                    }, 2500);
                 } else {
-                    Swal.fire('Cảnh báo', 'Phát hiện đối tượng không có trong CSDL!', 'error');
+                    // ==========================================
+                    // ĐÃ CẬP NHẬT: KÍCH HOẠT SECURITY AI KHI PHÁT HIỆN NGƯỜI LẠ
+                    // ==========================================
+                    if (window.triggerSecurityAIAlert) {
+                        window.triggerSecurityAIAlert("CẢNH BÁO: Trạm giám sát phát hiện <b>đối tượng không xác định</b> đang cố gắng truy cập cổng chính. Yêu cầu tổ bảo vệ tăng cường quan sát!");
+                    } else {
+                        Swal.fire('Cảnh báo', 'Phát hiện đối tượng không có trong CSDL!', 'error');
+                    }
                     resetState(btn);
                 }
             } else {
-                Swal.fire('Lỗi', 'Không nhận diện được khuôn mặt. Vui lòng nhìn thẳng vào Camera!', 'warning');
+                Swal.fire('Lỗi', 'Không nhận diện được khuôn mặt!', 'warning');
                 resetState(btn);
             }
         }, 1500);
@@ -460,74 +394,27 @@
     }
 
     function processCheckInOut(data) {
-        const finalPlate = (data.bienSo === 'undefined' || !data.bienSo || data.bienSo === 'null') ? "---" : data.bienSo;
-        const loaiXeStr = (data.loaiXe && data.loaiXe !== 'undefined' && data.loaiXe !== 'null') ? data.loaiXe : "KHÔNG CÓ";
-        const isOto = (loaiXeStr.toUpperCase() === 'Ô TÔ');
-
-        const payload = { HoTen: data.hoTen, BienSoXe: finalPlate, LoaiXe: loaiXeStr, HinhAnh: data.hinhAnh, ViTriDo: "" };
-
+        const payload = { HoTen: data.hoTen, BienSoXe: data.bienSo, LoaiXe: data.loaiXe, HinhAnh: data.hinhAnh, ViTriDo: "" };
         fetch('/LichSuCheckIn/GhiNhatKy', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
         })
         .then(res => res.json())
         .then(result => {
-            document.getElementById('resPlate').innerText = finalPlate;
+            document.getElementById('resPlate').innerText = data.bienSo || "---";
             document.getElementById('resHuong').innerText = result.huong.toUpperCase();
-            document.getElementById('resLoaiXe').innerText = "LOẠI XE: " + loaiXeStr.toUpperCase();
 
             let loaiXeBadge = document.getElementById('resLoaiXeText');
-            loaiXeBadge.innerText = loaiXeStr.toUpperCase();
-            if(isOto) { loaiXeBadge.className = "badge bg-primary rounded-pill px-3 py-2 fs-6 mt-1 shadow-sm"; }
-            else if (loaiXeStr.toUpperCase() === 'XE MÁY') { loaiXeBadge.className = "badge bg-info text-dark rounded-pill px-3 py-2 fs-6 mt-1 shadow-sm"; }
-            else { loaiXeBadge.className = "badge bg-secondary rounded-pill px-3 py-2 fs-6 mt-1 shadow-sm"; }
-
-            const now = new Date();
-            const currentMins = now.getHours() * 60 + now.getMinutes();
-            let allowedMins = 8 * 60;
-            if (data.gioXinDiMuon && data.gioXinDiMuon !== "undefined" && data.gioXinDiMuon !== "") {
-                let parts = data.gioXinDiMuon.split(':'); allowedMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-            } else if (data.gioVaoCa && data.gioVaoCa !== "undefined" && data.gioVaoCa !== "") {
-                let parts = data.gioVaoCa.split(':'); allowedMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-            }
-
-            const isLate = currentMins > allowedMins;
-            const statusTag = document.getElementById('resLateStatus');
-            statusTag.innerText = isLate ? "MUỘN GIỜ" : "ĐÚNG GIỜ";
-            statusTag.className = "badge fs-6 mt-1 rounded-pill px-3 " + (isLate ? "bg-danger" : "bg-success");
-
-            if (isOto && result.huong === "Đi Vào") {
-                document.getElementById('parkingTitle').innerText = "BÃI ĐỖ XE TỔNG HỢP";
-                occupiedOto++; updateParkingUI();
-                let p = "A-";
-                document.getElementById('resParkingSlot').innerText = p + Math.floor(Math.random() * 40 + 1).toString().padStart(2, '0');
-            } else if (isOto && result.huong === "Đi Ra") {
-                occupiedOto = Math.max(0, occupiedOto - 1); updateParkingUI();
-                document.getElementById('resParkingSlot').innerText = "--";
-            } else {
-                document.getElementById('parkingTitle').innerText = "BÃI ĐỖ XE MÁY";
-                document.getElementById('resParkingCount').innerText = "FREE";
-                document.getElementById('resParkingSlot').innerText = "Khu-XM";
-                document.getElementById('parkingBar').style.width = "100%";
-                document.getElementById('resParkingCount').className = "display-3 fw-bold text-success mb-0";
-            }
+            loaiXeBadge.innerText = (data.loaiXe || "---").toUpperCase();
+            loaiXeBadge.className = "badge bg-primary rounded-pill px-3 py-2 fs-6 mt-1 shadow-sm";
 
             openGate();
         });
-    }
-
-    function updateParkingUI() {
-        let left = totalSlots - occupiedOto;
-        document.getElementById('resParkingCount').innerText = left;
-        let pct = (left / totalSlots) * 100;
-        document.getElementById('parkingBar').style.width = pct + "%";
-        document.getElementById('resParkingCount').className = left <= 10 ? "display-3 fw-bold text-danger mb-0" : "display-3 fw-bold text-success mb-0";
     }
 
     function openGate() {
         const gate = document.getElementById('gateButton');
         gate.className = "btn btn-success py-3 fw-bold fs-4 shadow pulse-bg rounded-4 letter-spacing-1";
         gate.innerHTML = "<i class='bi bi-unlock-fill'></i> MỜI VÀO - CỔNG MỞ";
-
         setTimeout(resetResult, 5000);
     }
 
@@ -544,22 +431,7 @@
         document.getElementById('gateButton').className = "btn btn-secondary py-3 fw-bold disabled fs-4 rounded-4 letter-spacing-1";
         document.getElementById('gateButton').innerHTML = "<i class='bi bi-door-closed-fill'></i> CỔNG ĐANG ĐÓNG";
         document.getElementById('resName').innerText = "ĐANG CHỜ...";
-        document.getElementById('resChucVu').innerText = "-----";
-        document.getElementById('resHuong').innerText = "--";
-        document.getElementById('resPlate').innerText = "---------";
-        document.getElementById('resLoaiXe').innerText = "LOẠI XE: ---";
-        document.getElementById('resLoaiXeText').innerText = "---";
-        document.getElementById('resLoaiXeText').className = "fw-bold fs-5 text-dark mt-1";
-        document.getElementById('resParkingSlot').innerText = "--";
-        document.getElementById('resLateStatus').innerText = "CHỜ DỮ LIỆU";
-        document.getElementById('resLateStatus').className = "badge fs-6 mt-1 bg-secondary text-white shadow-sm rounded-pill px-3";
-
-        let avatarImg = document.getElementById('resAvatar');
-        avatarImg.src = "/images/face-id.png";
-        avatarImg.style.objectFit = "contain";
-
+        document.getElementById('resAvatar').src = "/images/face-id.png";
         document.getElementById('faceDoneOverlay').classList.add('d-none');
-        document.getElementById('parkingTitle').innerText = "BÃI ĐỖ XE TỔNG HỢP";
-        updateParkingUI();
     }
 </script>

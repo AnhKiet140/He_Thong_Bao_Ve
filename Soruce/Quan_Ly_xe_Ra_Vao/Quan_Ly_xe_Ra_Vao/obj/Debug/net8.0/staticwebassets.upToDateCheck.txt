@@ -7,6 +7,7 @@ wwwroot\images\faces\face_NV-260409-1023_639114908168308379.jpg
 wwwroot\images\faces\face_NV-260409-1023_639114914850522622.jpg
 wwwroot\images\faces\face_NV2604070736_639113212344042447.jpg
 wwwroot\images\logo.png
+wwwroot\images\LOGO_AI.png
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map

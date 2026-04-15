@@ -6,13 +6,13 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <div class="container-fluid mt-2 animate__animated animate__fadeIn">
-    <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-dark">
+    <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded-4 shadow-sm border-start border-5 border-dark custom-header-card">
         <div>
-            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-gear-fill text-primary"></i> CÀI ĐẶT HỆ THỐNG</h4>
+            <h4 class="fw-bold mb-1 text-body"><i class="bi bi-gear-fill text-primary"></i> CÀI ĐẶT HỆ THỐNG</h4>
             <small class="text-muted fw-bold">QUẢN LÝ THAM SỐ AI, THỜI GIAN VÀ BẢO MẬT DATABASE</small>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-light border fw-bold rounded-pill shadow-sm px-4" onclick="resetToDefault()">
+            <button class="btn btn-secondary border-0 fw-bold rounded-pill shadow-sm px-4" onclick="resetToDefault()">
                 <i class="bi bi-arrow-counterclockwise"></i> Khôi phục mặc định
             </button>
             <button class="btn btn-primary fw-bold rounded-pill shadow-sm px-5 pulse-btn" onclick="saveSettings()">
@@ -24,9 +24,9 @@
     <div class="row g-3">
         <div class="col-lg-6 d-flex flex-column gap-3">
 
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-robot text-info"></i> Tham Số Nhận Diện (AI Models)</h6>
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-card-custom">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-uppercase text-body"><i class="bi bi-robot text-info"></i> Tham Số Nhận Diện (AI Models)</h6>
                 </div>
                 <div class="card-body p-4">
                     <div class="mb-4">
@@ -50,29 +50,29 @@
                     <hr class="text-muted opacity-25">
 
                     <div class="form-check form-switch form-switch-lg d-flex align-items-center justify-content-between">
-                        <label class="form-check-label fw-bold text-dark" for="aiLearning">Học máy liên tục (Deep Learning)</label>
+                        <label class="form-check-label fw-bold text-body" for="aiLearning">Học máy liên tục (Deep Learning)</label>
                         <input class="form-check-input" type="checkbox" id="aiLearning" checked>
                     </div>
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-clock-history text-warning"></i> Cài Đặt Khung Giờ</h6>
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-card-custom">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-uppercase text-body"><i class="bi bi-clock-history text-warning"></i> Cài Đặt Khung Giờ</h6>
                 </div>
                 <div class="card-body p-4">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="fw-bold text-muted small mb-2">Giờ Vào Ca Mặc Định</label>
-                            <input type="time" id="timeIn" class="form-control shadow-none fw-bold text-center fs-5" value="08:00">
+                            <input type="time" id="timeIn" class="form-control shadow-none fw-bold text-center fs-5 input-custom" value="08:00">
                         </div>
                         <div class="col-md-6">
                             <label class="fw-bold text-muted small mb-2">Giờ Tan Ca Mặc Định</label>
-                            <input type="time" id="timeOut" class="form-control shadow-none fw-bold text-center fs-5" value="17:00">
+                            <input type="time" id="timeOut" class="form-control shadow-none fw-bold text-center fs-5 input-custom" value="17:00">
                         </div>
                         <div class="col-md-12">
                             <label class="fw-bold text-muted small mb-2">Dung sai đi muộn (Phút)</label>
-                            <select id="lateTolerance" class="form-select shadow-none fw-bold">
+                            <select id="lateTolerance" class="form-select shadow-none fw-bold input-custom">
                                 <option value="0">0 phút (Nghiêm ngặt)</option>
                                 <option value="5">5 phút</option>
                                 <option value="15" selected>15 phút (Mặc định)</option>
@@ -81,7 +81,7 @@
                         </div>
                         <div class="col-md-12 mt-3">
                             <div class="form-check form-switch form-switch-lg d-flex align-items-center justify-content-between">
-                                <label class="form-check-label fw-bold text-dark" for="autoCheckout">Tự động Check-out lúc nửa đêm</label>
+                                <label class="form-check-label fw-bold text-body" for="autoCheckout">Tự động Check-out lúc nửa đêm</label>
                                 <input class="form-check-input" type="checkbox" id="autoCheckout" checked>
                             </div>
                         </div>
@@ -92,28 +92,28 @@
 
         <div class="col-lg-6 d-flex flex-column gap-3">
 
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-database-fill-gear text-secondary"></i> Quản Trị Dữ Liệu (Database)</h6>
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-card-custom">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-uppercase text-body"><i class="bi bi-database-fill-gear text-secondary"></i> Quản Trị Dữ Liệu (Database)</h6>
                 </div>
                 <div class="card-body p-4">
                     <div class="mb-3">
                         <label class="fw-bold text-muted small mb-2">Thời gian lưu trữ hình ảnh Check-in (Ngày)</label>
-                        <div class="input-group">
-                            <input type="number" id="retentionDays" class="form-control shadow-none fw-bold" value="90" min="1">
-                            <span class="input-group-text bg-light text-muted">Ngày</span>
+                        <div class="input-group border rounded-2 input-custom-group">
+                            <input type="number" id="retentionDays" class="form-control border-0 shadow-none fw-bold bg-transparent text-body" value="90" min="1">
+                            <span class="input-group-text bg-transparent border-0 text-muted">Ngày</span>
                         </div>
-                        <small class="text-danger d-block mt-2 fw-bold" style="font-size: 0.75rem;">*Lưu ý: Hệ thống chỉ tự động xóa ảnh Camera tại Lịch sử ra vào cũ. Dữ liệu khuôn mặt (FaceID) trong Sinh Trắc Học NV sẽ KHÔNG BỊ XÓA.</small>
+                        <small class="text-danger d-block mt-2 fw-bold" style="font-size: 0.75rem;">*Lưu ý: Hệ thống chỉ tự động xóa ảnh Camera tại Lịch sử ra vào cũ. Dữ liệu khuôn mặt (FaceID) KHÔNG BỊ XÓA.</small>
                     </div>
 
                     <div class="form-check form-switch form-switch-lg d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
-                        <label class="form-check-label fw-bold text-dark" for="autoClearLog">Tự động dọn rác Audit Log (Mỗi Chủ Nhật)</label>
+                        <label class="form-check-label fw-bold text-body" for="autoClearLog">Tự động dọn rác Audit Log (Mỗi Chủ Nhật)</label>
                         <input class="form-check-input" type="checkbox" id="autoClearLog" checked>
                     </div>
 
-                    <div class="bg-light p-3 rounded-3 border">
+                    <div class="p-3 rounded-3 border box-highlight">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="fw-bold mb-0 text-dark">Bản sao lưu gần nhất</h6>
+                            <h6 class="fw-bold mb-0 text-body">Bản sao lưu gần nhất</h6>
                             <span class="badge bg-success">An toàn</span>
                         </div>
                         <p class="text-muted small mb-3 fw-bold" id="lastBackupInfo">Chưa có bản sao lưu nào.</p>
@@ -125,22 +125,22 @@
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-shield-lock-fill text-danger"></i> Bảo Mật Hệ Thống</h6>
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-card-custom">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-uppercase text-body"><i class="bi bi-shield-lock-fill text-danger"></i> Bảo Mật Hệ Thống</h6>
                 </div>
                 <div class="card-body p-4">
                     <div class="form-check form-switch form-switch-lg d-flex align-items-center justify-content-between mb-3">
-                        <label class="form-check-label fw-bold text-dark" for="require2FA">Bắt buộc xác thực 2 Lớp (2FA) cho Admin</label>
+                        <label class="form-check-label fw-bold text-body" for="require2FA">Bắt buộc xác thực 2 Lớp (2FA) cho Admin</label>
                         <input class="form-check-input" type="checkbox" id="require2FA">
                     </div>
                     <div class="form-check form-switch form-switch-lg d-flex align-items-center justify-content-between mb-3">
-                        <label class="form-check-label fw-bold text-dark" for="lockOut">Khóa tài khoản nếu nhập sai MK quá 5 lần</label>
+                        <label class="form-check-label fw-bold text-body" for="lockOut">Khóa tài khoản nếu nhập sai MK quá 5 lần</label>
                         <input class="form-check-input" type="checkbox" id="lockOut" checked>
                     </div>
                     <div class="mb-3">
                         <label class="fw-bold text-muted small mb-2">Thời gian hết hạn phiên đăng nhập (Session Timeout)</label>
-                        <select id="sessionTimeout" class="form-select shadow-none fw-bold">
+                        <select id="sessionTimeout" class="form-select shadow-none fw-bold input-custom">
                             <option value="15">15 phút</option>
                             <option value="30">30 phút</option>
                             <option value="60" selected>1 Tiếng</option>
@@ -149,13 +149,50 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card border-0 shadow-sm rounded-4 bg-card-custom">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-uppercase text-body"><i class="bi bi-moon-stars-fill text-primary"></i> Giao Diện & Trải Nghiệm</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3 border box-highlight">
+                        <div>
+                            <h6 class="mb-1 fw-bold text-body">Chế độ Tối (Dark Mode)</h6>
+                            <span class="small text-muted">Bảo vệ mắt khi trực ban đêm.</span>
+                        </div>
+                        <div class="form-check form-switch form-switch-lg mb-0">
+                            <input class="form-check-input cursor-pointer" type="checkbox" id="themeToggle">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-    body {
-        background-color: #f4f7f6;
+    /* CSS Chung mặc định (Light Mode) */
+    .custom-header-card {
+        background-color: #ffffff;
+    }
+
+    .bg-card-custom {
+        background-color: #ffffff;
+    }
+
+    .input-custom {
+        background-color: #ffffff;
+        color: #212529;
+        border: 1px solid #dee2e6;
+    }
+
+    .box-highlight {
+        background-color: #f8f9fa;
+    }
+
+    .input-custom-group {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
     }
 
     .form-switch-lg .form-check-input {
@@ -191,6 +228,35 @@
             box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
         }
     }
+
+    /* =========================================
+           CSS GHI ĐÈ KHI BẬT DARK MODE
+        ========================================= */
+    [data-bs-theme="dark"] .custom-header-card,
+    [data-bs-theme="dark"] .bg-card-custom {
+        background-color: #1e1e1e !important;
+        border-color: #333 !important;
+    }
+
+    [data-bs-theme="dark"] .box-highlight {
+        background-color: #2c2c2c !important;
+        border-color: #444 !important;
+    }
+
+    [data-bs-theme="dark"] .input-custom {
+        background-color: #2c2c2c !important;
+        color: #e0e0e0 !important;
+        border-color: #444 !important;
+    }
+
+    [data-bs-theme="dark"] .input-custom-group {
+        background-color: #2c2c2c !important;
+        border-color: #444 !important;
+    }
+
+    [data-bs-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+    }
 </style>
 
 <script>
@@ -225,7 +291,13 @@
             // Lưu vào bộ nhớ trình duyệt
             localStorage.setItem('chkin_settings', JSON.stringify(settings));
 
-            Swal.fire('THÀNH CÔNG', 'Toàn bộ cài đặt đã được lưu và áp dụng cho hệ thống!', 'success');
+            Swal.fire({
+                title: 'THÀNH CÔNG',
+                text: 'Toàn bộ cài đặt đã được lưu và áp dụng cho hệ thống!',
+                icon: 'success',
+                background: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#1e1e1e' : '#fff',
+                color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#fff' : '#000'
+            });
         });
     }
 
@@ -258,7 +330,13 @@
 
     function resetToDefault() {
         Swal.fire({
-            title: 'Khôi phục cài đặt gốc?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Đồng Ý Khôi Phục'
+            title: 'Khôi phục cài đặt gốc?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Đồng Ý Khôi Phục',
+            background: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#1e1e1e' : '#fff',
+            color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#fff' : '#000'
         }).then((result) => {
             if (result.isConfirmed) {
                 localStorage.removeItem('chkin_settings'); // Xóa dữ liệu
@@ -270,12 +348,20 @@
     // --- LOGIC BACKUP DỮ LIỆU ĐỘNG ---
     function backupDB() {
         Swal.fire({
-            title: 'XÁC NHẬN SAO LƯU', text: "Hệ thống sẽ nén toàn bộ Database. Quá trình này mất khoảng vài giây.", icon: 'info', showCancelButton: true, confirmButtonText: 'Bắt Đầu Sao Lưu'
+            title: 'XÁC NHẬN SAO LƯU',
+            text: "Hệ thống sẽ nén toàn bộ Database. Quá trình này mất khoảng vài giây.",
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Bắt Đầu Sao Lưu',
+            background: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#1e1e1e' : '#fff',
+            color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#fff' : '#000'
         }).then((result) => {
             if (result.isConfirmed) {
                 let timerInterval;
                 Swal.fire({
                     title: 'Đang Backup Data...', html: 'Đã hoàn thành <b></b>%', timer: 3000, timerProgressBar: true,
+                    background: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#1e1e1e' : '#fff',
+                    color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#fff' : '#000',
                     didOpen: () => {
                         Swal.showLoading();
                         const b = Swal.getHtmlContainer().querySelector('b');
@@ -295,7 +381,13 @@
                     // Lưu lịch sử backup
                     localStorage.setItem('chkin_lastBackup', backupText);
 
-                    Swal.fire('SAO LƯU THÀNH CÔNG', `Đã tạo file: CHKIN_Backup_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}.bak`, 'success');
+                    Swal.fire({
+                        title: 'SAO LƯU THÀNH CÔNG',
+                        text: `Đã tạo file: CHKIN_Backup_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}.bak`,
+                        icon: 'success',
+                        background: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#1e1e1e' : '#fff',
+                        color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#fff' : '#000'
+                    });
                 });
             }
         });

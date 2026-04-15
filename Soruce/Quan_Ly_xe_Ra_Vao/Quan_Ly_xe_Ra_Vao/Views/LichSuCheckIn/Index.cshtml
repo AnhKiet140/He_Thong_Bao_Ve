@@ -4,96 +4,104 @@
     string selectedDate = ViewBag.SelectedDate ?? DateTime.Today.ToString("yyyy-MM-dd");
 }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<div class="container-fluid mt-3 animate__animated animate__fadeIn">
+    <div class="card shadow-sm border-0 rounded-4 bg-card-custom overflow-hidden">
 
-<div class="container-fluid mt-3">
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="card-header bg-white border-bottom p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="fw-bold text-primary mb-0">
-                    <i class="bi bi-clock-history me-2"></i> TRUY XUẤT LỊCH SỬ RA VÀO
-                </h4>
-                <button onclick="exportHistoryExcel()" class="btn btn-success fw-bold shadow-sm rounded-3 px-4">
-                    <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel chi tiết
-                </button>
+        <div class="card-header bg-transparent border-0 p-4 pb-2">
+            <h4 class="fw-bold text-primary mb-0">
+                <i class="bi bi-clock-history me-2 fs-4"></i> TRUY XUẤT LỊCH SỬ RA VÀO
+            </h4>
+        </div>
+
+        <form method="get" asp-action="Index" class="d-flex flex-wrap align-items-end gap-4 px-4 pb-4 border-bottom bg-transparent">
+
+            <div style="width: 200px;">
+                <label class="small fw-bold text-muted mb-2"><i class="bi bi-calendar-check me-1"></i> Lọc theo ngày</label>
+                <input type="date" name="selectedDate" value="@selectedDate"
+                       class="form-control shadow-sm border-secondary text-body bg-transparent input-custom"
+                       onchange="this.form.submit()" style="cursor: pointer;">
             </div>
 
-            <form method="get" asp-action="Index" class="row g-3">
-                <div class="col-md-3">
-                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-calendar-check"></i> Lọc theo ngày</label>
-                    <input type="date" name="selectedDate" value="@selectedDate"
-                           class="form-control shadow-none border-primary-subtle"
-                           onchange="this.form.submit()">
+            <div class="flex-grow-1" style="max-width: 500px;">
+                <label class="small fw-bold text-muted mb-2">Tìm theo tên hoặc biển số</label>
+                <div class="input-group shadow-sm rounded-3">
+                    <span class="input-group-text bg-transparent border-secondary text-muted border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="searchName" value="@ViewBag.SearchName"
+                           class="form-control border-secondary shadow-none bg-transparent text-body border-start-0"
+                           placeholder="Nhập tên nhân viên, biển số xe cần tìm...">
+                    <button class="btn btn-primary px-4 fw-bold" type="submit">Tìm kiếm</button>
                 </div>
-                <div class="col-md-6">
-                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-person-search"></i> Tìm theo tên hoặc biển số</label>
-                    <div class="input-group">
-                        <input type="text" name="searchName" value="@ViewBag.SearchName"
-                               class="form-control shadow-none border-primary-subtle"
-                               placeholder="Nhập tên nhân viên, biển số xe cần tìm...">
-                        <button class="btn btn-primary px-4 fw-bold" type="submit"><i class="bi bi-search"></i> Tìm kiếm</button>
-                    </div>
-                </div>
-                <div class="col-md-3 d-flex align-items-end gap-2">
-                    <a asp-action="Index" class="btn btn-outline-secondary w-100 fw-bold">
-                        <i class="bi bi-arrow-counterclockwise"></i> Reset bộ lọc
-                    </a>
-                </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="ms-auto d-flex gap-2 mt-3 mt-xl-0">
+                <a asp-action="Index" class="btn btn-light border fw-bold shadow-sm text-nowrap btn-refresh-custom">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Làm mới
+                </a>
+
+                <button type="submit" asp-action="ExportExcel" formmethod="get" class="btn btn-success fw-bold shadow-sm text-nowrap d-flex align-items-center">
+                    <i class="bi bi-file-earmark-excel-fill me-2"></i> Xuất Excel chi tiết
+                </button>
+            </div>
+        </form>
 
         <div class="card-body p-0">
             <div class="table-responsive" style="max-height: 650px; overflow-y: auto;">
-                <table id="historyTable" class="table table-hover align-middle mb-0 text-center custom-table">
-                    <thead class="table-dark text-uppercase small fw-bold sticky-top">
+                <table class="table table-hover align-middle mb-0 text-center custom-table">
+                    <thead class="table-dark text-uppercase small fw-bold sticky-top custom-thead">
                         <tr>
-                            <th class="ps-4 text-start">Thời Gian</th>
-                            <th class="text-start">Đối Tượng Kiểm Soát</th>
-                            <th>Loại Xe</th>
-                            <th>Biển Số Xe</th>
-                            <th>Phương Thức</th>
-                            <th>Hướng</th>
-                            <th class="text-end pe-4">Trạng Thái</th>
+                            <th class="ps-4 text-start py-3">Thời Gian</th>
+                            <th class="text-start py-3">Đối Tượng Kiểm Soát</th>
+                            <th class="py-3">Loại Xe</th>
+                            <th class="py-3">Biển Số Xe</th>
+                            <th class="py-3">Phương Thức</th>
+                            <th class="py-3">Hướng</th>
+                            <th class="text-end pe-4 py-3">Trạng Thái</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="text-body">
                         @if (Model != null && Model.Any())
                         {
                             foreach (var log in Model)
                             {
-                                <tr>
+                                <tr class="animate__animated animate__fadeIn">
                                     <td class="text-start ps-4">
                                         <div class="fw-bold text-danger fs-6">@log.ThoiGian.ToString("HH:mm:ss")</div>
                                         <small class="text-muted">@log.ThoiGian.ToString("dd/MM/yyyy")</small>
                                     </td>
                                     <td class="text-start">
                                         <div class="d-flex align-items-center">
-                                            <img src="@(string.IsNullOrEmpty(log.HinhAnh) ? "/images/no-avatar.png" : log.HinhAnh)"
-                                                 class="rounded-circle me-3 shadow-sm border"
-                                                 style="width: 45px; height: 45px; object-fit: cover;"
-                                                 onerror="this.src='/images/no-avatar.png'" />
+                                            <div class="position-relative">
+                                                <img src="@(string.IsNullOrEmpty(log.HinhAnh) ? "/images/no-avatar.png" : log.HinhAnh)"
+                                                     class="rounded border shadow-sm me-3 img-avatar-custom"
+                                                     style="width: 45px; height: 45px; object-fit: cover;"
+                                                     onerror="this.src='/images/no-avatar.png'" />
+                                            </div>
                                             <div>
-                                                <span class="fw-bold text-uppercase text-primary">@log.HoTen</span><br>
-                                                <small class="badge bg-light text-dark border-0 p-0">NHÂN VIÊN</small>
+                                                <span class="fw-bold text-uppercase text-body">@(string.IsNullOrEmpty(log.HoTen) ? "Khách vãng lai" : log.HoTen)</span><br>
+                                                <small class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-2 py-1 mt-1">@(log.LoaiDoiTuong ?? "NHÂN VIÊN")</small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         @if (log.BienSoXe == "---" || log.LoaiXe == "Xe máy")
                                         {
-                                            <span class="badge bg-info bg-opacity-10 text-info border border-info px-3">🛵 XE MÁY</span>
+                                            <span class="badge bg-info bg-opacity-10 text-info border border-info px-3 py-1">🛵 XE MÁY</span>
+                                        }
+                                        else if (!string.IsNullOrEmpty(log.LoaiXe))
+                                        {
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-1">🚗 Ô TÔ</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3">🚗 Ô TÔ</span>
+                                            <span class="text-muted">---</span>
                                         }
                                     </td>
                                     <td class="font-monospace fw-bold">
-                                        @(log.BienSoXe == "---" ? "N/A" : log.BienSoXe)
+                                        <span class="px-2 py-1 rounded license-plate border">@(string.IsNullOrEmpty(log.BienSoXe) || log.BienSoXe == "---" ? "N/A" : log.BienSoXe)</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-light text-dark border rounded-pill px-2 py-1 small">
-                                            <i class="bi bi-cpu"></i> AI FACE + ALPR
+                                        <span class="badge bg-light text-dark border rounded-pill px-2 py-1 small custom-method-badge">
+                                            <i class="bi bi-cpu"></i> @(string.IsNullOrEmpty(log.PhuongThuc) ? "Tự động" : log.PhuongThuc)
                                         </span>
                                     </td>
                                     <td>
@@ -107,7 +115,14 @@
                                         }
                                     </td>
                                     <td class="text-end pe-4">
-                                        <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-check-lg"></i> Hợp lệ</span>
+                                        @if (log.TrangThai == "Thành Công" || log.TrangThai == "Hợp lệ")
+                                        {
+                                            <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-check-lg"></i> Hợp lệ</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-x-circle"></i> @log.TrangThai</span>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -116,9 +131,9 @@
                         {
                             <tr>
                                 <td colspan="7" class="text-center py-5 text-muted">
-                                    <div class="py-4">
-                                        <i class="bi bi-clipboard-x fs-1 d-block mb-2 opacity-25"></i>
-                                        <h5 class="fw-bold">Dữ liệu trống!</h5>
+                                    <div class="py-5">
+                                        <i class="bi bi-clipboard-x fs-1 d-block mb-3 opacity-25" style="font-size: 3rem !important;"></i>
+                                        <h5 class="fw-bold text-body">Dữ liệu trống!</h5>
                                         <p class="small">Không tìm thấy lịch sử ra vào cho ngày @DateTime.Parse(selectedDate).ToString("dd/MM/yyyy").</p>
                                     </div>
                                 </td>
@@ -132,6 +147,33 @@
 </div>
 
 <style>
+    /* CSS CHUNG (Light Mode) */
+    .bg-card-custom {
+        background-color: #ffffff;
+    }
+
+    .input-custom {
+        background-color: #ffffff;
+        border: 1px solid #ced4da;
+    }
+
+    .btn-refresh-custom {
+        background-color: #ffffff;
+        color: #212529;
+    }
+
+    .license-plate {
+        background-color: #f8f9fa;
+        color: #212529 !important;
+        border-color: #dee2e6 !important;
+    }
+
+    .custom-method-badge {
+        background-color: #f8f9fa;
+        color: #212529;
+        border-color: #dee2e6;
+    }
+
     .custom-table tbody tr {
         transition: all 0.2s ease;
         border-left: 4px solid transparent;
@@ -142,6 +184,16 @@
             border-left-color: #0d6efd;
         }
 
+    .custom-table td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    /* Làm viền header đen đẹp hơn */
+    .custom-thead th {
+        border-bottom: 0 !important;
+    }
+
     .sticky-top {
         top: 0;
         z-index: 10;
@@ -150,13 +202,78 @@
     .font-monospace {
         letter-spacing: 1px;
     }
-</style>
 
-<script>
-    function exportHistoryExcel() {
-        let table = document.getElementById("historyTable");
-        let dateStr = "@selectedDate";
-        let workbook = XLSX.utils.table_to_book(table, { sheet: "Nhat_Ky_Ra_Vao" });
-        XLSX.writeFile(workbook, "NhatKy_LichSu_" + dateStr + ".xlsx");
+    /* =========================================
+           CSS TƯƠNG THÍCH DARK MODE ĐỒNG BỘ
+        ========================================= */
+    [data-bs-theme="dark"] .bg-card-custom {
+        background-color: #1e1e1e !important;
+        border-color: #333 !important;
     }
-</script>
+
+    [data-bs-theme="dark"] .text-body {
+        color: #e0e0e0 !important;
+    }
+
+    [data-bs-theme="dark"] .input-custom {
+        background-color: #2c2c2c !important;
+        color: #e0e0e0 !important;
+        border-color: #444 !important;
+    }
+
+    [data-bs-theme="dark"] .border-secondary {
+        border-color: #444 !important;
+    }
+
+    [data-bs-theme="dark"] .btn-refresh-custom {
+        background-color: transparent !important;
+        color: #e0e0e0 !important;
+        border-color: #444 !important;
+    }
+
+        [data-bs-theme="dark"] .btn-refresh-custom:hover {
+            background-color: #2c2c2c !important;
+        }
+
+    [data-bs-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+    }
+
+    [data-bs-theme="dark"] .form-control::placeholder {
+        color: #888 !important;
+    }
+
+    /* Bảng dữ liệu */
+    [data-bs-theme="dark"] .custom-table {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .table-dark {
+        background-color: #0a0a0a !important;
+        color: #ccc !important;
+    }
+
+    [data-bs-theme="dark"] .custom-table td {
+        border-bottom: 1px solid #333 !important;
+    }
+
+    [data-bs-theme="dark"] .custom-table tbody tr:hover {
+        background-color: rgba(255,255,255,0.05);
+    }
+
+    [data-bs-theme="dark"] .license-plate {
+        background-color: #2c2c2c !important;
+        color: #e0e0e0 !important;
+        border-color: #555 !important;
+    }
+
+    [data-bs-theme="dark"] .img-avatar-custom {
+        border-color: #444 !important;
+    }
+
+    [data-bs-theme="dark"] .custom-method-badge {
+        background-color: #2c2c2c !important;
+        color: #ccc !important;
+        border-color: #555 !important;
+    }
+</style>

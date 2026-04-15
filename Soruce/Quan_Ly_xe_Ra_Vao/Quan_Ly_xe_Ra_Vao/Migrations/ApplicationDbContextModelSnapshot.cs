@@ -70,7 +70,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DangKyKhachs", (string)null);
+                    b.ToTable("DangKyKhachs");
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.KhachNgoai", b =>
@@ -131,7 +131,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("KhachNgoais", (string)null);
+                    b.ToTable("KhachNgoais");
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.LichSuCheckIn", b =>
@@ -177,7 +177,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("LichSuCheckIns", (string)null);
+                    b.ToTable("LichSuCheckIns");
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.NhanVien", b =>
@@ -221,7 +221,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("NhanViens", (string)null);
+                    b.ToTable("NhanViens");
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.NhatKyHeThong", b =>
@@ -256,7 +256,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("NhatKyHeThongs", (string)null);
+                    b.ToTable("NhatKyHeThongs");
                 });
 
             modelBuilder.Entity("Quan_Ly_xe_Ra_Vao.Models.TheXe", b =>
@@ -291,7 +291,7 @@ namespace Quan_Ly_xe_Ra_Vao.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TheXes", (string)null);
+                    b.ToTable("TheXes");
                 });
 #pragma warning restore 612, 618
         }

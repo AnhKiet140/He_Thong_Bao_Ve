@@ -2,61 +2,64 @@
 @{
     ViewData["Title"] = "Trực Ban Hôm Nay";
     int stt = 1;
-    // Lấy ngày đang lọc từ ViewBag (đã xử lý ở Controller)
     string selectedDate = ViewBag.SelectedDate ?? DateTime.Today.ToString("yyyy-MM-dd");
 }
 
-<div class="container-fluid mt-3">
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="card-header bg-white border-bottom p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold text-primary mb-0">
-                    <i class="bi bi-shield-check me-2"></i> SỔ TRỰC BAN NGÀY @DateTime.Parse(selectedDate).ToString("dd/MM/yyyy")
-                </h4>
-                <div class="d-flex gap-2">
-                    <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2 d-flex align-items-center">
-                        <span class="spinner-grow spinner-grow-sm me-2"></span> Hệ thống đang giám sát
-                    </span>
+<div class="container-fluid mt-3 animate__animated animate__fadeIn">
+    <div class="card shadow-sm border-0 rounded-4 bg-card-custom overflow-hidden">
+
+        <div class="card-header bg-transparent border-bottom p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <h4 class="fw-bold text-primary mb-0">
+                <i class="bi bi-shield-check me-2 fs-4"></i> SỔ TRỰC BAN NGÀY @DateTime.Parse(selectedDate).ToString("dd/MM/yyyy")
+            </h4>
+            <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2 d-flex align-items-center shadow-sm">
+                <span class="spinner-grow spinner-grow-sm me-2"></span> Hệ thống đang giám sát
+            </span>
+        </div>
+
+        <form method="get" asp-action="TrucBan" class="row g-3 p-4 pb-3 border-bottom bg-light-custom align-items-end">
+            <div class="col-md-3">
+                <label class="small fw-bold text-muted mb-1"><i class="bi bi-calendar-date"></i> Xem theo ngày</label>
+                <input type="date" name="selectedDate" value="@selectedDate"
+                       class="form-control shadow-sm border-0 input-custom"
+                       onchange="this.form.submit()" style="cursor: pointer;">
+            </div>
+
+            <div class="col-md-5">
+                <label class="small fw-bold text-muted mb-1"><i class="bi bi-search"></i> Tìm kiếm nhân viên</label>
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-transparent border-0 text-muted input-custom-group"><i class="bi bi-person"></i></span>
+                    <input type="text" name="searchName" value="@ViewBag.SearchName"
+                           class="form-control border-0 shadow-none text-body input-custom-group"
+                           placeholder="Nhập tên nhân viên cần tra cứu...">
+                    <button class="btn btn-primary px-4 fw-bold" type="submit">Tìm nhanh</button>
                 </div>
             </div>
 
-            <form method="get" asp-action="TrucBan" class="row g-3">
-                <div class="col-md-3">
-                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-calendar-date"></i> Xem theo ngày</label>
-                    <input type="date" name="selectedDate" value="@selectedDate"
-                           class="form-control shadow-none border-primary border-opacity-25"
-                           onchange="this.form.submit()">
-                </div>
-                <div class="col-md-6">
-                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-search"></i> Tìm kiếm nhân viên</label>
-                    <div class="input-group">
-                        <input type="text" name="searchName" value="@ViewBag.SearchName"
-                               class="form-control shadow-none"
-                               placeholder="Nhập tên nhân viên cần tra cứu...">
-                        <button class="btn btn-primary px-4 fw-bold" type="submit">Tìm nhanh</button>
-                    </div>
-                </div>
-                <div class="col-md-3 d-flex align-items-end justify-content-end">
-                    @if (!string.IsNullOrEmpty(ViewBag.SearchName) || selectedDate != DateTime.Today.ToString("yyyy-MM-dd"))
-                    {
-                        <a asp-action="TrucBan" class="btn btn-outline-danger w-100 fw-bold">
-                            <i class="bi bi-x-circle"></i> Reset bộ lọc
-                        </a>
-                    }
-                    else
-                    {
-                        <button type="button" class="btn btn-light w-100 fw-bold border" onclick="location.reload()">
-                            <i class="bi bi-arrow-clockwise"></i> Làm mới dữ liệu
-                        </button>
-                    }
-                </div>
-            </form>
-        </div>
+            <div class="col-md-4 d-flex align-items-end justify-content-end gap-2">
+                @if (!string.IsNullOrEmpty(ViewBag.SearchName) || selectedDate != DateTime.Today.ToString("yyyy-MM-dd"))
+                {
+                    <a asp-action="TrucBan" class="btn btn-outline-danger fw-bold shadow-sm text-nowrap">
+                        <i class="bi bi-x-circle"></i> Reset
+                    </a>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-light fw-bold border shadow-sm text-nowrap btn-refresh-custom" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Làm mới
+                    </button>
+                }
+
+                <button type="submit" asp-action="ExportTrucBanExcel" formmethod="get" class="btn btn-success fw-bold shadow-sm text-nowrap d-flex align-items-center">
+                    <i class="bi bi-file-earmark-excel-fill me-2"></i> Xuất Excel
+                </button>
+            </div>
+        </form>
 
         <div class="card-body p-0">
             <div class="table-responsive" style="max-height: 650px; overflow-y: auto;">
                 <table class="table table-hover align-middle mb-0 custom-table">
-                    <thead class="table-light text-muted text-uppercase small fw-bold sticky-top">
+                    <thead class="table-light text-muted text-uppercase small fw-bold sticky-top custom-thead">
                         <tr>
                             <th class="ps-4" width="80">STT</th>
                             <th>Thông tin Nhân viên</th>
@@ -67,14 +70,14 @@
                             <th class="text-end pe-4">Trạng Thái</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="text-body">
                         @if (!Model.Any())
                         {
                             <tr>
                                 <td colspan="7" class="text-center py-5 text-muted">
                                     <div class="py-4">
                                         <i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>
-                                        <h5 class="fw-bold">Không tìm thấy bản ghi nào!</h5>
+                                        <h5 class="fw-bold text-body">Không tìm thấy bản ghi nào!</h5>
                                         <p class="small">Dữ liệu trống trong ngày @DateTime.Parse(selectedDate).ToString("dd/MM/yyyy").</p>
                                     </div>
                                 </td>
@@ -90,14 +93,14 @@
                                         <div class="d-flex align-items-center">
                                             <div class="position-relative">
                                                 <img src="@(string.IsNullOrEmpty(item.HinhAnh) ? "/images/no-avatar.png" : item.HinhAnh)"
-                                                     class="rounded border shadow-sm me-3"
+                                                     class="rounded border shadow-sm me-3 img-avatar-custom"
                                                      style="width: 45px; height: 45px; object-fit: cover;"
                                                      onerror="this.src='/images/no-avatar.png'" />
                                             </div>
                                             <div>
-                                                <div class="fw-bold text-dark">@item.HoTen</div>
+                                                <div class="fw-bold text-body">@(string.IsNullOrEmpty(item.HoTen) ? "Khách vãng lai" : item.HoTen)</div>
                                                 <small class="text-primary fw-bold" style="font-size: 0.75rem;">
-                                                    <i class="bi bi-briefcase-fill"></i> NHÂN VIÊN
+                                                    <i class="bi bi-briefcase-fill"></i> @(item.LoaiDoiTuong ?? "NHÂN VIÊN")
                                                 </small>
                                             </div>
                                         </div>
@@ -107,16 +110,20 @@
                                         {
                                             <span class="badge bg-info bg-opacity-10 text-info border border-info px-3 py-1">🛵 XE MÁY</span>
                                         }
-                                        else
+                                        else if (!string.IsNullOrEmpty(item.LoaiXe))
                                         {
                                             <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-1">🚗 Ô TÔ</span>
                                         }
+                                        else
+                                        {
+                                            <span class="text-muted">---</span>
+                                        }
                                     </td>
                                     <td class="font-monospace fw-bold">
-                                        @(item.BienSoXe == "---" ? "N/A" : item.BienSoXe)
+                                        <span class="px-2 py-1 rounded license-plate border">@(item.BienSoXe == "---" || string.IsNullOrEmpty(item.BienSoXe) ? "N/A" : item.BienSoXe)</span>
                                     </td>
                                     <td>
-                                        <div class="fw-bold fs-5 @(item.ThoiGian.Hour >= 8 ? "text-danger" : "text-dark")">
+                                        <div class="fw-bold fs-5 @(item.ThoiGian.Hour >= 8 ? "text-danger" : "text-primary")">
                                             @item.ThoiGian.ToString("HH:mm:ss")
                                         </div>
                                         <div class="text-muted small">@item.ThoiGian.ToString("dd/MM/yyyy")</div>
@@ -136,9 +143,18 @@
                                         }
                                     </td>
                                     <td class="text-end pe-4">
-                                        <span class="text-success fw-bold small">
-                                            <i class="bi bi-shield-check"></i> HỢP LỆ
-                                        </span>
+                                        @if (item.TrangThai == "Thành Công" || item.TrangThai == "Hợp lệ")
+                                        {
+                                            <span class="text-success fw-bold small">
+                                                <i class="bi bi-shield-check"></i> HỢP LỆ
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger fw-bold small">
+                                                <i class="bi bi-x-circle-fill"></i> @item.TrangThai
+                                            </span>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -151,13 +167,41 @@
 </div>
 
 <style>
+    /* CSS CHUNG (Light Mode) */
+    .bg-card-custom {
+        background-color: #ffffff;
+    }
+
+    .bg-light-custom {
+        background-color: #f8f9fa;
+    }
+
+    .input-custom {
+        background-color: #ffffff;
+    }
+
+    .input-custom-group {
+        background-color: #ffffff;
+    }
+
+    .btn-refresh-custom {
+        background-color: #ffffff;
+        color: #212529;
+    }
+
+    .license-plate {
+        background-color: #f8f9fa;
+        color: #212529 !important;
+        border-color: #dee2e6 !important;
+    }
+
     .custom-table tbody tr {
         transition: all 0.2s ease;
         border-left: 4px solid transparent;
     }
 
         .custom-table tbody tr:hover {
-            background-color: #f8f9fa;
+            background-color: rgba(13, 110, 253, 0.03);
             border-left-color: #0d6efd;
         }
 
@@ -172,5 +216,75 @@
 
     .font-monospace {
         letter-spacing: 1px;
+    }
+
+    /* =========================================
+           CSS TƯƠNG THÍCH DARK MODE
+        ========================================= */
+    [data-bs-theme="dark"] .bg-card-custom {
+        background-color: #1e1e1e !important;
+        border-color: #333 !important;
+    }
+
+    [data-bs-theme="dark"] .bg-light-custom {
+        background-color: #1a1a1a !important;
+        border-color: #333 !important;
+    }
+
+    [data-bs-theme="dark"] .text-body {
+        color: #e0e0e0 !important;
+    }
+
+    [data-bs-theme="dark"] .input-custom,
+    [data-bs-theme="dark"] .input-custom-group {
+        background-color: #2c2c2c !important;
+        color: #e0e0e0 !important;
+        border-color: #444 !important;
+    }
+
+    [data-bs-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+    }
+
+    [data-bs-theme="dark"] .form-control::placeholder {
+        color: #888 !important;
+    }
+
+    [data-bs-theme="dark"] .btn-refresh-custom {
+        background-color: transparent !important;
+        color: #e0e0e0 !important;
+        border-color: #444 !important;
+    }
+
+        [data-bs-theme="dark"] .btn-refresh-custom:hover {
+            background-color: #2c2c2c !important;
+        }
+
+    [data-bs-theme="dark"] .custom-table {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .custom-thead th {
+        background-color: #2c2c2c !important;
+        color: #ccc !important;
+        border-bottom: 2px solid #444 !important;
+    }
+
+    [data-bs-theme="dark"] .custom-table td {
+        border-bottom: 1px solid #333 !important;
+    }
+
+    [data-bs-theme="dark"] .custom-table tbody tr:hover {
+        background-color: rgba(255,255,255,0.05);
+    }
+
+    [data-bs-theme="dark"] .license-plate {
+        background-color: #2c2c2c !important;
+        color: #e0e0e0 !important;
+        border-color: #555 !important;
+    }
+
+    [data-bs-theme="dark"] .img-avatar-custom {
+        border-color: #444 !important;
     }
 </style>

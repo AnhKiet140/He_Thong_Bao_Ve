@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Net107\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj": {}
+    "D:\\Mon Chuyen Nganh\\Aligien\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj": {}
   },
   "projects": {
-    "D:\\Net107\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj": {
+    "D:\\Mon Chuyen Nganh\\Aligien\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Net107\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj",
+        "projectUniqueName": "D:\\Mon Chuyen Nganh\\Aligien\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj",
         "projectName": "Quan_Ly_xe_Ra_Vao",
-        "projectPath": "D:\\Net107\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj",
-        "packagesPath": "C:\\Users\\PC\\.nuget\\packages\\",
-        "outputPath": "D:\\Net107\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\obj\\",
+        "projectPath": "D:\\Mon Chuyen Nganh\\Aligien\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj",
+        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
+        "outputPath": "D:\\Mon Chuyen Nganh\\Aligien\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\PC\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -50,6 +50,10 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "ClosedXML": {
+              "target": "Package",
+              "version": "[0.105.0, )"
+            },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
               "version": "[8.0.0, )"
@@ -80,7 +84,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

@@ -72,11 +72,10 @@
         }
     }
 
-    // 4. KÍCH HOẠT LOGIC LỌC BẢNG (FIX LỖI HIỂN THỊ ĐANG ĐẬU MÀ KHÔNG CÓ CHỖ)
+    // 4. KÍCH HOẠT LOGIC LỌC BẢNG
     var tableData = cleanModel.OrderByDescending(x => x.ThoiGian).ToList();
     if (filterStatus == "Đang đậu")
     {
-        // Bắt buộc chỉ lấy xe có Vị Trí thật sự (Đang hiện hữu trong bãi)
         tableData = xeDangTrongBai.OrderByDescending(x => x.ThoiGian).ToList();
     }
     else if (filterStatus == "Đã ra")
@@ -85,203 +84,274 @@
     }
 }
 
-<div class="container-fluid mt-3">
-    <div class="row g-3">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm p-4 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold text-primary mb-0">
-                        <i class="bi bi-grid-3x3-gap"></i> SƠ ĐỒ VỊ TRÍ - TẦNG @currentTang (TRANG @currentPage)
-                    </h5>
-                    <div class="btn-group shadow-sm">
-                        <a href="@Url.Action("Index", new { tang = "B1", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
-                           class="btn btn-sm @(currentTang == "B1" ? "btn-dark" : "btn-outline-secondary")">Tầng B1</a>
-                        <a href="@Url.Action("Index", new { tang = "B2", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
-                           class="btn btn-sm @(currentTang == "B2" ? "btn-dark" : "btn-outline-secondary")">Tầng B2</a>
-                    </div>
-                </div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
-                <div class="parking-grid">
-                    @for (int i = 1; i <= 40; i++)
-                    {
-                        int slotNumber = ((currentPage - 1) * 40) + i;
-                        var slotId = prefix + "-" + slotNumber.ToString("D2");
-                        var userInSlot = xeTangNay.FirstOrDefault(x => x.ViTriDo == slotId);
+<div class="container-fluid mt-2 animate__animated animate__fadeIn">
 
-                        <div class="slot @(userInSlot != null ? "occupied" : "available")"
-                             onclick="showSlotInfo('@slotId', '@(userInSlot?.HoTen)', '@(userInSlot?.BienSoXe)', '@(userInSlot?.HinhAnh)')">
-                            <i class="bi @(userInSlot != null ? "bi-car-front-fill" : "bi-plus-circle")"></i>
-                            <span>@slotId</span>
-                        </div>
-                    }
-                </div>
-
-                <div class="d-flex justify-content-center mt-4">
-                    <nav>
-                        <ul class="pagination pagination-sm mb-0 shadow-sm">
-                            @for (int p = 1; p <= 3; p++)
-                            {
-                                <li class="page-item @(currentPage == p ? "active" : "")">
-                                    <a class="page-link" href="@Url.Action("Index", new { page = p, tang = currentTang, selectedDate = selectedDate, searchName = ViewBag.SearchName, filterStatus = ViewBag.FilterStatus })">@p</a>
-                                </li>
-                            }
-                        </ul>
-                    </nav>
-                </div>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-primary">
+        <div>
+            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-p-circle-fill text-primary"></i> QUẢN LÝ BÃI XE THÔNG MINH</h4>
+            <small class="text-muted fw-bold">ĐIỀU HÀNH BÃI ĐỖ VÀ GIÁM SÁT AN NINH TOÀN DIỆN</small>
         </div>
 
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm bg-dark text-white mb-3 overflow-hidden">
-                <div class="card-header bg-black d-flex justify-content-between align-items-center py-2">
-                    <span class="small fw-bold text-info"><i class="bi bi-record-circle text-danger pulse-red"></i> LIVE CAMERA</span>
-                    <select id="camSelect" class="form-select form-select-sm w-auto bg-dark text-white border-secondary shadow-none" style="font-size: 0.75rem;" onchange="switchCamera()">
-                        <option value="1">Cam 1: Cổng Vào @currentTang</option>
-                        <option value="2">Cam 2: Cổng Ra @currentTang</option>
-                        <option value="3">Cam 3: Khu vực Sảnh chính</option>
-                        <option value="4">Cam 4: Hàng lang góc trái</option>
-                        <option value="5">Cam 5: Toàn cảnh bãi đỗ</option>
-                    </select>
-                </div>
-
-                <div id="cameraPlaceholder" class="position-relative d-flex align-items-center justify-content-center" style="height: 220px; background: #000; transition: opacity 0.3s;">
-                    <div id="normalCamView" class="text-center text-muted">
-                        <i class="bi bi-camera-video fs-1 d-block mb-2"></i>
-                        <span id="camNameDisplay" class="fw-bold text-uppercase">Giám sát Cổng Vào @currentTang</span>
-                    </div>
-
-                    <div id="slotCamOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center d-none" style="background: rgba(0, 50, 0, 0.15); border: 2px solid #198754;">
-                        <div class="position-absolute top-0 start-0 p-2">
-                            <span class="badge bg-danger animate__animated animate__flash animate__infinite">REC</span>
-                        </div>
-                        <i id="slotCamIcon" class="bi bi-car-front-fill text-success opacity-75 mb-2" style="font-size: 3rem;"></i>
-                        <h5 id="slotCamText" class="text-success fw-bold text-uppercase mb-0">VỊ TRÍ A-01</h5>
-                        <small id="slotCamStatus" class="text-white mt-1 fw-bold">Trạng thái: ---</small>
-                    </div>
-                </div>
-            </div>
-
-            <div id="slotDetailCard" class="card border-0 shadow-lg p-4 bg-white text-center mb-3 d-none animate__animated animate__fadeInRight" style="border-radius: 15px;">
-                <h6 class="fw-bold text-muted border-bottom pb-2 mb-3 text-uppercase">Vị trí <span id="lblSlotId" class="text-primary"></span></h6>
-                <div class="position-relative d-inline-block mb-3">
-                    <img id="slotImg" src="/images/no-avatar.png" class="rounded-circle shadow border border-3 border-primary" style="width: 120px; height: 120px; object-fit: cover;" onerror="this.src='/images/no-avatar.png'">
-                </div>
-                <h4 id="slotUser" class="fw-bold text-dark mb-1 text-capitalize"></h4>
-                <div id="slotPlate" class="badge bg-primary fs-5 mb-3 px-3 py-2 shadow-sm font-monospace"></div>
-                <button class="btn btn-sm btn-outline-secondary w-100 rounded-pill mt-2" onclick="resetSlot()">Đóng xem nhanh</button>
-            </div>
-
-            <div id="emptySlotNotify" class="p-4 bg-light text-center mb-3 rounded-4 border border-2 border-primary border-opacity-10 shadow-sm d-flex flex-column justify-content-center">
-                <h6 class="fw-bold text-muted text-uppercase mb-3">BÃI ĐỖ XE TỔNG HỢP</h6>
-                <h1 class="display-1 fw-bold @(availableSlots < 20 ? "text-danger" : "text-success") mb-0">@availableSlots</h1>
-                <p class="text-muted small fw-bold">CHỖ TRỐNG TRÊN TOÀN HỆ THỐNG</p>
-
-                <div class="progress mb-2" style="height: 12px; border-radius: 10px;">
-                    <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: @((availableSlots / 240.0) * 100)%"></div>
-                </div>
-
-                <small class="text-success fw-bold">TRẠNG THÁI: ĐÃ ĐỒNG BỘ</small>
-            </div>
-        </div>
+        <ul class="nav nav-pills custom-pills" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold px-4 rounded-pill shadow-sm" id="tab-sodo" data-bs-toggle="pill" data-bs-target="#content-sodo" type="button" role="tab">
+                    <i class="bi bi-grid-3x3-gap-fill"></i> SƠ ĐỒ VỊ TRÍ & LỊCH SỬ
+                </button>
+            </li>
+            <li class="nav-item ms-2" role="presentation">
+                <button class="nav-link fw-bold px-4 rounded-pill shadow-sm" id="tab-cctv" data-bs-toggle="pill" data-bs-target="#content-cctv" type="button" role="tab">
+                    <i class="bi bi-camera-video-fill"></i> GIÁM SÁT CHI TIẾT
+                </button>
+            </li>
+        </ul>
     </div>
 
-    <div class="card border-0 shadow-sm mt-4">
-        <div class="card-header bg-white p-3 border-bottom">
-            <form method="get" class="row g-2 align-items-end">
-                <div class="col-md-2">
-                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-calendar-date"></i> Ngày xem</label>
-                    <input type="date" name="selectedDate" value="@selectedDate" class="form-control form-control-sm shadow-none" onchange="this.form.submit()">
-                </div>
-                <div class="col-md-4">
-                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-search"></i> Tìm kiếm</label>
-                    <input type="text" name="searchName" value="@ViewBag.SearchName" class="form-control form-control-sm shadow-none" placeholder="Tên hoặc biển số...">
-                </div>
-                <div class="col-md-2">
-                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-filter"></i> Trạng thái</label>
-                    <select name="filterStatus" class="form-select form-select-sm shadow-none" onchange="this.form.submit()">
-                        <option value="Tất cả" selected="@(ViewBag.FilterStatus == "Tất cả")">Tất cả xe</option>
-                        <option value="Đang đậu" selected="@(ViewBag.FilterStatus == "Đang đậu")">Đang đậu</option>
-                        <option value="Đã ra" selected="@(ViewBag.FilterStatus == "Đã ra")">Đã ra</option>
-                    </select>
-                </div>
-                <input type="hidden" name="tang" value="@currentTang" />
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">Lọc dữ liệu</button>
-                </div>
-                <div class="col-md-2 text-end">
-                    <h5 class="fw-bold mb-0 text-primary">NHẬT KÝ BÃI XE</h5>
-                </div>
-            </form>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                <table class="table table-hover align-middle mb-0 text-center custom-table">
-                    <thead class="table-light small fw-bold text-uppercase sticky-top">
-                        <tr>
-                            <th class="ps-4 text-start">Thời gian</th>
-                            <th class="text-start">Nhân viên</th>
-                            <th>Loại Xe</th>
-                            <th>Biển số</th>
-                            <th>Vị trí</th>
-                            <th class="pe-4 text-end">Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (!tableData.Any())
-                        {
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy dữ liệu phù hợp với bộ lọc.</td>
-                            </tr>
-                        }
-                        else
-                        {
-                            @foreach (var item in tableData)
+    <div class="tab-content" id="pills-tabContent">
+
+        <div class="tab-pane fade show active" id="content-sodo" role="tabpanel">
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold text-primary mb-0">
+                                <i class="bi bi-grid-3x3-gap"></i> SƠ ĐỒ VỊ TRÍ - TẦNG @currentTang (TRANG @currentPage)
+                            </h5>
+                            <div class="btn-group shadow-sm">
+                                <a href="@Url.Action("Index", new { tang = "B1", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
+                                   class="btn btn-sm @(currentTang == "B1" ? "btn-dark" : "btn-outline-secondary")">Tầng B1</a>
+                                <a href="@Url.Action("Index", new { tang = "B2", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
+                                   class="btn btn-sm @(currentTang == "B2" ? "btn-dark" : "btn-outline-secondary")">Tầng B2</a>
+                            </div>
+                        </div>
+
+                        <div class="parking-grid">
+                            @for (int i = 1; i <= 40; i++)
                             {
-                                <tr>
-                                    <td class="ps-4 text-start">
-                                        <div class="fw-bold">@item.ThoiGian.ToString("HH:mm:ss")</div>
-                                        <small class="text-muted">@item.ThoiGian.ToString("dd/MM")</small>
-                                    </td>
-                                    <td class="text-start">
-                                        <div class="d-flex align-items-center">
-                                            <img src="@(string.IsNullOrEmpty(item.HinhAnh) ? "/images/no-avatar.png" : item.HinhAnh)"
-                                                 class="rounded-circle border shadow-sm me-3"
-                                                 style="width: 40px; height: 40px; object-fit: cover;"
-                                                 onerror="this.src='/images/no-avatar.png'">
-                                            <div>
-                                                <div class="fw-bold text-dark text-capitalize">@item.HoTen</div>
-                                                <small class="text-primary fw-bold" style="font-size: 0.7rem;">CHỦ XE</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">🚗 Ô TÔ</span>
-                                    </td>
-                                    <td class="font-monospace fw-bold">@item.BienSoXe</td>
+                                int slotNumber = ((currentPage - 1) * 40) + i;
+                                var slotId = prefix + "-" + slotNumber.ToString("D2");
+                                var userInSlot = xeTangNay.FirstOrDefault(x => x.ViTriDo == slotId);
 
-                                    <td class="text-danger fw-bold">@(item.Huong == "Đi Ra" ? "---" : (item.ViTriDo ?? "---"))</td>
+                                <div class="slot @(userInSlot != null ? "occupied" : "available")"
+                                     onclick="showSlotInfo('@slotId', '@(userInSlot?.HoTen)', '@(userInSlot?.BienSoXe)', '@(userInSlot?.HinhAnh)')">
+                                    <i class="bi @(userInSlot != null ? "bi-car-front-fill" : "bi-plus-circle")"></i>
+                                    <span>@slotId</span>
+                                </div>
+                            }
+                        </div>
 
-                                    <td class="pe-4 text-end">
-                                        @if (item.Huong == "Đi Vào")
+                        <div class="d-flex justify-content-center mt-4">
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0 shadow-sm">
+                                    @for (int p = 1; p <= 3; p++)
+                                    {
+                                        <li class="page-item @(currentPage == p ? "active" : "")">
+                                            <a class="page-link" href="@Url.Action("Index", new { page = p, tang = currentTang, selectedDate = selectedDate, searchName = ViewBag.SearchName, filterStatus = ViewBag.FilterStatus })">@p</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div id="slotDetailCard" class="card border-0 shadow-lg p-4 bg-white text-center mb-3 d-none animate__animated animate__fadeInRight" style="border-radius: 15px;">
+                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-3 text-uppercase">Vị trí <span id="lblSlotId" class="text-primary"></span></h6>
+                        <div class="position-relative d-inline-block mb-3">
+                            <img id="slotImg" src="/images/no-avatar.png" class="rounded-circle shadow border border-3 border-primary" style="width: 120px; height: 120px; object-fit: cover;" onerror="this.src='/images/no-avatar.png'">
+                        </div>
+                        <h4 id="slotUser" class="fw-bold text-dark mb-1 text-capitalize"></h4>
+                        <div id="slotPlate" class="badge bg-primary fs-5 mb-3 px-3 py-2 shadow-sm font-monospace"></div>
+                        <button class="btn btn-sm btn-outline-secondary w-100 rounded-pill mt-2" onclick="resetSlot()">Đóng xem nhanh</button>
+                    </div>
+
+                    <div id="emptySlotNotify" class="p-4 bg-light text-center rounded-4 border border-2 border-primary border-opacity-10 shadow-sm d-flex flex-column justify-content-center h-100">
+                        <h6 class="fw-bold text-muted text-uppercase mb-3">BÃI ĐỖ XE TỔNG HỢP</h6>
+                        <h1 class="display-1 fw-bold @(availableSlots < 20 ? "text-danger" : "text-success") mb-0">@availableSlots</h1>
+                        <p class="text-muted small fw-bold">CHỖ TRỐNG TRÊN TOÀN HỆ THỐNG</p>
+
+                        <div class="progress mb-2 mx-auto w-75" style="height: 12px; border-radius: 10px;">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: @((availableSlots / 240.0) * 100)%"></div>
+                        </div>
+
+                        <small class="text-success fw-bold">TRẠNG THÁI: ĐÃ ĐỒNG BỘ</small>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <div class="card border-0 shadow-sm mt-2">
+                        <div class="card-header bg-white p-3 border-bottom">
+                            <form method="get" class="row g-2 align-items-end">
+                                <div class="col-md-2">
+                                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-calendar-date"></i> Ngày xem</label>
+                                    <input type="date" name="selectedDate" value="@selectedDate" class="form-control form-control-sm shadow-none" onchange="this.form.submit()">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-search"></i> Tìm kiếm</label>
+                                    <input type="text" name="searchName" value="@ViewBag.SearchName" class="form-control form-control-sm shadow-none" placeholder="Tên hoặc biển số...">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-filter"></i> Trạng thái</label>
+                                    <select name="filterStatus" class="form-select form-select-sm shadow-none" onchange="this.form.submit()">
+                                        <option value="Tất cả" selected="@(ViewBag.FilterStatus == "Tất cả")">Tất cả xe</option>
+                                        <option value="Đang đậu" selected="@(ViewBag.FilterStatus == "Đang đậu")">Đang đậu</option>
+                                        <option value="Đã ra" selected="@(ViewBag.FilterStatus == "Đã ra")">Đã ra</option>
+                                    </select>
+                                </div>
+                                <input type="hidden" name="tang" value="@currentTang" />
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">Lọc dữ liệu</button>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <h5 class="fw-bold mb-0 text-primary">LỊCH SỬ</h5>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0 text-center custom-table">
+                                    <thead class="table-light small fw-bold text-uppercase sticky-top">
+                                        <tr>
+                                            <th class="ps-4 text-start">Thời gian</th>
+                                            <th class="text-start">Nhân viên</th>
+                                            <th>Loại Xe</th>
+                                            <th>Biển số</th>
+                                            <th>Vị trí</th>
+                                            <th class="pe-4 text-end">Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (!tableData.Any())
                                         {
-                                            <span class="badge bg-success rounded-pill px-3 shadow-sm">Đang đậu</span>
+                                            <tr>
+                                                <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy dữ liệu phù hợp với bộ lọc.</td>
+                                            </tr>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-warning text-dark rounded-pill px-3 shadow-sm">Đã ra</span>
+                                            @foreach (var item in tableData)
+                                            {
+                                                <tr>
+                                                    <td class="ps-4 text-start">
+                                                        <div class="fw-bold">@item.ThoiGian.ToString("HH:mm:ss")</div>
+                                                        <small class="text-muted">@item.ThoiGian.ToString("dd/MM")</small>
+                                                    </td>
+                                                    <td class="text-start">
+                                                        <div class="d-flex align-items-center">
+                                                            <img src="@(string.IsNullOrEmpty(item.HinhAnh) ? "/images/no-avatar.png" : item.HinhAnh)"
+                                                                 class="rounded-circle border shadow-sm me-3"
+                                                                 style="width: 40px; height: 40px; object-fit: cover;"
+                                                                 onerror="this.src='/images/no-avatar.png'">
+                                                            <div>
+                                                                <div class="fw-bold text-dark text-capitalize">@item.HoTen</div>
+                                                                <small class="text-primary fw-bold" style="font-size: 0.7rem;">CHỦ XE</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">🚗 Ô TÔ</span>
+                                                    </td>
+                                                    <td class="font-monospace fw-bold">@item.BienSoXe</td>
+                                                    <td class="text-danger fw-bold">@(item.Huong == "Đi Ra" ? "---" : (item.ViTriDo ?? "---"))</td>
+                                                    <td class="pe-4 text-end">
+                                                        @if (item.Huong == "Đi Vào")
+                                                        {
+                                                            <span class="badge bg-success rounded-pill px-3 shadow-sm">Đang đậu</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-warning text-dark rounded-pill px-3 shadow-sm">Đã ra</span>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
                                         }
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <div class="tab-pane fade" id="content-cctv" role="tabpanel">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-dark">
+
+                <div class="card-header bg-black text-white d-flex justify-content-between align-items-center py-3 border-0">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fw-bold text-danger animate__animated animate__pulse animate__infinite">
+                            <i class="bi bi-record-circle-fill"></i> LIVE MONITORING
+                        </span>
+                        <span id="cctv-mode-title" class="text-white-50 small fw-bold">| TỔNG QUAN (TẤT CẢ CAMERA)</span>
+                    </div>
+
+                    <button id="btn-back-grid" class="btn btn-outline-light btn-sm fw-bold d-none" onclick="backToGridView()">
+                        <i class="bi bi-grid-3x3-gap"></i> QUAY LẠI CAM CHÍNH
+                    </button>
+                </div>
+
+                <div class="card-body p-4" style="background-color: #0b1121;">
+                    <div id="cctv-grid-view" class="row g-4 custom-scrollbar" style="max-height: 700px; overflow-y: auto; overflow-x: hidden;">
+                    </div>
+
+                    <div id="cctv-focus-view" class="d-none focus-layout">
+                        <div class="focus-main-cam position-relative rounded-3 overflow-hidden border border-secondary">
+                            <div class="cam-frame-indicator corner-tl"></div>
+                            <div class="cam-frame-indicator corner-tr"></div>
+                            <div class="cam-frame-indicator corner-bl"></div>
+                            <div class="cam-frame-indicator corner-br"></div>
+                            <div class="cam-feed-loading d-flex flex-column justify-content-center align-items-center h-100 text-success font-monospace">
+                                <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+                                CONNECTING SECURE FEED...
+                            </div>
+                            <div class="cam-overlay">
+                                <span class="badge bg-danger animate__animated animate__pulse animate__infinite">REC</span>
+                                <span id="focus-cam-title" class="cam-title fs-5">Tên Camera</span>
+                            </div>
+                            <div class="cam-watermark">CHK-IN PRO // <span class="live-clock"></span></div>
+                        </div>
+
+                        <div class="cctv-side-list-wrapper bg-black rounded-3 p-3 border border-secondary d-flex flex-column h-100">
+                            <div class="text-white-50 small fw-bold mb-3 pb-2 border-bottom border-secondary" style="flex-shrink: 0;">
+                                <i class="bi bi-collection-play"></i> CHỌN CAMERA
+                            </div>
+                            <div id="cctv-side-list" class="d-flex flex-column gap-3 custom-scrollbar" style="flex: 1 1 auto; height: 0; overflow-y: auto; padding-right: 5px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
 <style>
+    /* GENERAL TABS STYLE */
+    .custom-pills .nav-link {
+        color: #495057;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        transition: 0.2s;
+    }
+
+        .custom-pills .nav-link:hover {
+            color: #fff;
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .custom-pills .nav-link.active {
+            color: #fff;
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+    /* CSS CHO TAB 1: SƠ ĐỒ VỊ TRÍ & LỊCH SỬ */
     .parking-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
@@ -338,114 +408,301 @@
         z-index: 10;
     }
 
-    .pulse-red {
-        animation: pulseRed 1.5s infinite;
+    /* CSS CHO TAB 2: CHẾ ĐỘ GIÁM SÁT CAMERA (CCTV) */
+    .cam-box {
+        background-color: #12121a;
+        aspect-ratio: 16 / 9;
+        border: 2px solid #2b2b36;
+        border-radius: 8px;
+        position: relative;
+        cursor: pointer;
+        overflow: hidden;
+        transition: all 0.2s ease;
     }
 
-    @@keyframes pulseRed {
-        0% {
-            opacity: 1;
+        .cam-box:hover {
+            border-color: #0dcaf0;
+            box-shadow: 0 0 15px rgba(13, 202, 240, 0.4);
+            transform: scale(1.02);
+            z-index: 10;
         }
 
-        50% {   
-            opacity: 0.4;
-        }
-
-        100% {
-            opacity: 1;
-        }
+    .cam-overlay {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        pointer-events: none;
     }
+
+    .cam-title {
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        border: 1px solid #444;
+    }
+
+    .cam-watermark {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        color: rgba(255,255,255,0.4);
+        font-family: monospace;
+        font-size: 0.7rem;
+        pointer-events: none;
+    }
+
+    /* Layout Focus 1+N */
+    .focus-layout {
+        display: grid;
+        grid-template-columns: 3fr 1fr;
+        gap: 15px;
+        height: 650px;
+    }
+
+    .focus-main-cam {
+        background-color: #050505;
+        cursor: default;
+    }
+
+    /* Side Cam Rows */
+    .side-cam-row {
+        background-color: #1a1a24;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: 0.2s;
+    }
+
+        .side-cam-row:hover {
+            border-color: #0dcaf0;
+            box-shadow: 0 0 10px rgba(13, 202, 240, 0.4);
+            transform: translateX(3px);
+        }
+
+        .side-cam-row.active {
+            border-color: #0dcaf0;
+            background: rgba(13, 202, 240, 0.1);
+            pointer-events: none;
+        }
+
+            .side-cam-row.active .side-cam-title {
+                color: #0dcaf0;
+                font-weight: bold;
+            }
+
+    .side-cam-indicator {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+    }
+
+    .indicator-online {
+        background: #198754;
+        box-shadow: 0 0 5px #198754;
+    }
+
+    .indicator-viewing {
+        background: #dc3545;
+        box-shadow: 0 0 5px #dc3545;
+    }
+
+    .side-cam-title {
+        color: white;
+        font-size: 0.8rem;
+        margin-bottom: 2px;
+    }
+
+    .side-cam-location {
+        color: rgba(255,255,255,0.5);
+        font-size: 0.7rem;
+    }
+
+    /* Corner indicators for Focus Cam */
+    .cam-frame-indicator {
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        border-color: rgba(255,255,255,0.3);
+        border-style: solid;
+    }
+
+    .corner-tl {
+        top: 0;
+        left: 0;
+        border-width: 3px 0 0 3px;
+    }
+
+    .corner-tr {
+        top: 0;
+        right: 0;
+        border-width: 3px 3px 0 0;
+    }
+
+    .corner-bl {
+        bottom: 0;
+        left: 0;
+        border-width: 0 0 3px 3px;
+    }
+
+    .corner-br {
+        bottom: 0;
+        right: 0;
+        border-width: 0 3px 3px 0;
+    }
+
+    /* Custom Scrollbar Hacker style */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #111;
+        border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 4px;
+    }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #0dcaf0;
+        }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // XỬ LÝ SỰ KIỆN KHI CLICK VÀO Ô ĐỖ XE
+    // =======================================================
+    // JAVASCRIPT CHO TAB 1
+    // =======================================================
     function showSlotInfo(id, name, plate, img) {
+        document.getElementById('slotDetailCard').classList.remove('d-none');
+        document.getElementById('emptySlotNotify').classList.add('d-none');
 
-        // --- 1. ĐỒNG BỘ CAMERA VỚI Ô ĐỖ ---
-        const camSelect = document.getElementById('camSelect');
-        let dynamicOpt = document.getElementById('optDynamicSlot');
+        document.getElementById('lblSlotId').innerText = id;
 
-        if (!dynamicOpt) {
-            dynamicOpt = document.createElement('option');
-            dynamicOpt.id = 'optDynamicSlot';
-            camSelect.appendChild(dynamicOpt);
-        }
-
-        // Thêm option Camera chiếu vào Vị trí đó và chọn ngay lập tức
-        dynamicOpt.value = "slot-" + id;
-        dynamicOpt.text = "🔴 Cam Giám Sát: Vị trí " + id;
-        camSelect.value = dynamicOpt.value;
-
-        // Bật màn hình mô phỏng Camera Ô đỗ
-        document.getElementById('normalCamView').classList.add('d-none');
-        const slotCamOverlay = document.getElementById('slotCamOverlay');
-        slotCamOverlay.classList.remove('d-none');
-        document.getElementById('slotCamText').innerText = "VỊ TRÍ " + id;
-
-        // --- 2. CẬP NHẬT THÔNG TIN UI VÀ HIỆN CẢNH BÁO ---
         if (name && name !== 'null' && name !== '') {
-            // NẾU CÓ XE
-            document.getElementById('slotDetailCard').classList.remove('d-none');
-            document.getElementById('emptySlotNotify').classList.add('d-none');
-            document.getElementById('lblSlotId').innerText = id;
             document.getElementById('slotUser').innerText = name;
             document.getElementById('slotPlate').innerText = plate;
             document.getElementById('slotImg').src = img || '/images/no-avatar.png';
-
-            // Đổi UI Camera sang màu xanh dương (Đang có xe)
-            document.getElementById('slotCamStatus').innerText = "Có xe đỗ - Biển số: " + plate;
-            slotCamOverlay.style.border = "2px solid #0d6efd";
-            slotCamOverlay.style.background = "rgba(13, 110, 253, 0.15)";
-            document.getElementById('slotCamIcon').className = "bi bi-car-front-fill text-primary opacity-75 mb-2";
-            document.getElementById('slotCamText').className = "text-primary fw-bold text-uppercase mb-0";
-
         } else {
-            // NẾU CHỖ TRỐNG
             resetSlot();
             Swal.fire({ title: 'Vị trí ' + id, text: 'Vị trí này hiện đang trống.', icon: 'info', timer: 1500, showConfirmButton: false });
-
-            // Đổi UI Camera sang màu xanh lá (Đang trống)
-            document.getElementById('slotCamStatus').innerText = "Trạng thái: Đang trống";
-            slotCamOverlay.style.border = "2px solid #198754";
-            slotCamOverlay.style.background = "rgba(25, 135, 84, 0.15)";
-            document.getElementById('slotCamIcon').className = "bi bi-p-square text-success opacity-75 mb-2";
-            document.getElementById('slotCamText').className = "text-success fw-bold text-uppercase mb-0";
         }
     }
 
-    // ĐÓNG XEM NHANH THÔNG TIN (Không làm ảnh hưởng Camera)
     function resetSlot() {
         document.getElementById('slotDetailCard').classList.add('d-none');
         document.getElementById('emptySlotNotify').classList.remove('d-none');
     }
 
-    // XỬ LÝ KHI NGƯỜI DÙNG CHỌN COMBOBOX CAMERA BẰNG TAY
-    function switchCamera() {
-        let camSelect = document.getElementById('camSelect');
-        let selectedValue = camSelect.value;
-        let camName = camSelect.options[camSelect.selectedIndex].text;
-        let camBox = document.getElementById('cameraPlaceholder');
+    // =======================================================
+    // JAVASCRIPT CHO TAB 2: CHẾ ĐỘ GIÁM SÁT CAMERA
+    // =======================================================
+    const cameraList = [
+        { id: 'cam1', name: 'FaceID Cổng Chính B1', location: 'Tầng Trệt' },
+        { id: 'cam2', name: 'FaceID Cổng Chính B2', location: 'Tầng Trệt' },
+        { id: 'cam3', name: 'Cam Lối Vào Hầm A', location: 'Tầng Hầm B1' },
+        { id: 'cam4', name: 'Cam Lối Ra Hầm A', location: 'Tầng Hầm B1' },
+        { id: 'cam5', name: 'Cam Lối Vào Hầm B', location: 'Tầng Hầm B2' },
+        { id: 'cam6', name: 'Cam Lối Ra Hầm B', location: 'Tầng Hầm B2' },
+        { id: 'cam7', name: 'Cam Bãi Xe Máy', location: 'Tầng Hầm B1' },
+        { id: 'cam8', name: 'Cam Góc Khuất B1-01', location: 'Tầng Hầm B1' },
+        { id: 'cam9', name: 'Cam Thang Máy Hầm A', location: 'Tầng Hầm B1' },
+        { id: 'cam10', name: 'Cam Góc Khuất B2-01', location: 'Tầng Hầm B2' },
+        { id: 'cam11', name: 'Cam Thang Máy Hầm B', location: 'Tầng Hầm B2' },
+        { id: 'cam12', name: 'Cam Hành Lang Thoát Hiểm', location: 'Tầng Trệt' }
+    ];
 
-        // Hiệu ứng mờ nháy khi chuyển Cam
-        camBox.style.opacity = '0.1';
-
-        setTimeout(() => {
-            if (selectedValue.startsWith('slot-')) {
-                // Nếu đang là Cam vị trí -> Chỉ làm mờ rồi sáng lên
-                camBox.style.opacity = '1';
-            } else {
-                // Nếu chọn lại Cam bình thường (1,2,3,4,5) -> Tắt Overlay đi
-                document.getElementById('slotCamOverlay').classList.add('d-none');
-                document.getElementById('normalCamView').classList.remove('d-none');
-
-                // Cắt bỏ chữ "Cam X: " để hiển thị cho đẹp
-                let parts = camName.split(': ');
-                let displayName = parts.length > 1 ? parts[1] : camName;
-
-                document.getElementById('camNameDisplay').innerText = "ĐANG PHÁT: " + displayName.toUpperCase();
-                camBox.style.opacity = '1';
-            }
-        }, 300);
+    function updateClocks() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-US', { hour12: false }) + ':' + now.getMilliseconds().toString().padStart(3, '0').slice(0,2);
+        document.querySelectorAll('.live-clock').forEach(el => el.innerText = timeStr);
+        requestAnimationFrame(updateClocks);
     }
+
+    function renderGridCams() {
+        const grid = document.getElementById('cctv-grid-view');
+        grid.innerHTML = '';
+
+        cameraList.forEach(cam => {
+            const html = `
+                <div class="col-lg-4 col-md-6">
+                    <div class="cam-box shadow-sm" onclick="focusCamera('${cam.id}')" title="Bấm để xem chi tiết">
+                        <div class="cam-feed-loading d-flex justify-content-center align-items-center h-100 text-secondary">
+                            <i class="bi bi-camera-video" style="font-size: 2rem; opacity: 0.3;"></i>
+                        </div>
+                        <div class="cam-overlay">
+                            <span class="badge bg-success animate__animated animate__pulse animate__infinite">● ONLINE</span>
+                            <span class="cam-title">${cam.name}</span>
+                        </div>
+                        <div class="cam-watermark">CHK-IN PRO // <span class="live-clock"></span></div>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML += html;
+        });
+    }
+
+    function focusCamera(camId) {
+        const targetCam = cameraList.find(c => c.id === camId);
+
+        document.getElementById('cctv-grid-view').classList.add('d-none');
+        document.getElementById('cctv-focus-view').classList.remove('d-none');
+        document.getElementById('cctv-focus-view').classList.add('focus-layout');
+        document.getElementById('btn-back-grid').classList.remove('d-none');
+        document.getElementById('cctv-mode-title').innerText = '| CHẾ ĐỘ CHI TIẾT';
+
+        document.getElementById('focus-cam-title').innerText = targetCam.name;
+
+        renderSideCams(camId);
+    }
+
+    function renderSideCams(activeCamId) {
+        const sideList = document.getElementById('cctv-side-list');
+        sideList.innerHTML = '';
+
+        cameraList.forEach(cam => {
+            const isActive = cam.id === activeCamId;
+            const activeClass = isActive ? 'active' : '';
+            const indicatorClass = isActive ? 'indicator-viewing' : 'indicator-online';
+
+            const html = `
+                <div class="side-cam-row shadow-sm ${activeClass}" onclick="focusCamera('${cam.id}')" title="Bấm để xem cam này">
+                    <div class="side-cam-indicator ${indicatorClass}"></div>
+                    <div class="side-cam-info flex-grow-1">
+                        <div class="side-cam-title fw-bold">${cam.name}</div>
+                        <div class="side-cam-location small">${cam.location}</div>
+                    </div>
+                    <div class="side-cam-action text-white-50 small">
+                        ${isActive ? '' : '<i class="bi bi-eye-fill fs-5"></i>'}
+                    </div>
+                </div>
+            `;
+            sideList.innerHTML += html;
+        });
+    }
+
+    function backToGridView() {
+        document.getElementById('cctv-focus-view').classList.add('d-none');
+        document.getElementById('cctv-focus-view').classList.remove('focus-layout');
+        document.getElementById('cctv-grid-view').classList.remove('d-none');
+        document.getElementById('btn-back-grid').classList.add('d-none');
+        document.getElementById('cctv-mode-title').innerText = '| TỔNG QUAN (TẤT CẢ CAMERA)';
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        renderGridCams();
+        updateClocks();
+    });
 </script>

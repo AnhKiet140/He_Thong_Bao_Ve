@@ -5,22 +5,22 @@
 
 <div class="container-fluid mt-2 animate__animated animate__fadeIn">
 
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-primary">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 p-3 rounded-4 shadow-sm border-start border-5 border-primary custom-header-card">
         <div>
             <h4 class="fw-bold text-primary mb-1">
                 @ViewBag.Greeting, Tổ Bảo Vệ!
             </h4>
             <div class="text-muted small fw-bold d-flex align-items-center">
-                <i class="bi bi-clock-history me-1"></i> <span id="liveClock" class="me-2 text-dark">--:--:--</span>
+                <i class="bi bi-clock-history me-1"></i> <span id="liveClock" class="me-2 text-body">--:--:--</span>
                 <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Hệ thống an ninh đang hoạt động ổn định.</span>
             </div>
         </div>
         <div>
             <form id="dateForm" method="get" asp-action="Index">
-                <div class="input-group shadow-sm rounded-pill overflow-hidden border">
-                    <span class="input-group-text bg-white border-0 text-primary"><i class="bi bi-calendar-event-fill"></i></span>
+                <div class="input-group shadow-sm rounded-pill overflow-hidden border date-picker-wrapper">
+                    <span class="input-group-text bg-transparent border-0 text-primary"><i class="bi bi-calendar-event-fill"></i></span>
                     <input type="date" name="selectedDate" value="@ViewBag.SelectedDate"
-                           class="form-control border-0 fw-bold text-dark shadow-none"
+                           class="form-control border-0 fw-bold text-body bg-transparent shadow-none"
                            onchange="document.getElementById('dateForm').submit();" style="cursor: pointer;">
                 </div>
             </form>
@@ -33,42 +33,42 @@
                 <div class="card-body p-4 position-relative overflow-hidden">
                     <div class="z-1 position-relative">
                         <p class="text-uppercase fw-bold mb-1 opacity-75 small">Khách Hôm Nay</p>
-                        <h2 class="display-5 fw-bolder mb-0">@ViewBag.TotalKhachHnay</h2>
+                        <h2 class="display-5 fw-bolder mb-0 text-white">@ViewBag.TotalKhachHnay</h2>
                     </div>
                     <i class="bi bi-people-fill position-absolute stat-bg-icon"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-6 col-xl-3">
-            <div class="card border-0 rounded-4 shadow-sm text-dark stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);">
+            <div class="card border-0 rounded-4 shadow-sm text-white stat-card" style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);">
                 <div class="card-body p-4 position-relative overflow-hidden">
                     <div class="z-1 position-relative">
                         <p class="text-uppercase fw-bold mb-1 opacity-75 small">Chờ Duyệt</p>
-                        <h2 class="display-5 fw-bolder mb-0">@ViewBag.TotalChoDuyet</h2>
+                        <h2 class="display-5 fw-bolder mb-0 text-white">@ViewBag.TotalChoDuyet</h2>
                     </div>
-                    <i class="bi bi-hourglass-split position-absolute stat-bg-icon text-dark opacity-25"></i>
+                    <i class="bi bi-hourglass-split position-absolute stat-bg-icon opacity-25"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-6 col-xl-3">
-            <div class="card border-0 rounded-4 shadow-sm text-white stat-card" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
+            <div class="card border-0 rounded-4 shadow-sm text-white stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
                 <div class="card-body p-4 position-relative overflow-hidden">
                     <div class="z-1 position-relative">
                         <p class="text-uppercase fw-bold mb-1 opacity-75 small">Lượt Vào Ra (NV)</p>
-                        <h2 class="display-5 fw-bolder mb-0">@ViewBag.TotalNhanVienVao</h2>
+                        <h2 class="display-5 fw-bolder mb-0 text-white">@ViewBag.TotalNhanVienVao</h2>
                     </div>
                     <i class="bi bi-shield-check position-absolute stat-bg-icon"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-6 col-xl-3">
-            <div class="card border-0 rounded-4 shadow-sm text-white stat-card" style="background: linear-gradient(135deg, #212529 0%, #121416 100%);">
+            <div class="card border-0 rounded-4 shadow-sm text-white stat-card" style="background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%);">
                 <div class="card-body p-4 position-relative overflow-hidden">
                     <div class="z-1 position-relative">
-                        <p class="text-uppercase fw-bold mb-1 opacity-75 small text-success">Trạng Thái Server</p>
-                        <h2 class="display-5 fw-bolder mb-0 text-success">ONLINE</h2>
+                        <p class="text-uppercase fw-bold mb-1 opacity-75 small text-info">Trạng Thái Server</p>
+                        <h2 class="display-5 fw-bolder mb-0 text-info">ONLINE</h2>
                     </div>
-                    <i class="bi bi-wifi position-absolute stat-bg-icon text-success opacity-50"></i>
+                    <i class="bi bi-wifi position-absolute stat-bg-icon text-info opacity-50"></i>
                 </div>
             </div>
         </div>
@@ -80,8 +80,8 @@
             <div class="row g-3">
                 <div class="col-md-4">
                     <a href="/Home/Monitoring" class="text-decoration-none">
-                        <div class="card border-0 rounded-4 shadow-sm action-card h-100 p-3">
-                            <div class="d-flex align-items-center text-dark">
+                        <div class="card border-0 rounded-4 shadow-sm action-card h-100 p-3 bg-card-custom">
+                            <div class="d-flex align-items-center text-body">
                                 <div class="icon-shape bg-primary bg-opacity-10 text-primary rounded-3 me-3">
                                     <i class="bi bi-eye-fill fs-3"></i>
                                 </div>
@@ -95,8 +95,8 @@
                 </div>
                 <div class="col-md-4">
                     <a href="/LichSuCheckIn/TrucBan" class="text-decoration-none">
-                        <div class="card border-0 rounded-4 shadow-sm action-card h-100 p-3">
-                            <div class="d-flex align-items-center text-dark">
+                        <div class="card border-0 rounded-4 shadow-sm action-card h-100 p-3 bg-card-custom">
+                            <div class="d-flex align-items-center text-body">
                                 <div class="icon-shape bg-success bg-opacity-10 text-success rounded-3 me-3">
                                     <i class="bi bi-clipboard-check fs-3"></i>
                                 </div>
@@ -110,13 +110,13 @@
                 </div>
                 <div class="col-md-4">
                     <a href="/DangKyKhach/Index" class="text-decoration-none">
-                        <div class="card border-0 rounded-4 shadow-sm action-card h-100 p-3">
-                            <div class="d-flex align-items-center text-dark">
+                        <div class="card border-0 rounded-4 shadow-sm action-card h-100 p-3 bg-card-custom">
+                            <div class="d-flex align-items-center text-body">
                                 <div class="icon-shape bg-info bg-opacity-10 text-info rounded-3 me-3">
                                     <i class="bi bi-person-lines-fill fs-3"></i>
                                 </div>
                                 <div>
-                                    <h6 class="fw-bold mb-1">Danh Bạ Khách Hàng</h6>
+                                    <h6 class="fw-bold mb-1">Danh Bạ Khách</h6>
                                     <small class="text-muted">Quản lý thông tin</small>
                                 </div>
                             </div>
@@ -129,54 +129,54 @@
             <div class="row g-3">
                 <div class="col-6 col-md-4">
                     <a href="/BaoCao/Index" class="text-decoration-none">
-                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100 bg-card-custom">
                             <i class="bi bi-graph-up-arrow fs-2 text-primary mb-2"></i>
-                            <h6 class="fw-bold text-dark mb-1">Báo Cáo & Thống Kê</h6>
+                            <h6 class="fw-bold text-body mb-1">Báo Cáo & Thống Kê</h6>
                             <small class="text-muted">Dữ liệu an ninh</small>
                         </div>
                     </a>
                 </div>
                 <div class="col-6 col-md-4">
                     <a href="/BaiDoXe/Index" class="text-decoration-none">
-                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100 bg-card-custom">
                             <i class="bi bi-p-square-fill fs-2 text-success mb-2"></i>
-                            <h6 class="fw-bold text-dark mb-1">Bãi Đỗ Xe</h6>
+                            <h6 class="fw-bold text-body mb-1">Bãi Đỗ Xe</h6>
                             <small class="text-muted">Kiểm soát biển số</small>
                         </div>
                     </a>
                 </div>
                 <div class="col-6 col-md-4">
                     <a href="/BanDoAnNinh/Index" class="text-decoration-none">
-                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100 bg-card-custom">
                             <i class="bi bi-map-fill fs-2 text-info mb-2"></i>
-                            <h6 class="fw-bold text-dark mb-1">Bản Đồ An Ninh</h6>
+                            <h6 class="fw-bold text-body mb-1">Bản Đồ An Ninh</h6>
                             <small class="text-muted">Vị trí trạm trực</small>
                         </div>
                     </a>
                 </div>
                 <div class="col-6 col-md-4">
                     <a href="/ThietBiAI/Index" class="text-decoration-none">
-                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100 bg-card-custom">
                             <i class="bi bi-cpu-fill fs-2 text-warning mb-2"></i>
-                            <h6 class="fw-bold text-dark mb-1">Quản Lý Thiết Bị</h6>
+                            <h6 class="fw-bold text-body mb-1">Quản Lý Thiết Bị</h6>
                             <small class="text-muted">IoT Hub</small>
                         </div>
                     </a>
                 </div>
                 <div class="col-6 col-md-4">
                     <a href="/SuCoCanhBao/Index" class="text-decoration-none">
-                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100 bg-card-custom">
                             <i class="bi bi-megaphone-fill fs-2 text-danger mb-2"></i>
-                            <h6 class="fw-bold text-dark mb-1">Sự Cố</h6>
+                            <h6 class="fw-bold text-body mb-1">Sự Cố</h6>
                             <small class="text-muted">Báo động S.O.S</small>
                         </div>
                     </a>
                 </div>
                 <div class="col-6 col-md-4">
                     <a href="/NhatKyHeThong/Index" class="text-decoration-none">
-                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100">
+                        <div class="card border-0 rounded-4 shadow-sm module-card text-center p-3 h-100 bg-card-custom">
                             <i class="bi bi-terminal-fill fs-2 text-secondary mb-2"></i>
-                            <h6 class="fw-bold text-dark mb-1">Lịch Sử Máy Chủ</h6>
+                            <h6 class="fw-bold text-body mb-1">Lịch Sử Máy Chủ</h6>
                             <small class="text-muted">Audit Logs</small>
                         </div>
                     </a>
@@ -186,21 +186,21 @@
 
         <div class="col-xl-4">
             <h6 class="fw-bold text-muted text-uppercase mb-3"><i class="bi bi-bell-fill text-primary"></i> Khách Hẹn Đang Chờ</h6>
-            <div class="card border-0 rounded-4 shadow-sm h-100">
+            <div class="card border-0 rounded-4 shadow-sm h-100 bg-card-custom">
                 <div class="card-body p-0">
                     @if (ViewBag.ThongBaoGanDay != null && ((IEnumerable<dynamic>)ViewBag.ThongBaoGanDay).Any())
                     {
-                        <ul class="list-group list-group-flush">
+                        <ul class="list-group list-group-flush bg-transparent">
                             @foreach (var tb in ViewBag.ThongBaoGanDay)
                             {
-                                <li class="list-group-item p-3 border-bottom hover-bg-light">
+                                <li class="list-group-item p-3 border-bottom bg-transparent custom-hover-item">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div class="d-flex align-items-center">
                                             <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
                                                 <i class="bi bi-person-fill"></i>
                                             </div>
                                             <div>
-                                                <h6 class="fw-bold mb-0">@tb.HoTen</h6>
+                                                <h6 class="fw-bold mb-0 text-body">@tb.HoTen</h6>
                                                 <small class="text-muted">@tb.BoPhanCanGap</small>
                                             </div>
                                         </div>
@@ -237,10 +237,24 @@
 </div>
 
 <style>
-    body {
-        background-color: #f4f7f6;
+    /* Light mode mặc định */
+    .custom-header-card {
+        background-color: #ffffff;
     }
 
+    .bg-card-custom {
+        background-color: #ffffff;
+    }
+
+    .date-picker-wrapper {
+        background-color: #ffffff;
+    }
+
+    .custom-hover-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* CSS cho thẻ thống kê */
     .stat-card {
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
@@ -282,8 +296,30 @@
             border-color: rgba(13, 110, 253, 0.2);
         }
 
-    .hover-bg-light:hover {
-        background-color: #f8f9fa;
+    /* =========================================
+           CSS TỰ ĐỘNG ĐỔI MÀU KHI BẬT DARK MODE
+        ========================================= */
+    [data-bs-theme="dark"] .custom-header-card,
+    [data-bs-theme="dark"] .bg-card-custom {
+        background-color: #1e1e1e !important;
+        border-color: #333 !important;
+    }
+
+    [data-bs-theme="dark"] .date-picker-wrapper {
+        background-color: #2c2c2c !important;
+        border-color: #444 !important;
+    }
+
+    [data-bs-theme="dark"] .custom-hover-item:hover {
+        background-color: #2c2c2c !important;
+    }
+
+    [data-bs-theme="dark"] .list-group-item {
+        border-color: #333 !important;
+    }
+
+    [data-bs-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
     }
 </style>
 

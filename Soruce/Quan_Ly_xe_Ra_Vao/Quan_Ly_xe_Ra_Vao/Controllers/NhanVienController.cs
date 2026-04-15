@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using ClosedXML.Excel; // Thêm thư viện xuất Excel
 
 namespace Quan_Ly_xe_Ra_Vao.Controllers
 {
@@ -185,6 +186,164 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
                 TempData["Success"] = "Đã xóa nhân sự khỏi hệ thống!";
             }
             return RedirectToAction("Index");
+        }
+
+        // =======================================================
+        // TÍNH NĂNG XUẤT EXCEL CÓ ĐỊNH DẠNG VÀ HÌNH ẢNH
+        // =======================================================
+        [HttpGet]
+        public async Task<IActionResult> ExportExcel(string searchString, string chucVu)
+        {
+            var query = _context.NhanViens.AsQueryable();
+            string filterText = "Tất cả nhân sự";
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(n => n.HoTen.Contains(searchString) || n.MaNV.Contains(searchString));
+                filterText = $"Tìm kiếm: {searchString}";
+            }
+
+            if (!string.IsNullOrEmpty(chucVu))
+            {
+                query = (chucVu == "Khach")
+                    ? query.Where(n => n.ChucVu.Contains("Khách"))
+                    : query.Where(n => n.ChucVu == chucVu);
+
+                filterText += $" | Lọc theo: {chucVu}";
+            }
+
+            var danhSach = await query.ToListAsync();
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Dữ Liệu Sinh Trắc Học");
+
+                // 1. THIẾT KẾ HEADER BÁO CÁO
+                var titleCompany = worksheet.Range("A1:F1");
+                titleCompany.Merge().Value = "HỆ THỐNG KIỂM SOÁT AN NINH CHK-IN PRO";
+                titleCompany.Style.Font.Bold = true;
+                titleCompany.Style.Font.FontSize = 11;
+
+                var titleReport = worksheet.Range("A3:F3");
+                titleReport.Merge().Value = "BẢNG KÊ DỮ LIỆU SINH TRẮC HỌC NHÂN VIÊN";
+                titleReport.Style.Font.Bold = true;
+                titleReport.Style.Font.FontSize = 16;
+                titleReport.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                var titleFilter = worksheet.Range("A4:F4");
+                titleFilter.Merge().Value = $"{filterText} | Ngày trích xuất: {DateTime.Now:dd/MM/yyyy HH:mm}";
+                titleFilter.Style.Font.Italic = true;
+                titleFilter.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                // 2. THIẾT KẾ CỘT TIÊU ĐỀ
+                int headerRowIdx = 6;
+                worksheet.Cell(headerRowIdx, 1).Value = "STT";
+                worksheet.Cell(headerRowIdx, 2).Value = "MÃ NV/KHÁCH";
+                worksheet.Cell(headerRowIdx, 3).Value = "HỌ VÀ TÊN";
+                worksheet.Cell(headerRowIdx, 4).Value = "CHỨC VỤ / GHI CHÚ";
+                worksheet.Cell(headerRowIdx, 5).Value = "DỮ LIỆU KHUÔN MẶT";
+                worksheet.Cell(headerRowIdx, 6).Value = "DỮ LIỆU VÂN TAY";
+
+                var headerRange = worksheet.Range($"A{headerRowIdx}:F{headerRowIdx}");
+                headerRange.Style.Font.Bold = true;
+                headerRange.Style.Font.FontColor = XLColor.Black;
+                headerRange.Style.Fill.BackgroundColor = XLColor.FromArgb(198, 239, 206);
+                headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                headerRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                headerRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                headerRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+                worksheet.Row(headerRowIdx).Height = 25;
+
+                // 3. ĐỔ DỮ LIỆU
+                int row = headerRowIdx + 1;
+                int stt = 1;
+                string webRootPath = _env.WebRootPath; // Lấy thư mục wwwroot trực tiếp từ hosting env
+
+                foreach (var nv in danhSach)
+                {
+                    worksheet.Cell(row, 1).Value = stt++;
+                    worksheet.Cell(row, 2).Value = nv.MaNV;
+                    worksheet.Cell(row, 3).Value = nv.HoTen;
+                    worksheet.Cell(row, 4).Value = string.IsNullOrEmpty(nv.BienSoXe) || nv.BienSoXe == "---" ? nv.ChucVu : $"{nv.ChucVu}\n(Xe: {nv.BienSoXe})";
+
+                    // ---- XỬ LÝ ẢNH FACE ID ----
+                    if (!string.IsNullOrEmpty(nv.FaceDataPath) && nv.FaceDataPath != "chua_co_anh.jpg" && nv.FaceDataPath != "/images/no-avatar.png")
+                    {
+                        try
+                        {
+                            string relativePath = nv.FaceDataPath.StartsWith("/") ? nv.FaceDataPath.Substring(1) : nv.FaceDataPath;
+                            string imgPath = Path.Combine(webRootPath, relativePath.Replace("/", "\\"));
+
+                            if (System.IO.File.Exists(imgPath))
+                            {
+                                var picture = worksheet.AddPicture(imgPath).MoveTo(worksheet.Cell(row, 5));
+                                picture.Width = 45;
+                                picture.Height = 45;
+                                worksheet.Row(row).Height = 35;
+                                worksheet.Cell(row, 5).Value = "";
+                            }
+                            else
+                            {
+                                worksheet.Cell(row, 5).Value = "(Có dữ liệu)";
+                            }
+                        }
+                        catch
+                        {
+                            worksheet.Cell(row, 5).Value = "(Lỗi tải ảnh)";
+                        }
+                    }
+                    else
+                    {
+                        worksheet.Cell(row, 5).Value = "Chưa có";
+                        worksheet.Cell(row, 5).Style.Font.Italic = true;
+                        worksheet.Cell(row, 5).Style.Font.FontColor = XLColor.Red;
+                    }
+
+                    // ---- XỬ LÝ TRẠNG THÁI VÂN TAY (Chỉ hiện ô màu) ----
+                    var cellVanTay = worksheet.Cell(row, 6);
+                    if (nv.HasFingerprint)
+                    {
+                        cellVanTay.Value = "Đã nạp";
+                        cellVanTay.Style.Font.FontColor = XLColor.DarkGreen;
+                        cellVanTay.Style.Font.Bold = true;
+                        cellVanTay.Style.Fill.BackgroundColor = XLColor.FromArgb(198, 239, 206);
+                    }
+                    else
+                    {
+                        cellVanTay.Value = "Trống";
+                        cellVanTay.Style.Font.FontColor = XLColor.Gray;
+                    }
+
+                    // Căn giữa
+                    worksheet.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    worksheet.Cell(row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    worksheet.Cell(row, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    worksheet.Cell(row, 5).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                    worksheet.Cell(row, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                    row++;
+                }
+
+                // Kẻ khung toàn bộ
+                if (danhSach.Any())
+                {
+                    var dataRange = worksheet.Range($"A{headerRowIdx + 1}:F{row - 1}");
+                    dataRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                    dataRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+                    dataRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                }
+
+                // Giãn cột
+                worksheet.Columns(1, 4).AdjustToContents();
+                worksheet.Column(5).Width = 12; // Cố định chiều rộng cột ảnh
+                worksheet.Column(6).Width = 18;
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"DuLieuSinhTracHoc_{DateTime.Now:ddMMyyyy}.xlsx");
+                }
+            }
         }
     }
 }
