@@ -15,7 +15,17 @@
 </div>
 
 <div id="ai-chat-panel" class="ai-chat-window d-none shadow-lg animate__animated animate__fadeInUp animate__faster">
-    <div class="ai-chat-header d-flex justify-content-between align-items-center">
+
+    <div class="resizer resizer-top"></div>
+    <div class="resizer resizer-right"></div>
+    <div class="resizer resizer-bottom"></div>
+    <div class="resizer resizer-left"></div>
+    <div class="resizer resizer-tl"></div>
+    <div class="resizer resizer-tr"></div>
+    <div class="resizer resizer-bl"></div>
+    <div class="resizer resizer-br"></div>
+
+    <div id="ai-chat-header" class="ai-chat-header d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
             <div class="ai-avatar">
                 <i class="bi bi-robot text-white"></i>
@@ -25,7 +35,11 @@
                 <small class="text-white-50" style="font-size: 0.65rem;">Trợ lý dữ liệu hệ thống</small>
             </div>
         </div>
-        <button id="btn-close-ai" class="btn text-white p-0 border-0 shadow-none"><i class="bi bi-x-lg fs-5"></i></button>
+        <div class="chat-controls d-flex gap-1">
+            <button id="btn-minimize-ai" class="btn btn-sm text-white p-1 border-0 shadow-none" title="Thu nhỏ"><i class="bi bi-dash-lg fs-6"></i></button>
+            <button id="btn-maximize-ai" class="btn btn-sm text-white p-1 border-0 shadow-none" title="Phóng to"><i class="bi bi-square fs-6"></i></button>
+            <button id="btn-close-ai" class="btn btn-sm text-white p-1 border-0 shadow-none" title="Đóng"><i class="bi bi-x-lg fs-5"></i></button>
+        </div>
     </div>
 
     <div id="ai-chat-messages" class="ai-chat-body custom-scrollbar">
@@ -96,28 +110,115 @@
         }
     }
 
-    /* --- CSS CHO CỬA SỔ CHAT --- */
+    /* --- CSS CHO CỬA SỔ CHAT DYNAMIC --- */
     .ai-chat-window {
         position: fixed;
         bottom: 100px;
         right: 30px;
         z-index: 1050;
-        width: 380px;
+        width: 400px;
         height: 600px;
         background-color: #f8f9fa;
         border-radius: 20px;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
-        border: 1px solid rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,0.15);
+        min-width: 320px;
+        min-height: 400px;
+        box-shadow: 0 1rem 3rem rgba(0,0,0,0.2) !important;
+        /* Hiệu ứng trượt mượt mà khi phóng to/thu nhỏ */
+        transition: width 0.3s ease, height 0.3s ease, left 0.3s ease, top 0.3s ease;
     }
+        /* Tạm tắt transition khi đang dùng chuột kéo để tránh lag */
+        .ai-chat-window.no-transition {
+            transition: none !important;
+        }
 
     .ai-chat-header {
         background: linear-gradient(135deg, #1e1e2f, #2d2b42);
         padding: 15px 20px;
         border-bottom: 1px solid rgba(255,255,255,0.1);
+        cursor: grab;
+        user-select: none;
+        border-top-left-radius: 19px;
+        border-top-right-radius: 19px;
     }
 
+        .ai-chat-header:active {
+            cursor: grabbing;
+        }
+
+    /* --- CSS CHO 8 ĐIỂM NEO RESIZE --- */
+    .resizer {
+        position: absolute;
+        z-index: 10;
+    }
+
+    .resizer-top {
+        top: -4px;
+        left: 15px;
+        right: 15px;
+        height: 8px;
+        cursor: n-resize;
+    }
+
+    .resizer-right {
+        right: -4px;
+        top: 15px;
+        bottom: 15px;
+        width: 8px;
+        cursor: e-resize;
+    }
+
+    .resizer-bottom {
+        bottom: -4px;
+        left: 15px;
+        right: 15px;
+        height: 8px;
+        cursor: s-resize;
+    }
+
+    .resizer-left {
+        left: -4px;
+        top: 15px;
+        bottom: 15px;
+        width: 8px;
+        cursor: w-resize;
+    }
+
+    .resizer-tl {
+        top: -4px;
+        left: -4px;
+        width: 16px;
+        height: 16px;
+        cursor: nw-resize;
+    }
+
+    .resizer-tr {
+        top: -4px;
+        right: -4px;
+        width: 16px;
+        height: 16px;
+        cursor: ne-resize;
+    }
+
+    .resizer-bl {
+        bottom: -4px;
+        left: -4px;
+        width: 16px;
+        height: 16px;
+        cursor: sw-resize;
+    }
+
+    .resizer-br {
+        bottom: -4px;
+        right: -4px;
+        width: 16px;
+        height: 16px;
+        cursor: se-resize;
+    }
+
+    /* (Phần Avatar, Body, Bubbles giữ nguyên) */
     .ai-avatar {
         width: 35px;
         height: 35px;
@@ -133,6 +234,7 @@
         padding: 20px;
         background-color: #fff;
         overflow-y: auto;
+        overflow-x: hidden;
         display: flex;
         flex-direction: column;
         gap: 15px;
@@ -175,7 +277,6 @@
         border: 1px solid #e9ecef;
     }
 
-    /* CSS cho Cảnh báo khẩn cấp (Proactive Alert) */
     .ai-msg-row.bot.alert-msg .ai-bubble {
         background-color: #fff3cd;
         border: 2px solid #ffc107;
@@ -246,6 +347,8 @@
         padding: 15px;
         background-color: #f8f9fa;
         border-top: 1px solid #dee2e6;
+        border-bottom-left-radius: 19px;
+        border-bottom-right-radius: 19px;
     }
 
         .ai-chat-footer input:focus {
@@ -258,35 +361,40 @@
     document.addEventListener("DOMContentLoaded", function () {
         const btnFloat = document.getElementById('btn-security-ai');
         const chatPanel = document.getElementById('ai-chat-panel');
+        const chatHeader = document.getElementById('ai-chat-header');
+
         const btnClose = document.getElementById('btn-close-ai');
+        const btnMinimize = document.getElementById('btn-minimize-ai');
+        const btnMaximize = document.getElementById('btn-maximize-ai');
+
         const btnSend = document.getElementById('btn-send-ai');
         const chatInput = document.getElementById('ai-chat-input');
         const chatBody = document.getElementById('ai-chat-messages');
         const unreadBadge = document.getElementById('ai-unread-badge');
+        const resizers = document.querySelectorAll('.resizer');
 
         const AI_STORAGE_KEY = 'SecurityAI_ChatHistory_V2';
         const aiUserName = '@Html.Raw(aiUserFullName)';
+
+        let isMaximized = false;
+        let preMaxState = { left: '', top: '', width: '', height: '', right: '30px', bottom: '100px' };
 
         // 1. INITIALIZE CHAT & HISTORY
         function initChat() {
             chatBody.innerHTML = '';
             const history = JSON.parse(sessionStorage.getItem(AI_STORAGE_KEY)) || [];
-
             if (history.length === 0) {
-                const greetingData = { answer: `Xin chào <b>${aiUserName}</b>! 👋<br/>Tôi là <b>Security AI</b> của CHK-IN PRO. Tôi có thể giúp bạn thống kê xe ra vào, phân tích tỷ lệ chấm công, hoặc trích xuất sơ đồ lưu lượng. Bạn cần xem báo cáo nào?` };
+                const greetingData = { answer: `Xin chào <b>${aiUserName}</b>! 👋<br/>Tôi là <b>Security AI</b> của CHK-IN PRO. Bạn cần tôi truy xuất dữ liệu gì hôm nay?` };
                 appendMessageToUI('bot', greetingData, false);
                 saveMessageToStorage('bot', greetingData);
             } else {
                 history.forEach(msg => appendMessageToUI(msg.sender, msg.data, false));
             }
             scrollToBottom();
-
-            // Removed the setTimeout that automatically triggered the alert.
         }
-
         initChat();
 
-        // 2. UI TOGGLES
+        // 2. TOGGLES & SMART MAXIMIZE (Phóng to ra giữa màn hình)
         btnFloat.addEventListener('click', () => {
             chatPanel.classList.remove('d-none');
             btnFloat.style.transform = "scale(0)";
@@ -295,16 +403,148 @@
             scrollToBottom();
         });
 
-        btnClose.addEventListener('click', () => {
+        const hideChat = () => {
             chatPanel.classList.add('d-none');
             btnFloat.style.transform = "scale(1)";
+        };
+        btnClose.addEventListener('click', hideChat);
+        btnMinimize.addEventListener('click', hideChat);
+
+        btnMaximize.addEventListener('click', () => {
+            isMaximized = !isMaximized;
+            const icon = btnMaximize.querySelector('i');
+
+            if (isMaximized) {
+                // Lưu lại trạng thái kích thước và tọa độ cũ trước khi phóng to
+                const rect = chatPanel.getBoundingClientRect();
+                preMaxState = {
+                    left: rect.left + 'px', top: rect.top + 'px',
+                    width: rect.width + 'px', height: rect.height + 'px'
+                };
+
+                // Tính toán để căn giữa màn hình với kích thước 800x650 (hoặc tối đa màn hình nếu bé hơn)
+                const targetW = Math.min(800, window.innerWidth - 40);
+                const targetH = Math.min(650, window.innerHeight - 40);
+                const targetLeft = (window.innerWidth - targetW) / 2;
+                const targetTop = (window.innerHeight - targetH) / 2;
+
+                chatPanel.style.width = targetW + 'px';
+                chatPanel.style.height = targetH + 'px';
+                chatPanel.style.left = targetLeft + 'px';
+                chatPanel.style.top = targetTop + 'px';
+                chatPanel.style.right = 'auto';
+                chatPanel.style.bottom = 'auto';
+
+                icon.className = "bi bi-aspect-ratio fs-6"; // Icon thu lại
+            } else {
+                // Khôi phục trạng thái cũ mượt mà
+                chatPanel.style.width = preMaxState.width;
+                chatPanel.style.height = preMaxState.height;
+                chatPanel.style.left = preMaxState.left;
+                chatPanel.style.top = preMaxState.top;
+
+                icon.className = "bi bi-square fs-6"; // Icon phóng to
+            }
         });
 
-        // 3. SEND MESSAGE & FETCH C# CONTROLLER
+        // 3. LOGIC DRAG & DYNAMIC RESIZE
+        let isDragging = false, isResizing = false;
+        let startX, startY, startW, startH, startL, startT;
+        let currentResizer = null;
+
+        // Bắt đầu kéo thanh Header
+        chatHeader.addEventListener("mousedown", (e) => {
+            if (e.target.closest('.chat-controls')) return; // Bỏ qua nếu click trúng mấy nút đóng/mở
+
+            isDragging = true;
+            chatPanel.classList.add('no-transition');
+
+            const rect = chatPanel.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+
+            // Xóa Bottom/Right để định vị tuyệt đối theo Top/Left
+            chatPanel.style.right = 'auto';
+            chatPanel.style.bottom = 'auto';
+            chatPanel.style.left = rect.left + 'px';
+            chatPanel.style.top = rect.top + 'px';
+        });
+
+        // Bắt đầu kéo 8 góc Resize
+        resizers.forEach(resizer => {
+            resizer.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                currentResizer = resizer;
+                chatPanel.classList.add('no-transition');
+
+                const rect = chatPanel.getBoundingClientRect();
+                startX = e.clientX; startY = e.clientY;
+                startW = rect.width; startH = rect.height;
+                startL = rect.left; startT = rect.top;
+
+                chatPanel.style.right = 'auto'; chatPanel.style.bottom = 'auto';
+                chatPanel.style.left = startL + 'px'; chatPanel.style.top = startT + 'px';
+                e.preventDefault();
+            });
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            // Xử lý kéo cửa sổ
+            if (isDragging) {
+                let newX = e.clientX - startX;
+                let newY = e.clientY - startY;
+
+                // Ràng buộc không bay khỏi màn hình
+                newX = Math.max(0, Math.min(newX, window.innerWidth - chatPanel.offsetWidth));
+                newY = Math.max(0, Math.min(newY, window.innerHeight - chatPanel.offsetHeight));
+
+                chatPanel.style.left = `${newX}px`;
+                chatPanel.style.top = `${newY}px`;
+            }
+
+            // Xử lý kéo dãn
+            if (isResizing) {
+                let dx = e.clientX - startX;
+                let dy = e.clientY - startY;
+
+                let newW = startW, newH = startH, newL = startL, newT = startT;
+                const minW = 320, minH = 400;
+
+                // Xử lý kéo cạnh Phải
+                if (currentResizer.classList.contains('resizer-right') || currentResizer.classList.contains('resizer-br') || currentResizer.classList.contains('resizer-tr')) {
+                    newW = startW + dx;
+                }
+                // Xử lý kéo cạnh Trái
+                if (currentResizer.classList.contains('resizer-left') || currentResizer.classList.contains('resizer-bl') || currentResizer.classList.contains('resizer-tl')) {
+                    newW = startW - dx;
+                    if (newW > minW) newL = startL + dx;
+                }
+                // Xử lý kéo cạnh Dưới
+                if (currentResizer.classList.contains('resizer-bottom') || currentResizer.classList.contains('resizer-bl') || currentResizer.classList.contains('resizer-br')) {
+                    newH = startH + dy;
+                }
+                // Xử lý kéo cạnh Trên
+                if (currentResizer.classList.contains('resizer-top') || currentResizer.classList.contains('resizer-tl') || currentResizer.classList.contains('resizer-tr')) {
+                    newH = startH - dy;
+                    if (newH > minH) newT = startT + dy;
+                }
+
+                if (newW > minW) { chatPanel.style.width = newW + 'px'; chatPanel.style.left = newL + 'px'; }
+                if (newH > minH) { chatPanel.style.height = newH + 'px'; chatPanel.style.top = newT + 'px'; }
+            }
+        });
+
+        document.addEventListener("mouseup", () => {
+            if (isDragging || isResizing) {
+                isDragging = false; isResizing = false; currentResizer = null;
+                chatPanel.classList.remove('no-transition');
+            }
+        });
+
+        // 4. SEND MESSAGE & FETCH API
         function sendMessage() {
             const text = chatInput.value.trim();
             if (!text) return;
-
             const userData = { answer: text };
             appendMessageToUI('user', userData, true);
 
@@ -320,38 +560,31 @@
             .then(response => response.json())
             .then(data => {
                 removeTypingIndicator();
-
                 if (data.answer === "CLEAR_COMMAND") {
                     sessionStorage.removeItem(AI_STORAGE_KEY);
                     appendMessageToUI('bot', { answer: 'Đã xóa bộ nhớ tạm! Đang khởi động lại hệ thống...' }, false);
                     setTimeout(() => location.reload(), 1000);
                     return;
                 }
-
                 appendMessageToUI('bot', data, true);
             })
             .catch(error => {
                 removeTypingIndicator();
                 appendMessageToUI('bot', { answer: '<span class="text-danger"><i class="bi bi-exclamation-triangle"></i> Lỗi kết nối AI Server.</span>' }, false);
-                console.error("AI Error:", error);
             });
         }
 
         btnSend.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-        // 4. COMPLEX MESSAGE RENDERER
+        // 5. MESSAGE RENDERER & CHARTS
         function appendMessageToUI(sender, data, saveToHistory = false) {
             const row = document.createElement('div');
             row.className = `ai-msg-row ${sender}`;
-
             if (data.isDanger) row.classList.add('danger-msg');
             else if (data.isAlert) row.classList.add('alert-msg');
 
             let innerContent = `<div class="ai-bubble animate__animated animate__fadeIn">`;
-
             if (data.isDanger) innerContent += `<div class="fw-bold mb-2"><i class="bi bi-shield-fill-exclamation fs-5"></i> CẢNH BÁO KHẨN CẤP</div>`;
             if (data.answer) innerContent += `<div>${data.answer}</div>`;
 
@@ -361,9 +594,7 @@
                 innerContent += `<div class="ai-chart-container shadow-sm border"><canvas id="${canvasId}"></canvas></div>`;
             }
 
-            if (data.analysis) {
-                innerContent += `<div class="mt-2 p-2 bg-light rounded text-dark small border-start border-3 border-primary">${data.analysis}</div>`;
-            }
+            if (data.analysis) innerContent += `<div class="mt-2 p-2 bg-light rounded text-dark small border-start border-3 border-primary">${data.analysis}</div>`;
 
             if (data.showExcel || data.showMore) {
                 innerContent += `<div class="d-flex gap-2 mt-3 border-top pt-2">`;
@@ -378,83 +609,33 @@
 
             if (data.chart) renderLineChart(canvasId, data.chart);
             if (data.pieChart) renderPieChart(canvasId, data.pieChart);
-
             scrollToBottom();
-
             if (saveToHistory) saveMessageToStorage(sender, data);
         }
 
-        // 5. CHART RENDERERS
         function renderLineChart(canvasId, chartData) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [{
-                        label: 'Lượt xe',
-                        data: chartData.data,
-                        borderColor: '#0d6efd',
-                        backgroundColor: 'rgba(13, 110, 253, 0.2)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-                }
+                type: 'line', data: { labels: chartData.labels, datasets: [{ label: 'Lượt xe', data: chartData.data, borderColor: '#0d6efd', backgroundColor: 'rgba(13, 110, 253, 0.2)', borderWidth: 2, tension: 0.3, fill: true }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
             });
         }
 
         function renderPieChart(canvasId, chartData) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [{
-                        data: chartData.data,
-                        backgroundColor: chartData.colors,
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }
-                    },
-                    cutout: '60%'
-                }
+                type: 'doughnut', data: { labels: chartData.labels, datasets: [{ data: chartData.data, backgroundColor: chartData.colors, borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } }, cutout: '60%' }
             });
         }
 
-        // 6. EXPOSE PROACTIVE ALERT GLOBALLY
-        // Now it will ONLY fire when you manually call `window.triggerSecurityAIAlert(...)`
         window.triggerSecurityAIAlert = function(message) {
-            const alertData = {
-                answer: message || "Phát hiện có <b>01 đối tượng lạ</b> (Không đeo thẻ nhân viên) đang lảng vảng tại khu vực <b>Lối ra Hầm B2</b> hơn 5 phút. Yêu cầu Tổ Bảo Vệ kiểm tra camera hoặc điều động nhân sự đến hiện trường ngay lập tức!",
-                isDanger: true,
-                showMore: true
-            };
-
-            appendMessageToUI('bot', alertData, true);
-
-            if (chatPanel.classList.contains('d-none')) {
-                chatPanel.classList.remove('d-none');
-                btnFloat.style.transform = "scale(0)";
-            } else {
-                unreadBadge.classList.remove('d-none');
-            }
-
+            appendMessageToUI('bot', { answer: message || "Phát hiện có <b>01 đối tượng lạ</b> đang lảng vảng tại khu vực <b>Lối ra Hầm B2</b>. Yêu cầu kiểm tra camera!", isDanger: true, showMore: true }, true);
+            if (chatPanel.classList.contains('d-none')) { chatPanel.classList.remove('d-none'); btnFloat.style.transform = "scale(0)"; }
+            else { unreadBadge.classList.remove('d-none'); }
             scrollToBottom();
         };
 
-        // UTILITIES
         function saveMessageToStorage(sender, dataObj) {
             const history = JSON.parse(sessionStorage.getItem(AI_STORAGE_KEY)) || [];
             history.push({ sender: sender, data: dataObj });
@@ -462,21 +643,12 @@
         }
 
         function showTypingIndicator() {
-            const row = document.createElement('div');
-            row.id = 'ai-typing';
-            row.className = 'ai-msg-row bot';
+            const row = document.createElement('div'); row.id = 'ai-typing'; row.className = 'ai-msg-row bot';
             row.innerHTML = `<div class="ai-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-            chatBody.appendChild(row);
-            scrollToBottom();
+            chatBody.appendChild(row); scrollToBottom();
         }
 
-        function removeTypingIndicator() {
-            const typingObj = document.getElementById('ai-typing');
-            if (typingObj) typingObj.remove();
-        }
-
-        function scrollToBottom() {
-            chatBody.scrollTop = chatBody.scrollHeight;
-        }
+        function removeTypingIndicator() { const typingObj = document.getElementById('ai-typing'); if (typingObj) typingObj.remove(); }
+        function scrollToBottom() { chatBody.scrollTop = chatBody.scrollHeight; }
     });
 </script>
