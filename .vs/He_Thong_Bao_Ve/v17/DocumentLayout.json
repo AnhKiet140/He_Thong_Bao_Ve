@@ -1,7 +1,12 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\Net107\\He_Thong_Bao_Ve\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Net107\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Views\\Shared\\_SecurityAIWidget.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Views\\Shared\\_SecurityAIWidget.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,7 +14,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
@@ -30,6 +35,19 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "_SecurityAIWidget.cshtml",
+              "DocumentMoniker": "D:\\Net107\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Views\\Shared\\_SecurityAIWidget.cshtml",
+              "RelativeDocumentMoniker": "Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Views\\Shared\\_SecurityAIWidget.cshtml",
+              "ToolTip": "D:\\Net107\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Views\\Shared\\_SecurityAIWidget.cshtml",
+              "RelativeToolTip": "Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Views\\Shared\\_SecurityAIWidget.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-04-18T01:11:56.062Z",
+              "EditorCaption": ""
             }
           ]
         },
