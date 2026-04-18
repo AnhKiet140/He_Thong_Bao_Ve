@@ -4,8 +4,10 @@
     "\\Soruce",
     "\\Soruce\\Quan_Ly_xe_Ra_Vao",
     "\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao",
-    "\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Controllers"
+    "\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Controllers",
+    "\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Views",
+    "\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Views\\Shared"
   ],
-  "SelectedNode": "\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Controllers\\DangKyKhachController.cs",
+  "SelectedNode": "\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Views\\Shared\\_SecurityAIWidget.cshtml",
   "PreviewInSolutionExplorer": false
 }
