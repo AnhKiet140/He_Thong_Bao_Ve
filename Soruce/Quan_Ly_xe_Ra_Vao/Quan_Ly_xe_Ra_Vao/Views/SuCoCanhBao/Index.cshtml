@@ -1,69 +1,73 @@
 ﻿@{
     ViewData["Title"] = "Cảnh Báo Khẩn Cấp & Sơ Tán";
+    string todayStr = DateTime.Today.ToString("dd/MM/yyyy");
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<div class="container-fluid mt-2 animate__animated animate__fadeIn">
-    <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-danger">
+<div class="container-fluid mt-3 animate__animated animate__fadeIn">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-danger">
         <div>
-            <h4 class="fw-bold text-danger mb-1"><i class="bi bi-broadcast-pin"></i> TRUNG TÂM ĐIỀU PHỐI KHẨN CẤP (S.O.S)</h4>
+            <h5 class="fw-bold text-danger mb-1"><i class="bi bi-broadcast me-2 pulse-text"></i>TRUNG TÂM ĐIỀU PHỐI KHẨN CẤP (S.O.S)</h5>
             <small class="text-muted fw-bold">QUẢN LÝ SỰ CỐ, CỨU HỘ VÀ SƠ TÁN TOÀN DIỆN</small>
         </div>
-        <div class="d-flex gap-2">
-            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-2 rounded-pill shadow-sm d-flex align-items-center">
-                <i class="bi bi-shield-exclamation me-2"></i> MỨC ĐỘ CẢNH GIÁC: MỨC 1 (BÌNH THƯỜNG)
+        <div class="mt-2 mt-md-0 d-flex gap-2">
+            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-2 fs-6 rounded-pill shadow-sm">
+                <i class="bi bi-shield-check me-1"></i> MỨC ĐỘ CẢNH GIÁC: MỨC 1 (BÌNH THƯỜNG)
             </span>
         </div>
     </div>
 
-    <div class="row g-3">
-        <div class="col-lg-5 d-flex flex-column gap-3">
+    <div class="row g-4">
+        <div class="col-xl-4 col-lg-5 d-flex flex-column gap-4">
 
-            <div class="card border-0 shadow-lg rounded-4 bg-dark text-white text-center position-relative overflow-hidden h-100">
-                <div class="bg-danger p-2 text-uppercase fw-bold letter-spacing-2 small">
-                    <i class="bi bi-exclamation-triangle-fill"></i> CHỈ SỬ DỤNG TRONG TÌNH HUỐNG KHẨN CẤP
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-dark custom-sos-card">
+                <div class="card-header bg-danger text-white fw-bold py-3 border-0 text-center text-uppercase" style="letter-spacing: 1px;">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Chỉ sử dụng trong tình huống khẩn cấp
                 </div>
-                <div class="card-body p-5 d-flex flex-column justify-content-center align-items-center">
+                <div class="card-body text-center py-5 d-flex flex-column align-items-center justify-content-center" style="min-height: 320px;">
 
-                    <button class="sos-btn mb-4 shadow-lg" onclick="triggerGlobalSOS()">
-                        <span>S.O.S</span>
-                    </button>
+                    <div class="position-relative d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; z-index: 1;">
+                        <div class="sos-ring"></div>
+                        <button class="btn btn-danger rounded-circle giant-sos-btn shadow-lg d-flex align-items-center justify-content-center position-relative" onclick="triggerGlobalSOS()">
+                            S.O.S
+                        </button>
+                    </div>
 
-                    <h5 class="fw-bold mb-2">BÁO ĐỘNG TOÀN CƠ SỞ</h5>
-                    <p class="text-muted small px-3 mb-0">Hành động này sẽ kích hoạt toàn bộ còi báo cháy, tự động gọi lực lượng phản ứng nhanh và gửi thông báo sơ tán.</p>
+                    <h5 class="text-white mt-4 mb-2 fw-bold text-uppercase" style="letter-spacing: 2px;">Báo động toàn cơ sở</h5>
+                    <p class="text-white-50 small px-3 mb-0">Kích hoạt còi báo cháy, tự động gọi lực lượng phản ứng nhanh và gửi thông báo sơ tán.</p>
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-sliders text-primary"></i> Lệnh Cưỡng Chế (Override)</h6>
+            <div class="card border-0 shadow-sm rounded-4 bg-card-custom">
+                <div class="card-header bg-transparent border-bottom p-3">
+                    <h6 class="fw-bold text-primary mb-0 text-uppercase"><i class="bi bi-sliders2 me-2"></i> Lệnh cưỡng chế (Override)</h6>
                 </div>
                 <div class="card-body p-3">
                     <div class="row g-2">
-                        <div class="col-4">
-                            <button class="btn btn-outline-success w-100 p-2 h-100 fw-bold d-flex flex-column align-items-center justify-content-center text-center" onclick="unlockEmergencyDoors()">
-                                <i class="bi bi-door-open-fill fs-3 mb-1"></i>
-                                <span style="font-size: 0.75rem;">Mở Khóa Cửa Khẩn Cấp</span>
+                        <div class="col-6">
+                            <button class="btn btn-outline-success w-100 p-3 h-100 fw-bold d-flex flex-column align-items-center justify-content-center text-center custom-hover-btn rounded-3" onclick="unlockEmergencyDoors()">
+                                <i class="bi bi-door-open-fill fs-2 mb-2"></i>
+                                <span style="font-size: 0.8rem;">Mở Khóa Khẩn Cấp</span>
                             </button>
                         </div>
-                        <div class="col-4">
-                            <button class="btn btn-outline-info w-100 p-2 h-100 fw-bold d-flex flex-column align-items-center justify-content-center text-center" onclick="turnOnSprinklers()">
-                                <i class="bi bi-droplet-half fs-3 mb-1"></i>
-                                <span style="font-size: 0.75rem;">Bật Vòi Chữa Cháy</span>
-                            </button>
-                        </div>
-                        <div class="col-4">
-                            <button class="btn btn-outline-warning text-dark w-100 p-2 h-100 fw-bold d-flex flex-column align-items-center justify-content-center text-center" onclick="testAlarm()">
-                                <i class="bi bi-volume-up-fill fs-3 mb-1"></i>
-                                <span style="font-size: 0.75rem;">Test Còi (Diễn Tập)</span>
+                        <div class="col-6">
+                            <button class="btn btn-outline-info w-100 p-3 h-100 fw-bold d-flex flex-column align-items-center justify-content-center text-center custom-hover-btn rounded-3" onclick="turnOnSprinklers()">
+                                <i class="bi bi-droplet-half fs-2 mb-2"></i>
+                                <span style="font-size: 0.8rem;">Bật Vòi Chữa Cháy</span>
                             </button>
                         </div>
                         <div class="col-12 mt-2">
-                            <button class="btn btn-dark w-100 p-3 fw-bold d-flex align-items-center justify-content-center hover-danger" onclick="call114()">
-                                <i class="bi bi-telephone-outbound-fill fs-4 me-2 text-danger"></i>
-                                <span class="fs-5">KẾT NỐI TỔNG ĐÀI 114 (PCCC)</span>
+                            <button class="btn btn-outline-warning text-dark w-100 py-2 fw-bold rounded-3 shadow-sm custom-hover-btn" onclick="testAlarm()">
+                                <i class="bi bi-volume-up-fill me-1"></i> Test Còi (Diễn Tập)
+                            </button>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <button class="btn btn-dark w-100 py-3 fw-bold rounded-3 shadow-sm d-flex align-items-center justify-content-center hover-danger" onclick="call114()">
+                                <i class="bi bi-telephone-outbound-fill fs-5 me-2 text-danger"></i>
+                                <span>KẾT NỐI TỔNG ĐÀI 114 (PCCC)</span>
                             </button>
                         </div>
                     </div>
@@ -71,87 +75,90 @@
             </div>
         </div>
 
-        <div class="col-lg-7 d-flex flex-column gap-3">
+        <div class="col-xl-8 col-lg-7 d-flex flex-column gap-4">
 
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-sign-turn-right-fill text-success"></i> Trạng Thái Khu Vực Sơ Tán</h6>
-                    <span class="badge bg-success">Tự Động Cập Nhật</span>
+            <div class="card border-0 shadow-sm rounded-4 bg-card-custom">
+                <div class="card-header bg-transparent border-bottom p-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-primary mb-0 text-uppercase"><i class="bi bi-activity me-2"></i> Trạng thái khu vực sơ tán</h6>
+                    <span class="badge bg-success rounded-pill shadow-sm"><i class="bi bi-arrow-repeat"></i> Tự Động Cập Nhật</span>
                 </div>
-                <div class="card-body p-3">
+                <div class="card-body p-4 bg-light bg-opacity-50">
                     <div class="row g-3">
-
                         <div class="col-md-6">
-                            <div class="zone-card p-3 border rounded-3 bg-light position-relative" data-zone="Tầng Trệt & Sảnh" data-temp="24">
-                                <div class="position-absolute top-0 end-0 p-2"><i class="bi bi-check-circle-fill text-success fs-5"></i></div>
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <h6 class="fw-bold mb-0">Tầng Trệt & Sảnh</h6>
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success">24°C</span>
+                            <div class="card border-0 border-start border-success border-4 shadow-sm rounded-3 h-100 zone-card bg-white" data-zone="Tầng Trệt & Sảnh" data-temp="24">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-dark mb-0">Tầng Trệt & Sảnh</h6>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1">24°C <i class="bi bi-check-circle-fill ms-1"></i></span>
+                                    </div>
+                                    <small class="text-muted mb-2 d-block">Trạng thái: Thông thoáng, an toàn.</small>
+                                    <div class="progress" style="height: 4px;"><div class="progress-bar bg-success" style="width: 100%"></div></div>
                                 </div>
-                                <p class="text-muted small mb-2">Trạng thái: Thông thoáng, an toàn.</p>
-                                <div class="progress" style="height: 6px;"><div class="progress-bar bg-success" style="width: 100%"></div></div>
                             </div>
                         </div>
 
                         <div class="col-md-6">
-                            <div class="zone-card p-3 border rounded-3 bg-light position-relative" data-zone="Tầng Hầm (Bãi Xe)" data-temp="26">
-                                <div class="position-absolute top-0 end-0 p-2"><i class="bi bi-check-circle-fill text-success fs-5"></i></div>
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <h6 class="fw-bold mb-0">Tầng Hầm (Bãi Xe)</h6>
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success">26°C</span>
+                            <div class="card border-0 border-start border-success border-4 shadow-sm rounded-3 h-100 zone-card bg-white" data-zone="Tầng Hầm (Bãi Xe)" data-temp="26">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-dark mb-0">Tầng Hầm (Bãi Xe)</h6>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1">26°C <i class="bi bi-check-circle-fill ms-1"></i></span>
+                                    </div>
+                                    <small class="text-muted mb-2 d-block">Hệ thống thông gió hoạt động tốt.</small>
+                                    <div class="progress" style="height: 4px;"><div class="progress-bar bg-success" style="width: 100%"></div></div>
                                 </div>
-                                <p class="text-muted small mb-2">Hệ thống thông gió hoạt động tốt.</p>
-                                <div class="progress" style="height: 6px;"><div class="progress-bar bg-success" style="width: 100%"></div></div>
                             </div>
                         </div>
 
                         <div class="col-md-6">
-                            <div class="zone-card p-3 border rounded-3 bg-warning bg-opacity-10 border-warning position-relative" data-zone="Kho Vật Tư (Khu B)" data-temp="38.5">
-                                <div class="position-absolute top-0 end-0 p-2"><i class="bi bi-exclamation-circle-fill text-warning pulse-yellow fs-5"></i></div>
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <h6 class="fw-bold mb-0 text-dark">Kho Vật Tư (Khu B)</h6>
-                                    <span class="badge bg-danger pulse-red">38.5°C</span>
+                            <div class="card border-0 border-start border-danger border-4 shadow-sm rounded-3 h-100 bg-danger bg-opacity-10 zone-card alert-zone" data-zone="Kho Vật Tư (Khu B)" data-temp="38.5">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-danger mb-0">Kho Vật Tư (Khu B)</h6>
+                                        <span class="badge bg-danger pulse-badge px-2 py-1 shadow-sm">38.5°C <i class="bi bi-exclamation-triangle-fill ms-1"></i></span>
+                                    </div>
+                                    <small class="text-danger fw-bold d-block mb-2">Nhiệt độ cao bất thường.</small>
+                                    <div class="progress" style="height: 4px;"><div class="progress-bar bg-warning" style="width: 80%"></div></div>
                                 </div>
-                                <p class="text-danger small mb-2 fw-bold">Nhiệt độ cao bất thường.</p>
-                                <div class="progress" style="height: 6px;"><div class="progress-bar bg-warning" style="width: 80%"></div></div>
                             </div>
                         </div>
 
                         <div class="col-md-6">
-                            <div class="zone-card p-3 border rounded-3 bg-light position-relative" data-zone="Văn Phòng Tầng 1" data-temp="22">
-                                <div class="position-absolute top-0 end-0 p-2"><i class="bi bi-check-circle-fill text-success fs-5"></i></div>
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <h6 class="fw-bold mb-0">Văn Phòng Tầng 1</h6>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">22°C</span>
+                            <div class="card border-0 border-start border-success border-4 shadow-sm rounded-3 h-100 zone-card bg-white" data-zone="Văn Phòng Tầng 1" data-temp="22">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-dark mb-0">Văn Phòng Tầng 1</h6>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1">22°C <i class="bi bi-check-circle-fill ms-1"></i></span>
+                                    </div>
+                                    <small class="text-muted mb-2 d-block">Hệ thống báo cháy ở trạng thái chờ.</small>
+                                    <div class="progress" style="height: 4px;"><div class="progress-bar bg-success" style="width: 100%"></div></div>
                                 </div>
-                                <p class="text-muted small mb-2">Hệ thống báo cháy ở trạng thái chờ.</p>
-                                <div class="progress" style="height: 6px;"><div class="progress-bar bg-success" style="width: 100%"></div></div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4 flex-grow-1">
-                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold text-dark mb-0 text-uppercase"><i class="bi bi-clock-history text-secondary"></i> Lịch Sử Hoạt Động (Session)</h6>
-                    <div class="input-group input-group-sm w-auto">
-                        <span class="input-group-text bg-light"><i class="bi bi-calendar3"></i></span>
-                        <input type="date" id="logDateFilter" class="form-control form-control-sm fw-bold text-primary" onchange="renderLogs()">
+            <div class="card border-0 shadow-sm rounded-4 bg-card-custom flex-grow-1">
+                <div class="card-header bg-transparent border-bottom p-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-primary mb-0 text-uppercase"><i class="bi bi-clock-history me-2"></i> Lịch sử hoạt động (Session)</h6>
+                    <div class="input-group input-group-sm w-auto shadow-sm rounded-3">
+                        <span class="input-group-text bg-transparent border-secondary text-muted border-end-0"><i class="bi bi-calendar"></i></span>
+                        <input type="date" id="logDateFilter" class="form-control border-secondary text-body bg-transparent border-start-0 fw-bold text-center" onchange="renderLogs()" style="max-width: 140px; cursor:pointer;">
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
-                        <table class="table table-hover align-middle mb-0 text-center">
-                            <thead class="table-light small text-muted text-uppercase sticky-top">
+                    <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0 custom-table text-center">
+                            <thead class="table-light text-muted fw-bold text-uppercase small sticky-top">
                                 <tr>
-                                    <th class="ps-4 text-start">Thời gian</th>
-                                    <th class="text-start">Sự kiện</th>
-                                    <th>Người thực hiện</th>
-                                    <th class="pe-4 text-end">Chi tiết</th>
+                                    <th class="py-3 ps-4 border-bottom-0 text-start">Thời Gian</th>
+                                    <th class="py-3 border-bottom-0 text-start">Sự Kiện</th>
+                                    <th class="py-3 border-bottom-0">Người Thực Hiện</th>
+                                    <th class="py-3 pe-4 border-bottom-0 text-end">Chi Tiết</th>
                                 </tr>
                             </thead>
-                            <tbody id="logTableBody">
+                            <tbody class="border-top-0 text-body" id="logTableBody">
                             </tbody>
                         </table>
                     </div>
@@ -163,41 +170,162 @@
 </div>
 
 <style>
-    body {
-        background-color: #f4f7f6;
+    /* CSS CHUNG */
+    .bg-card-custom {
+        background-color: #ffffff;
     }
 
-    .letter-spacing-2 {
-        letter-spacing: 2px;
+    /* NÚT S.O.S VÀ HIỆU ỨNG */
+    .custom-sos-card {
+        border: 1px solid #dc3545 !important;
     }
 
-    .sos-btn {
-        width: 180px;
-        height: 180px;
-        border-radius: 50%;
-        background: radial-gradient(circle, #ff416c, #ff4b2b);
-        border: 10px solid #900000;
-        color: white;
-        font-size: 3.5rem;
+    .giant-sos-btn {
+        width: 150px;
+        height: 150px;
+        font-size: 2.5rem;
         font-weight: 900;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 10px 30px rgba(220, 53, 69, 0.5), inset 0 10px 20px rgba(255, 255, 255, 0.3);
-        transition: all 0.1s ease;
+        letter-spacing: 2px;
+        border: 8px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.2s ease-in-out;
+        z-index: 3;
+        background: radial-gradient(circle, #ff416c, #ff4b2b);
         text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
 
-        .sos-btn:hover {
+        .giant-sos-btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 15px 40px rgba(220, 53, 69, 0.7), inset 0 10px 20px rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 15px 40px rgba(220, 53, 69, 0.7);
         }
 
-        .sos-btn:active {
+        .giant-sos-btn:active {
             transform: scale(0.95);
-            border: 8px solid #600000;
-            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.5), inset 0 5px 10px rgba(0, 0, 0, 0.5);
+        }
+
+    .sos-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: #dc3545;
+        z-index: 2;
+        animation: giantPulse 2s infinite ease-out;
+    }
+    @@keyframes giantPulse {
+        0%
+
+    {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(2.2);
+        opacity: 0;
+    }
+
+    }
+
+    .pulse-text {
+        animation: pulseOpacity 1.5s infinite;
+    }
+    @@keyframes pulseOpacity {
+        0%, 100%
+
+    {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    }
+
+    .pulse-badge {
+        animation: pulseDanger 1.5s infinite;
+    }
+    @@keyframes pulseDanger {
+        0%
+
+    {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.6);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+
+    }
+
+    /* CSS ĐÃ BỔ SUNG: Hiệu ứng chớp cho nút "Cử Người Đi Kiểm Tra" */
+    .custom-pulse-btn {
+        animation: smoothPulse 1.5s infinite;
+        box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+    }
+    @@keyframes smoothPulse {
+        0%
+
+    {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+
+    }
+
+    /* HIỆU ỨNG THẺ KHU VỰC & BẢNG ĐỒNG BỘ */
+    .zone-card {
+        transition: transform 0.2s ease;
+    }
+
+        .zone-card:hover {
+            transform: translateY(-3px);
+        }
+
+    .alert-zone {
+        border: 1px solid #dc3545 !important;
+    }
+
+    .custom-table tbody tr {
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+    }
+
+        .custom-table tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.03);
+            border-left-color: #0d6efd;
+        }
+
+    .custom-table td {
+        padding: 15px 10px;
+        border-bottom: 1px solid #f1f3f5;
+        vertical-align: middle;
+    }
+
+    .custom-hover-btn {
+        transition: all 0.2s;
+    }
+
+        .custom-hover-btn:hover {
+            transform: translateY(-2px);
         }
 
     .hover-danger {
@@ -220,40 +348,65 @@
         pointer-events: none;
         animation: sirenFlash 0.8s infinite alternate;
     }
-
     @@keyframes sirenFlash {
-        0% {
-            opacity: 0;
-        }
+        0%
 
-        100% {
-            opacity: 1;
-        }
+    {
+        opacity: 0;
     }
 
-    @@keyframes pulseGlowYellow {
-        0% {
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        50% {
-            transform: scale(1.2);
-            opacity: 0.5;
-        }
-
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
+    100% {
+        opacity: 1;
     }
 
-    .pulse-yellow {
-        animation: pulseGlowYellow 1.5s infinite;
     }
 
-    .pulse-red {
-        animation: pulseGlowYellow 1s infinite;
+    /* DARK MODE */
+    [data-bs-theme="dark"] .bg-card-custom {
+        background-color: #1e1e1e !important;
+        border-color: #333 !important;
+    }
+
+    [data-bs-theme="dark"] .text-body {
+        color: #e0e0e0 !important;
+    }
+
+    [data-bs-theme="dark"] .bg-light.bg-opacity-50 {
+        background-color: #121212 !important;
+    }
+
+    [data-bs-theme="dark"] .zone-card {
+        background-color: #2c2c2c !important;
+    }
+
+    [data-bs-theme="dark"] .alert-zone {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] .custom-table {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .table-light {
+        background-color: #0a0a0a !important;
+        color: #ccc !important;
+        border-bottom: 1px solid #333 !important;
+    }
+
+    [data-bs-theme="dark"] .custom-table td {
+        border-bottom: 1px solid #333 !important;
+    }
+
+    [data-bs-theme="dark"] .custom-table tbody tr:hover {
+        background-color: rgba(255,255,255,0.05);
+    }
+
+    [data-bs-theme="dark"] .border-secondary {
+        border-color: #444 !important;
+    }
+
+    [data-bs-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
     }
 </style>
 
@@ -262,21 +415,12 @@
     function ghiLogHeThong(mucDo, phanHe, chiTiet) {
         fetch('/NhatKyHeThong/GhiLogTuDong', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                MucDo: mucDo,
-                PhanHe: phanHe,
-                ChiTietThaoTac: chiTiet
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ MucDo: mucDo, PhanHe: phanHe, ChiTietThaoTac: chiTiet })
         }).then(response => {
-            if (!response.ok) {
-                console.error("Lỗi khi ghi log CSDL");
-            }
+            if (!response.ok) console.error("Lỗi khi ghi log CSDL");
         }).catch(error => console.error('Lỗi Fetch API:', error));
     }
-
 
     // --- QUẢN LÝ NHẬT KÝ ĐỘNG TRÊN GIAO DIỆN ---
     const yesterday = new Date();
@@ -285,7 +429,7 @@
 
     let systemLogs = [
         { date: yesterdayStr, time: '14:00', type: 'Diễn Tập', typeClass: 'bg-warning text-dark', icon: 'volume-up', user: 'Admin System', detail: 'Test còi báo cháy định kỳ. Đã xác nhận ổn định.' },
-        { date: yesterdayStr, time: '09:15', type: 'Cảnh Báo', typeClass: 'bg-danger', icon: 'thermometer-high', user: 'AI Server', detail: 'Nhiệt độ kho vật tư đạt 38°C.' }
+        { date: yesterdayStr, time: '09:15', type: 'Cảnh Báo', typeClass: 'bg-danger', icon: 'thermometer-high', user: 'AI Server', detail: 'Nhiệt độ kho vật tư đạt 38.5°C.' }
     ];
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -300,8 +444,9 @@
             if (temp > 35) {
                 let actionDiv = document.createElement('div');
                 actionDiv.className = 'mt-3 d-flex justify-content-end';
-                actionDiv.innerHTML = `<button class="btn btn-sm btn-danger fw-bold border border-dark shadow-sm animate__animated animate__pulse animate__infinite" onclick="dispatchGuard('${zone}', ${temp})"><i class="bi bi-person-fill-exclamation"></i> Cử Người Đi Kiểm Tra</button>`;
-                card.appendChild(actionDiv);
+                // ĐÃ FIX UI CHO NÚT NÀY: Bỏ border dark, thêm w-100 để bung đều, dùng custom-pulse-btn
+                actionDiv.innerHTML = `<button class="btn btn-danger text-white fw-bold w-100 d-flex justify-content-center align-items-center border-0 rounded-3 py-2 custom-pulse-btn" onclick="dispatchGuard('${zone}', ${temp})"><i class="bi bi-person-fill-exclamation fs-5 me-2"></i> Cử Người Đi Kiểm Tra</button>`;
+                card.querySelector('.card-body').appendChild(actionDiv);
             }
         });
     });
@@ -313,15 +458,15 @@
         const filteredLogs = systemLogs.filter(log => log.date === filterDate);
 
         if (filteredLogs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block opacity-50 mb-2"></i><b>Chưa có hoạt động nào trong ngày này.</b></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-muted"><div class="py-4"><i class="bi bi-inbox fs-1 d-block opacity-25 mb-3" style="font-size: 3rem !important;"></i><h6 class="fw-bold text-body">Chưa có hoạt động nào!</h6><small>Hệ thống không ghi nhận thao tác khẩn cấp trong ngày này.</small></div></td></tr>`;
         } else {
             filteredLogs.forEach(log => {
                 tbody.innerHTML += `
                     <tr>
-                        <td class="ps-4 text-start fw-bold">${log.time}</td>
-                        <td class="text-start"><span class="badge ${log.typeClass}"><i class="bi bi-${log.icon}"></i> ${log.type}</span></td>
-                        <td><span class="fw-bold text-dark">${log.user}</span></td>
-                        <td class="pe-4 text-end text-muted small">${log.detail}</td>
+                        <td class="ps-4 text-start"><div class="fw-bold text-dark fs-6">${log.time}</div></td>
+                        <td class="text-start"><span class="badge ${log.typeClass} px-3 py-2"><i class="bi bi-${log.icon} me-1"></i> ${log.type}</span></td>
+                        <td><span class="fw-bold text-body">${log.user}</span></td>
+                        <td class="pe-4 text-end text-muted small fw-bold">${log.detail}</td>
                     </tr>`;
             });
         }
@@ -331,82 +476,59 @@
         const now = new Date();
         const dateStr = now.toISOString().split('T')[0];
         const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        systemLogs.unshift({ date: dateStr, time: timeStr, type: type, typeClass: typeClass, icon: icon, user: 'Tổ Bảo Vệ', detail: detail });
+        systemLogs.unshift({ date: dateStr, time: timeStr, type: type, typeClass: typeClass, icon: icon, user: '@Html.Raw(User.Identity.IsAuthenticated ? User.Identity.Name : "Tổ Bảo Vệ")', detail: detail });
         document.getElementById('logDateFilter').value = dateStr;
         renderLogs();
     }
 
-
     // --- CÁC HÀM XỬ LÝ NÚT BẤM VÀ ĐIỀU ĐỘNG ---
-
     function dispatchGuard(zone, temp) {
         Swal.fire({
             title: 'ĐIỀU ĐỘNG BẢO VỆ',
             html: `Xác nhận cử tổ trực ban đến <b>${zone}</b> để kiểm tra nguyên nhân sự cố quá nhiệt (${temp}°C)?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
+            icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', cancelButtonColor: '#6c757d',
             confirmButtonText: '<i class="bi bi-send-check-fill"></i> Đã cử người'
         }).then((result) => {
             if (result.isConfirmed) {
                 addLogRecord('Điều Động', 'bg-primary', 'person-walking', `Cử nhân viên an ninh đến ${zone} kiểm tra cảnh báo nhiệt độ ${temp}°C.`);
-                ghiLogHeThong("CẢNH BÁO", "SỰ CỐ CẢNH BÁO", `Điều động bảo vệ kiểm tra khu vực ${zone} do nhiệt độ cao (${temp}°C)`);
+                ghiLogHeThong("CẢNH BÁO", "CẢNH BÁO S.O.S", `Điều động bảo vệ kiểm tra khu vực ${zone} do nhiệt độ cao (${temp}°C)`);
                 Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Đã điều động nhân viên!', showConfirmButton: false, timer: 3000});
             }
         });
     }
 
-    // ========================================================
-    // ĐÃ UPDATE: TÍCH HỢP SIGNALR VÀO NÚT S.O.S
-    // ========================================================
+    // TÍCH HỢP SIGNALR VÀO NÚT S.O.S
     function triggerGlobalSOS() {
         Swal.fire({
             title: 'KÍCH HOẠT BÁO ĐỘNG ĐỎ?',
             html: "Hành động này sẽ gửi cảnh báo sơ tán đến <b>tất cả thiết bị đang đăng nhập</b>.<br><br>Vui lòng nhập Mã Khẩn Cấp <b>9999</b> để xác nhận:",
-            input: 'text',
-            icon: 'error',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
+            input: 'text', icon: 'error', showCancelButton: true, confirmButtonColor: '#dc3545', cancelButtonColor: '#6c757d',
             confirmButtonText: 'KÍCH HOẠT NGAY',
             preConfirm: (inputValue) => {
-                if (inputValue !== '9999') {
-                    Swal.showValidationMessage('Sai mã khẩn cấp! Yêu cầu nhập 9999.');
-                }
+                if (inputValue !== '9999') Swal.showValidationMessage('Sai mã khẩn cấp! Yêu cầu nhập 9999.');
             }
         }).then((result) => {
             if (result.isConfirmed) {
-
-                // 1. PHÁT LỆNH SIGNALR ĐẾN TOÀN BỘ CÁC MÁY KHÁC
                 if (typeof alertConnection !== 'undefined') {
                     const msg = "PHÁT HIỆN SỰ CỐ KHẨN CẤP! KÍCH HOẠT QUY TRÌNH SƠ TÁN TOÀN CƠ SỞ!";
                     alertConnection.invoke("SendGlobalSOS", msg).catch(err => console.error(err.toString()));
-                } else {
-                    console.warn("SignalR chưa được kết nối. Chỉ báo động nội bộ.");
-                }
+                } else { console.warn("SignalR chưa được kết nối. Chỉ báo động nội bộ."); }
 
-                // 2. HIỂN THỊ CẢNH BÁO LOCAL TẠI MÁY CỦA BẢO VỆ
                 let overlay = document.createElement('div');
                 overlay.className = 'emergency-overlay';
                 document.body.appendChild(overlay);
 
-                addLogRecord('Báo Động Đỏ', 'bg-danger', 'broadcast-pin', 'Đã kích hoạt còi báo động khẩn cấp toàn tòa nhà!');
-                ghiLogHeThong("NGUY HIỂM", "SỰ CỐ CẢNH BÁO", "Đã KÍCH HOẠT trạng thái S.O.S báo động đỏ toàn cơ sở.");
+                addLogRecord('Báo Động Đỏ', 'bg-danger', 'broadcast-pin', 'Đã kích hoạt còi báo động khẩn cấp toàn cơ sở!');
+                ghiLogHeThong("NGUY HIỂM", "CẢNH BÁO S.O.S", "Đã KÍCH HOẠT trạng thái S.O.S báo động đỏ toàn cơ sở.");
 
                 Swal.fire({
-                    title: 'ĐÃ KÍCH HOẠT S.O.S',
-                    html: '<h4 class="text-danger fw-bold">QUY TRÌNH SƠ TÁN ĐANG DIỄN RA</h4>',
-                    icon: 'success',
-                    allowOutsideClick: false,
-                    confirmButtonText: 'TẮT BÁO ĐỘNG (DÀNH CHO ADMIN)',
-                    confirmButtonColor: '#212529'
+                    title: 'ĐÃ KÍCH HOẠT S.O.S', html: '<h4 class="text-danger fw-bold">QUY TRÌNH SƠ TÁN ĐANG DIỄN RA</h4>',
+                    icon: 'success', allowOutsideClick: false, confirmButtonText: 'TẮT BÁO ĐỘNG (DÀNH CHO ADMIN)', confirmButtonColor: '#212529'
                 }).then(() => {
-                    // TẮT BÁO ĐỘNG LOCAL
                     document.body.removeChild(overlay);
                     Swal.fire('Đã Tắt', 'Hệ thống trở về trạng thái an toàn.', 'info');
                     addLogRecord('Tắt Báo Động', 'bg-dark', 'shield-check', 'Admin đã tắt trạng thái S.O.S.');
-                    ghiLogHeThong("BÌNH THƯỜNG", "SỰ CỐ CẢNH BÁO", "Admin đã TẮT trạng thái S.O.S. Hệ thống trở lại bình thường.");
+                    ghiLogHeThong("BÌNH THƯỜNG", "CẢNH BÁO S.O.S", "Admin đã TẮT trạng thái S.O.S. Hệ thống trở lại bình thường.");
                 });
             }
         });
@@ -414,13 +536,12 @@
 
     function unlockEmergencyDoors() {
         Swal.fire({
-            title: 'MỞ KHÓA CÁC CỬA KHẨN CẤP?',
-            text: "Toàn bộ cửa từ thoát hiểm và chốt Barie sẽ được mở tung.",
+            title: 'MỞ KHÓA CÁC CỬA KHẨN CẤP?', text: "Toàn bộ cửa từ thoát hiểm và chốt Barie sẽ được mở tung.",
             icon: 'warning', showCancelButton: true, confirmButtonColor: '#198754', confirmButtonText: 'Xác Nhận Mở',
         }).then((result) => {
             if (result.isConfirmed) {
                 addLogRecord('Override Cửa', 'bg-success', 'door-open', 'Mở tất cả cửa khẩn cấp.');
-                ghiLogHeThong("CẢNH BÁO", "SỰ CỐ CẢNH BÁO", "Đã sử dụng lệnh Cưỡng chế: Mở khóa tất cả cửa thoát hiểm/barie.");
+                ghiLogHeThong("CẢNH BÁO", "CẢNH BÁO S.O.S", "Đã sử dụng lệnh Cưỡng chế: Mở khóa tất cả cửa thoát hiểm/barie.");
                 Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Các cửa khẩn cấp đã được mở!', showConfirmButton: false, timer: 3000});
             }
         });
@@ -428,13 +549,12 @@
 
     function turnOnSprinklers() {
         Swal.fire({
-            title: 'BẬT HỆ THỐNG PHUN NƯỚC?',
-            text: "Máy bơm PCCC sẽ kích hoạt vòi phun sương.",
+            title: 'BẬT HỆ THỐNG PHUN NƯỚC?', text: "Máy bơm PCCC sẽ kích hoạt vòi phun sương.",
             icon: 'question', showCancelButton: true, confirmButtonColor: '#0dcaf0', confirmButtonText: 'Bật Máy Bơm',
         }).then((result) => {
             if (result.isConfirmed) {
                 addLogRecord('Kích hoạt Bơm', 'bg-info text-dark', 'droplet-half', 'Đã kích hoạt hệ thống phun nước chữa cháy.');
-                ghiLogHeThong("NGUY HIỂM", "SỰ CỐ CẢNH BÁO", "Đã sử dụng lệnh Cưỡng chế: Kích hoạt hệ thống bơm phun nước chữa cháy.");
+                ghiLogHeThong("NGUY HIỂM", "CẢNH BÁO S.O.S", "Đã sử dụng lệnh Cưỡng chế: Kích hoạt hệ thống bơm phun nước chữa cháy.");
                 Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Hệ thống nước đang phun!', showConfirmButton: false, timer: 3000});
             }
         });
@@ -442,13 +562,12 @@
 
     function testAlarm() {
         Swal.fire({
-            title: 'DIỄN TẬP BÁO CHÁY',
-            text: "Còi báo động sẽ hú trong 15 giây.",
+            title: 'DIỄN TẬP BÁO CHÁY', text: "Còi báo động sẽ hú trong 15 giây.",
             icon: 'info', showCancelButton: true, confirmButtonColor: '#ffc107', confirmButtonText: 'Bắt đầu Test',
         }).then((result) => {
             if (result.isConfirmed) {
                 addLogRecord('Diễn Tập', 'bg-warning text-dark', 'volume-up', 'Tiến hành test còi hú và loa phát thanh.');
-                ghiLogHeThong("BÌNH THƯỜNG", "SỰ CỐ CẢNH BÁO", "Bắt đầu quy trình Diễn tập: Kích hoạt test còi và loa phát thanh tòa nhà.");
+                ghiLogHeThong("BÌNH THƯỜNG", "CẢNH BÁO S.O.S", "Bắt đầu quy trình Diễn tập: Kích hoạt test còi và loa phát thanh tòa nhà.");
                 Swal.fire({ title: 'Đang hú còi...', timer: 3000, didOpen: () => { Swal.showLoading(); }});
             }
         });
@@ -456,7 +575,7 @@
 
     function call114() {
         addLogRecord('Gọi Cứu Hỏa', 'bg-dark', 'telephone', 'Kết nối đường dây nóng 114.');
-        ghiLogHeThong("NGUY HIỂM", "SỰ CỐ CẢNH BÁO", "Bảo vệ đã kết nối đàm thoại với tổng đài 114 (PCCC).");
+        ghiLogHeThong("NGUY HIỂM", "CẢNH BÁO S.O.S", "Bảo vệ đã kết nối đàm thoại với tổng đài 114 (PCCC).");
         Swal.fire('Đang kết nối 114...', 'Vui lòng cầm bộ đàm lên để trao đổi.', 'info');
     }
 </script>

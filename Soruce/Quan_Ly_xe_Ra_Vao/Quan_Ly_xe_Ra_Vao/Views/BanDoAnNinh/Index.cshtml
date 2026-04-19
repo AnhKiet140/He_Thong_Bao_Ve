@@ -4,10 +4,16 @@
 @{
     ViewData["Title"] = "Bản Đồ An Ninh Tổng Hợp";
 
-    // Lấy danh sách xe đang đậu trực tiếp từ DB
+    // NÂNG CẤP LẤY DỮ LIỆU: Lấy thêm Loại Đối Tượng và Biển Số để check đỗ sai
     var danhSachXeDangDau = DbContext.LichSuCheckIns
         .Where(x => x.ViTriDo != null && x.TrangThai != null && x.TrangThai.Contains("đậu"))
-        .Select(x => x.ViTriDo)
+        .Select(x => new
+        {
+            ViTri = x.ViTriDo,
+            Loai = x.LoaiDoiTuong ?? "Khách", // Mặc định là Khách nếu rỗng
+            BienSo = x.BienSoXe ?? "N/A",
+            Ten = x.HoTen ?? "Khách vãng lai"
+        })
         .ToList();
 }
 
@@ -39,8 +45,8 @@
                     <option value="floor1">Tầng 1 (IT & Giám Đốc)</option>
                     <option value="floor2">Tầng 2 (Phòng Nhân Sự)</option>
                     <option value="floor3">Tầng 3 (Phòng Kế Toán)</option>
-                    <option value="basement_A" selected>Tầng Hầm - Khu A (Ô tô)</option>
-                    <option value="basement_B">Tầng Hầm - Khu B (Ô tô)</option>
+                    <option value="basement_A" selected>Tầng Hầm - Khu A (Khách & VIP)</option>
+                    <option value="basement_B">Tầng Hầm - Khu B (Nhân Viên)</option>
                     <option value="basement_moto">Tầng Hầm - Xe Máy</option>
                 </select>
             </div>
@@ -54,146 +60,103 @@
         <div class="col-lg-9 d-flex flex-column gap-3">
 
             <div id="view-blueprint" class="card border-0 shadow-sm rounded-4 overflow-hidden bg-dark animate__animated animate__fadeIn">
-                <div class="card-header bg-black text-white d-flex justify-content-between align-items-center py-3 border-0">
-                    <span id="blueprintTitle" class="fw-bold small text-uppercase text-info"><i class="bi bi-map"></i> Blueprint - Tầng Hầm - Khu A (Ô tô)</span>
-                    <div class="d-flex gap-3 small fw-bold">
-                        <span class="text-success"><i class="bi bi-circle-fill"></i> Trống</span>
-                        <span class="text-danger"><i class="bi bi-circle-fill"></i> Đang Đậu</span>
+                <div class="card-header bg-black text-white d-flex justify-content-between align-items-center py-3 border-0 z-3">
+                    <span id="blueprintTitle" class="fw-bold small text-uppercase text-info"><i class="bi bi-map"></i> Blueprint - Tầng Hầm - Khu A</span>
+                    <div class="d-flex gap-3 small fw-bold flex-wrap justify-content-end">
+                        <span class="text-warning"><i class="bi bi-star-fill"></i> Sếp/VIP</span>
+                        <span class="text-info"><i class="bi bi-person-badge"></i> Khách</span>
+                        <span class="text-secondary"><i class="bi bi-person-vcard"></i> Nhân Viên</span>
+                        <span class="text-danger" style="animation: pulseDanger 1s infinite;"><i class="bi bi-exclamation-triangle-fill"></i> Đỗ sai</span>
                     </div>
                 </div>
 
-                <div class="blueprint-frame" style="position: relative; height: 600px; width: 100%; overflow-y: auto; overflow-x: hidden; padding-bottom: 20px;">
-                    <div id="map-ground" class="blueprint-container d-none">
-                        <div class="room-box" style="top: 5%; left: 40%; width: 55%; height: 60%;"><i class="bi bi-building room-bg-icon"></i><div class="room-title">SẢNH TIẾP TÂN</div><div class="cam-marker" style="top: 15px; right: 15px;" onclick="switchTab('camera')"><div class="cam-pulse bg-success"></div><i class="bi bi-webcam-fill text-success fs-3"></i><div class="cam-label">Cam Sảnh 360</div></div></div>
-                        <div class="room-box border-warning text-warning" style="top: 5%; left: 5%; width: 30%; height: 40%; background: rgba(255,193,7,0.05);"><i class="bi bi-box-seam room-bg-icon text-warning"></i><div class="room-title text-warning">KHO VẬT TƯ</div><div class="cam-marker" style="top: 15px; left: 15px;" onclick="switchTab('camera')"><div class="cam-pulse bg-warning"></div><i class="bi bi-thermometer-sun text-warning fs-3"></i><div class="cam-label border-warning text-warning">Cam Nhiệt Kho</div></div></div>
-                        <div class="room-box" style="top: 70%; left: 40%; width: 55%; height: 25%;"><i class="bi bi-door-open room-bg-icon"></i><div class="room-title">CỔNG CHÍNH RA VÀO</div><div class="cam-marker" style="bottom: 15px; left: 50%; transform: translateX(-50%);" onclick="switchTab('camera')"><div class="cam-pulse bg-info"></div><i class="bi bi-person-bounding-box text-info fs-3"></i><div class="cam-label border-info text-info">FaceID Cổng</div></div></div>
+                <div class="blueprint-frame" id="blueprint-frame" style="position: relative; height: 650px; width: 100%; overflow: hidden; cursor: grab;">
+                    <div class="position-absolute bottom-0 end-0 m-3 d-flex flex-column gap-2 z-3">
+                        <button class="btn btn-light bg-opacity-75 rounded-circle shadow fw-bold" onclick="zoomMap(0.1)" title="Phóng to"><i class="bi bi-zoom-in"></i></button>
+                        <button class="btn btn-light bg-opacity-75 rounded-circle shadow fw-bold" onclick="resetZoom()" title="Về mặc định"><i class="bi bi-crosshair"></i></button>
+                        <button class="btn btn-light bg-opacity-75 rounded-circle shadow fw-bold" onclick="zoomMap(-0.1)" title="Thu nhỏ"><i class="bi bi-zoom-out"></i></button>
                     </div>
 
-                    <div id="map-floor1" class="blueprint-container d-none"><div class="room-box border-primary" style="top: 10%; left: 40%; width: 55%; height: 80%; background: rgba(13,110,253,0.05);"><i class="bi bi-hdd-network room-bg-icon text-primary"></i><div class="room-title text-primary">TRUNG TÂM DỮ LIỆU (IT)</div></div></div>
-                    <div id="map-floor2" class="blueprint-container d-none"><div class="room-box" style="top: 10%; left: 10%; width: 80%; height: 80%;"><i class="bi bi-people-fill room-bg-icon"></i><div class="room-title">VĂN PHÒNG NHÂN SỰ</div></div></div>
-                    <div id="map-floor3" class="blueprint-container d-none"><div class="room-box" style="top: 10%; left: 10%; width: 80%; height: 80%;"><i class="bi bi-safe-fill room-bg-icon"></i><div class="room-title">PHÒNG KẾ TOÁN & KÉT SẮT</div></div></div>
+                    <div id="map-zoom-wrapper" style="transform-origin: 0 0; width: 100%; height: 100%; position: relative; padding: 20px;">
 
-                    <div id="map-basement_A" class="basement-clean-layout p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="zone-badge bg-success animate__animated animate__pulse animate__infinite">
-                                <i class="bi bi-arrow-down-square-fill"></i> LỐI VÀO (ENTRANCE)
-                            </div>
-                            <div class="cam-static cursor-pointer text-info fw-bold border border-info px-3 py-1 rounded" onclick="switchTab('camera')">
-                                <i class="bi bi-camera-video-fill"></i> Xem ALPR Cổng A
-                            </div>
+                        <div id="map-ground" class="blueprint-container d-none w-100 h-100">
+                            <div class="room-box" style="top: 5%; left: 40%; width: 55%; height: 60%;"><i class="bi bi-building room-bg-icon"></i><div class="room-title">SẢNH TIẾP TÂN</div><div class="cam-marker" style="top: 15px; right: 15px;" onclick="switchTab('camera')"><div class="cam-pulse bg-success"></div><i class="bi bi-webcam-fill text-success fs-3"></i><div class="cam-label">Cam Sảnh 360</div></div></div>
+                            <div class="room-box border-warning text-warning" style="top: 5%; left: 5%; width: 30%; height: 40%; background: rgba(255,193,7,0.05);"><i class="bi bi-box-seam room-bg-icon text-warning"></i><div class="room-title text-warning">KHO VẬT TƯ</div><div class="cam-marker" style="top: 15px; left: 15px;" onclick="switchTab('camera')"><div class="cam-pulse bg-warning"></div><i class="bi bi-thermometer-sun text-warning fs-3"></i><div class="cam-label border-warning text-warning">Cam Nhiệt Kho</div></div></div>
+                            <div class="room-box" style="top: 70%; left: 40%; width: 55%; height: 25%;"><i class="bi bi-door-open room-bg-icon"></i><div class="room-title">CỔNG CHÍNH RA VÀO</div><div class="cam-marker" style="bottom: 15px; left: 50%; transform: translateX(-50%);" onclick="switchTab('camera')"><div class="cam-pulse bg-info"></div><i class="bi bi-person-bounding-box text-info fs-3"></i><div class="cam-label border-info text-info">FaceID Cổng</div></div></div>
                         </div>
-                        <div class="parking-block">
-                            <div class="parking-grid" id="grid-A-1"></div>
-                        </div>
-                        <div class="driveway-clean">
-                            <i class="bi bi-chevron-double-left fs-3 driveway-arrow left"></i>
-                            <span><i class="bi bi-car-front"></i> LÀN ĐƯỜNG LƯU THÔNG CHÍNH - TỐC ĐỘ < 5KM/H <i class="bi bi-car-front"></i></span>
-                            <i class="bi bi-chevron-double-right fs-3 driveway-arrow right"></i>
-                        </div>
-                        <div class="parking-block">
-                            <div class="parking-grid" id="grid-A-2"></div>
-                        </div>
-                        <div class="d-flex justify-content-end mt-3">
-                            <div class="zone-badge bg-danger animate__animated animate__pulse animate__infinite">
-                                LỐI RA (EXIT) <i class="bi bi-arrow-right-square-fill"></i>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div id="map-basement_B" class="basement-clean-layout d-none p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="zone-badge bg-success animate__animated animate__pulse animate__infinite">
-                                <i class="bi bi-arrow-down-square-fill"></i> LỐI VÀO (ENTRANCE)
-                            </div>
-                            <div class="cam-static cursor-pointer text-info fw-bold border border-info px-3 py-1 rounded" onclick="switchTab('camera')">
-                                <i class="bi bi-camera-video-fill"></i> Xem ALPR Cổng B
-                            </div>
-                        </div>
-                        <div class="parking-block">
-                            <div class="parking-grid" id="grid-B-1"></div>
-                        </div>
-                        <div class="driveway-clean">
-                            <i class="bi bi-chevron-double-left fs-3 driveway-arrow left"></i>
-                            <span><i class="bi bi-car-front"></i> LÀN ĐƯỜNG LƯU THÔNG CHÍNH - TỐC ĐỘ < 5KM/H <i class="bi bi-car-front"></i></span>
-                            <i class="bi bi-chevron-double-right fs-3 driveway-arrow right"></i>
-                        </div>
-                        <div class="parking-block">
-                            <div class="parking-grid" id="grid-B-2"></div>
-                        </div>
-                        <div class="d-flex justify-content-end mt-3">
-                            <div class="zone-badge bg-danger animate__animated animate__pulse animate__infinite">
-                                LỐI RA (EXIT) <i class="bi bi-arrow-right-square-fill"></i>
-                            </div>
-                        </div>
-                    </div>
+                        <div id="map-floor1" class="blueprint-container d-none w-100 h-100"><div class="room-box border-primary" style="top: 10%; left: 40%; width: 55%; height: 80%; background: rgba(13,110,253,0.05);"><i class="bi bi-hdd-network room-bg-icon text-primary"></i><div class="room-title text-primary">TRUNG TÂM DỮ LIỆU (IT)</div></div></div>
+                        <div id="map-floor2" class="blueprint-container d-none w-100 h-100"><div class="room-box" style="top: 10%; left: 10%; width: 80%; height: 80%;"><i class="bi bi-people-fill room-bg-icon"></i><div class="room-title">VĂN PHÒNG NHÂN SỰ</div></div></div>
+                        <div id="map-floor3" class="blueprint-container d-none w-100 h-100"><div class="room-box" style="top: 10%; left: 10%; width: 80%; height: 80%;"><i class="bi bi-safe-fill room-bg-icon"></i><div class="room-title">PHÒNG KẾ TOÁN & KÉT SẮT</div></div></div>
 
-                    <div id="map-basement_moto" class="basement-clean-layout d-none p-4 h-100">
-                        <div class="room-box w-100 position-relative" style="min-height: 450px; border: 3px dashed rgba(13,202,240,0.4);">
-                            <i class="bi bi-bicycle room-bg-icon"></i>
-                            <div class="room-title fs-5" style="top: 20px; left: 50%; transform: translateX(-50%);">KHU VỰC XE MÁY TỰ DO</div>
-                            <div class="zone-badge bg-success position-absolute" style="top: 20px; left: 20px;">
-                                <i class="bi bi-arrow-down-square-fill"></i> VÀO (MOTO)
+                        <div id="map-basement_A" class="basement-clean-layout w-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="zone-badge bg-success animate__animated animate__pulse animate__infinite"><i class="bi bi-arrow-down-square-fill"></i> LỐI VÀO (ENTRANCE)</div>
+                                <div class="cam-static cursor-pointer text-info fw-bold border border-info px-3 py-1 rounded" onclick="switchTab('camera')"><i class="bi bi-camera-video-fill"></i> Xem ALPR Cổng A</div>
                             </div>
-                            <div class="driveway-clean position-absolute" style="top: 45%; width: 90%; left: 5%;">
-                                <span><i class="bi bi-arrow-right"></i> HƯỚNG DI CHUYỂN <i class="bi bi-arrow-right"></i></span>
+                            <div id="dynamic-parking-A" class="w-100 pb-5"></div>
+                        </div>
+
+                        <div id="map-basement_B" class="basement-clean-layout d-none w-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="zone-badge bg-success animate__animated animate__pulse animate__infinite"><i class="bi bi-arrow-down-square-fill"></i> LỐI VÀO (ENTRANCE)</div>
+                                <div class="cam-static cursor-pointer text-info fw-bold border border-info px-3 py-1 rounded" onclick="switchTab('camera')"><i class="bi bi-camera-video-fill"></i> Xem ALPR Cổng B</div>
                             </div>
-                            <div class="zone-badge bg-danger position-absolute" style="bottom: 20px; right: 20px;">
-                                RA (MOTO) <i class="bi bi-arrow-right-square-fill"></i>
-                            </div>
-                            <div class="cam-static cursor-pointer text-success fw-bold border border-success px-3 py-1 rounded position-absolute" style="bottom: 20px; left: 20px;" onclick="switchTab('camera')">
-                                <i class="bi bi-camera-video-fill"></i> Cam Bãi Xe Máy
+                            <div id="dynamic-parking-B" class="w-100 pb-5"></div>
+                        </div>
+
+                        <div id="map-basement_moto" class="basement-clean-layout d-none h-100 w-100">
+                            <div class="room-box w-100 position-relative" style="min-height: 450px; border: 3px dashed rgba(13,202,240,0.4);">
+                                <i class="bi bi-bicycle room-bg-icon"></i>
+                                <div class="room-title fs-5" style="top: 20px; left: 50%; transform: translateX(-50%);">KHU VỰC XE MÁY TỰ DO</div>
+                                <div class="zone-badge bg-success position-absolute" style="top: 20px; left: 20px;"><i class="bi bi-arrow-down-square-fill"></i> VÀO (MOTO)</div>
+                                <div class="driveway-clean position-absolute" style="top: 45%; width: 90%; left: 5%;"><span><i class="bi bi-arrow-right"></i> HƯỚNG DI CHUYỂN <i class="bi bi-arrow-right"></i></span></div>
+                                <div class="zone-badge bg-danger position-absolute" style="bottom: 20px; right: 20px;">RA (MOTO) <i class="bi bi-arrow-right-square-fill"></i></div>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
 
             <div id="view-camera" class="card border-0 shadow-sm rounded-4 bg-card-custom overflow-hidden d-none animate__animated animate__fadeIn h-100">
                 <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold mb-0 text-body"><i class="bi bi-webcam-fill text-primary"></i> CAMERA GIÁM SÁT CHI TIẾT - <span id="cam-zone-name" class="text-primary">TẦNG HẦM - KHU A</span></h6>
+                    <h6 class="fw-bold mb-0 text-body"><i class="bi bi-webcam-fill text-primary"></i> HỆ THỐNG CAMERA GIÁM SÁT - <span id="cam-zone-name" class="text-primary">TẦNG HẦM - KHU A</span></h6>
                     <span class="badge bg-danger pulse-btn-danger"><i class="bi bi-record-circle me-1"></i>ĐANG GHI HÌNH LIVE</span>
                 </div>
-                <div class="card-body p-4" style="background-color: #050505;">
-                    <div class="row g-4 h-100">
+
+                <div class="card-body p-4 custom-scrollbar" style="background-color: #0a0a0a; max-height: 650px; overflow-y: auto;">
+                    <div class="row g-4" id="camera-grid">
                         <div class="col-md-6">
-                            <div class="cam-feed h-100 min-vh-25">
-                                <div class="position-absolute top-0 start-0 m-3 badge bg-success bg-opacity-75 z-1 border border-success fs-6"><i class="bi bi-circle-fill text-white small me-1" style="font-size: 8px;"></i> ONLINE</div>
-                                <div class="position-absolute top-0 end-0 m-3 text-white text-shadow small z-1 fw-bold fs-6"><i class="bi bi-geo-alt-fill text-danger me-1"></i><span id="cam1-name">ALPR Lối Vào A</span></div>
-                                <div class="d-flex h-100 align-items-center justify-content-center pt-5 pb-5">
-                                    <i class="bi bi-camera-video text-white opacity-25" style="font-size: 5rem;"></i>
-                                </div>
-                                <div class="cam-overlay w-100 p-2 px-3 d-flex justify-content-between fs-6">
-                                    <span>CHK-IN PRO // STREAM-01</span>
-                                    <span class="live-clock-cam text-success fw-bold"></span>
-                                </div>
+                            <div class="cam-feed">
+                                <div class="cam-content"><i class="bi bi-camera-video text-white opacity-25"></i></div>
+                                <div class="cam-status"><i class="bi bi-circle-fill text-white small me-1"></i> ONLINE</div>
+                                <div class="cam-title"><i class="bi bi-geo-alt-fill text-danger me-1"></i><span id="cam1-name">ALPR Lối Vào</span></div>
+                                <button class="btn-fullscreen" onclick="toggleFullscreen(this.parentElement)" title="Phóng to toàn màn hình"><i class="bi bi-fullscreen"></i></button>
+                                <div class="cam-overlay"><span>CHK-IN PRO // STR-01</span><span class="live-clock-cam text-success fw-bold"></span></div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="cam-feed h-100 min-vh-25">
-                                <div class="position-absolute top-0 start-0 m-3 badge bg-success bg-opacity-75 z-1 border border-success fs-6"><i class="bi bi-circle-fill text-white small me-1" style="font-size: 8px;"></i> ONLINE</div>
-                                <div class="position-absolute top-0 end-0 m-3 text-white text-shadow small z-1 fw-bold fs-6"><i class="bi bi-geo-alt-fill text-danger me-1"></i><span id="cam2-name">ALPR Lối Ra A</span></div>
-                                <div class="d-flex h-100 align-items-center justify-content-center pt-5 pb-5">
-                                    <i class="bi bi-camera-video text-white opacity-25" style="font-size: 5rem;"></i>
-                                </div>
-                                <div class="cam-overlay w-100 p-2 px-3 d-flex justify-content-between fs-6">
-                                    <span>CHK-IN PRO // STREAM-02</span>
-                                    <span class="live-clock-cam text-success fw-bold"></span>
-                                </div>
+                            <div class="cam-feed">
+                                <div class="cam-content"><i class="bi bi-camera-video text-white opacity-25"></i></div>
+                                <div class="cam-status"><i class="bi bi-circle-fill text-white small me-1"></i> ONLINE</div>
+                                <div class="cam-title"><i class="bi bi-geo-alt-fill text-danger me-1"></i><span id="cam2-name">ALPR Lối Ra</span></div>
+                                <button class="btn-fullscreen" onclick="toggleFullscreen(this.parentElement)"><i class="bi bi-fullscreen"></i></button>
+                                <div class="cam-overlay"><span>CHK-IN PRO // STR-02</span><span class="live-clock-cam text-success fw-bold"></span></div>
                             </div>
                         </div>
                         <div class="col-md-12">
-                            <div class="cam-feed h-100 min-vh-25">
-                                <div class="position-absolute top-0 start-0 m-3 badge bg-success bg-opacity-75 z-1 border border-success fs-6"><i class="bi bi-circle-fill text-white small me-1" style="font-size: 8px;"></i> ONLINE</div>
-                                <div class="position-absolute top-0 end-0 m-3 text-white text-shadow small z-1 fw-bold fs-6"><i class="bi bi-geo-alt-fill text-warning me-1"></i><span id="cam3-name">Toàn Cảnh Hầm A (PTZ)</span></div>
-                                <div class="d-flex h-100 align-items-center justify-content-center pt-5 pb-5">
-                                    <i class="bi bi-camera-video text-white opacity-25" style="font-size: 5rem;"></i>
-                                </div>
-                                <div class="cam-overlay w-100 p-2 px-3 d-flex justify-content-between fs-6">
-                                    <span>CHK-IN PRO // WIDE-ANGLE-03</span>
-                                    <span class="live-clock-cam text-success fw-bold"></span>
-                                </div>
+                            <div class="cam-feed" style="min-height: 350px;">
+                                <div class="cam-content"><i class="bi bi-camera-video text-white opacity-25"></i></div>
+                                <div class="cam-status"><i class="bi bi-circle-fill text-white small me-1"></i> ONLINE</div>
+                                <div class="cam-title"><i class="bi bi-geo-alt-fill text-warning me-1"></i><span id="cam3-name">Toàn Cảnh Bãi Đỗ (PTZ)</span></div>
+                                <button class="btn-fullscreen" onclick="toggleFullscreen(this.parentElement)"><i class="bi bi-fullscreen"></i></button>
+                                <div class="cam-overlay"><span>CHK-IN PRO // WIDE-03</span><span class="live-clock-cam text-success fw-bold"></span></div>
                             </div>
                         </div>
+
+                        <div id="cam-container-basement_A" class="row g-4 w-100 m-0 p-0 d-none"></div>
+                        <div id="cam-container-basement_B" class="row g-4 w-100 m-0 p-0 d-none"></div>
                     </div>
                 </div>
             </div>
@@ -219,9 +182,13 @@
                     <span class="small text-body fw-bold">Đang trống:</span>
                     <span class="fw-bold text-success fs-5" id="emptyCount">240</span>
                 </div>
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between mb-2">
                     <span class="small text-body fw-bold">Đang đậu:</span>
                     <span class="fw-bold text-danger fs-5" id="occupiedCount">0</span>
+                </div>
+                <div class="d-flex justify-content-between border-top pt-2 mt-2">
+                    <span class="small text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo đỗ sai:</span>
+                    <span class="fw-bold text-danger fs-5 blink-text" id="violationCount">0</span>
                 </div>
 
                 <div class="mt-4 pt-3 border-top text-center">
@@ -235,15 +202,10 @@
 
 <style>
     /* CSS CHUNG */
-    .custom-header-card {
+    .custom-header-card, .bg-card-custom {
         background-color: #ffffff;
     }
 
-    .bg-card-custom {
-        background-color: #ffffff;
-    }
-
-    /* CSS TAB BUTTONS */
     .tab-container {
         background-color: #f8f9fa;
         border-color: #dee2e6;
@@ -257,6 +219,18 @@
             background-color: rgba(0,0,0,0.05);
         }
 
+    .blink-text {
+        animation: blinker 1s linear infinite;
+    }
+    @@keyframes blinker {
+        50%
+
+    {
+        opacity: 0.3;
+    }
+
+    }
+
     /* BLUEPRINT STYLING */
     .blueprint-frame {
         background-color: #0b132b;
@@ -266,13 +240,9 @@
 
     .blueprint-container {
         position: absolute;
-        height: 100%;
-        width: 100%;
-        top: 0;
-        left: 0;
     }
 
-    /* VĂN PHÒNG (TRỆT, LẦU) */
+    /* VĂN PHÒNG */
     .room-box {
         position: absolute;
         border: 2px solid rgba(59, 130, 246, 0.4);
@@ -338,7 +308,7 @@
         border: 1px solid rgba(255,255,255,0.2);
     }
 
-    /* LAYOUT BÃI XE */
+    /* BÃI XE VÀ ĐƯỜNG ĐI CHUẨN MỚI */
     .basement-clean-layout {
         display: flex;
         flex-direction: column;
@@ -370,7 +340,6 @@
         border: 1px solid rgba(59, 130, 246, 0.3);
         padding: 15px;
         border-radius: 8px;
-        margin-bottom: 5px;
     }
 
     .parking-grid {
@@ -380,8 +349,9 @@
         width: 100%;
     }
 
+    /* Ô ĐỖ XE */
     .parking-slot {
-        height: 60px;
+        height: 75px;
         border: 1px solid rgba(13,202,240,0.3);
         display: flex;
         flex-direction: column;
@@ -392,25 +362,87 @@
         color: rgba(255,255,255,0.4);
         border-radius: 4px;
         transition: all 0.3s;
+        position: relative;
     }
 
-    .slot-empty {
-        background: rgba(25, 135, 84, 0.1);
-        border-color: rgba(25,135,84,0.5);
-        color: #198754;
+    .slot-vip {
+        background: rgba(255, 193, 7, 0.05);
+        border-color: rgba(255, 193, 7, 0.4);
+        color: rgba(255, 193, 7, 0.7);
+    }
+
+    .slot-customer {
+        background: rgba(13, 202, 240, 0.05);
+        border-color: rgba(13, 202, 240, 0.4);
+        color: rgba(13, 202, 240, 0.7);
+    }
+
+    .slot-employee {
+        background: rgba(108, 117, 125, 0.1);
+        border-color: rgba(108, 117, 125, 0.4);
+        color: rgba(108, 117, 125, 0.7);
     }
 
     .slot-occupied {
-        background: rgba(220, 53, 69, 0.15) !important;
+        background: rgba(25, 135, 84, 0.15) !important;
+        border-color: #198754 !important;
+        color: #198754 !important;
+        box-shadow: inset 0 0 15px rgba(25, 135, 84, 0.2);
+    }
+
+    .slot-violation {
+        background: rgba(220, 53, 69, 0.2) !important;
         border-color: #dc3545 !important;
         color: #ff4d4d !important;
-        box-shadow: inset 0 0 15px rgba(220, 53, 69, 0.3);
+        animation: violationFlash 1s infinite alternate;
+    }
+    @@keyframes violationFlash {
+        0%
+
+    {
+        box-shadow: inset 0 0 5px rgba(220, 53, 69, 0.5), 0 0 5px rgba(220, 53, 69, 0.5);
+        border-color: #dc3545;
+    }
+
+    100% {
+        box-shadow: inset 0 0 20px rgba(255, 193, 7, 0.8), 0 0 15px rgba(255, 193, 7, 0.8);
+        border-color: #ffc107;
+    }
+
     }
 
     .car-icon {
         font-size: 1.8rem;
         margin-bottom: 2px;
         filter: drop-shadow(0 0 5px rgba(255, 77, 77, 0.8));
+    }
+
+    .slot-violation .car-icon {
+        filter: drop-shadow(0 0 8px rgba(255, 0, 0, 1));
+    }
+
+    .slot-cam {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        font-size: 0.65rem;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: all 0.2s;
+        z-index: 10;
+    }
+
+        .slot-cam:hover {
+            opacity: 1;
+            transform: scale(1.4);
+            color: #fff !important;
+        }
+
+    /* ĐƯỜNG NỘI BỘ */
+    .mini-driveway {
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        padding: 5px;
+        border-radius: 4px;
     }
 
     .driveway-clean {
@@ -435,118 +467,223 @@
     .driveway-arrow.right {
         animation: moveRight 2s infinite linear;
     }
-
     @@keyframes moveLeft {
-        0% {
-            transform: translateX(10px);
-            opacity: 0;
-        }
+        0%
 
-        50% {
-            opacity: 1;
-        }
-
-        100% {
-            transform: translateX(-10px);
-            opacity: 0;
-        }
+    {
+        transform: translateX(10px);
+        opacity: 0;
     }
 
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(-10px);
+        opacity: 0;
+    }
+
+    }
     @@keyframes moveRight {
-        0% {
-            transform: translateX(-10px);
-            opacity: 0;
-        }
+        0%
 
-        50% {
-            opacity: 1;
-        }
-
-        100% {
-            transform: translateX(10px);
-            opacity: 0;
-        }
+    {
+        transform: translateX(-10px);
+        opacity: 0;
     }
 
-    /* CAMERA CSS CHO TAB MỚI */
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(10px);
+        opacity: 0;
+    }
+
+    }
+
+    /* NÂNG CẤP GIAO DIỆN CAMERA: SỬA LỖI TEXT LỆCH CHUẨN XÁC */
     .cam-feed {
-        background: #111;
+        background: #1a1a1a;
         border: 1px solid #333;
         border-radius: 8px;
         position: relative;
         overflow: hidden;
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s;
     }
 
-    .min-vh-25 {
-        min-height: 25vh;
+        .cam-feed:hover {
+            border-color: #0d6efd;
+            box-shadow: 0 0 15px rgba(13, 110, 253, 0.4);
+        }
+
+    /* Gắn Background Camera vào tuyệt đối để không đẩy text */
+    .cam-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle, #2a2a2a 0%, #000 100%);
+        z-index: 1;
     }
+
+        .cam-content i {
+            font-size: 4rem;
+        }
+
+    /* Các thành phần Text đặt lên trên z-index 2 */
+    .cam-status {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(25, 135, 84, 0.8);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        z-index: 2;
+        margin: 0;
+    }
+
+        .cam-status i {
+            font-size: 6px;
+        }
+
+    .cam-title {
+        position: absolute;
+        top: 10px;
+        right: 40px;
+        color: white;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-shadow: 1px 1px 3px black;
+        z-index: 2;
+        margin: 0;
+    }
+
+    .btn-fullscreen {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        border-radius: 4px;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 0.2s;
+        z-index: 5;
+    }
+
+        .btn-fullscreen:hover {
+            background: rgba(255,255,255,0.5);
+            transform: scale(1.1);
+        }
 
     .cam-overlay {
         position: absolute;
         bottom: 0;
-        background: rgba(0,0,0,0.7);
+        left: 0;
+        width: 100%;
+        background: rgba(0,0,0,0.8);
+        padding: 5px 15px;
         font-family: 'Courier New', Courier, monospace;
-        color: #ccc;
+        color: #0dcaf0;
+        font-size: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        margin: 0;
+        z-index: 2;
     }
 
-    .text-shadow {
-        text-shadow: 1px 1px 3px black;
+    /* Chế độ Phóng To Camera */
+    .cam-fullscreen {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 999999 !important;
+        border-radius: 0 !important;
+        background: #000 !important;
     }
 
-    /* NÚT SOS & ANIMATIONS */
+        .cam-fullscreen .cam-content i {
+            font-size: 15rem !important;
+        }
+
+    /* SOS & DARK MODE */
     .btn-sos {
         animation: sosbtn 1.5s infinite;
     }
-
     @@keyframes sosbtn {
-        0%, 100% {
-            transform: scale(1);
-        }
+        0%, 100%
 
-        50% {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(220, 53, 69, 0.8);
-        }
+    {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(220, 53, 69, 0.8);
+    }
+
     }
 
     .pulse-btn-danger {
         animation: pulseDanger 2s infinite;
     }
-
     @@keyframes pulseDanger {
-        0% {
-            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.5);
-        }
+        0%
 
-        70% {
-            box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
-        }
-
-        100% {
-            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
-        }
+    {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.5);
     }
 
-    @@keyframes pulsing {
-        0% {
-            transform: scale(0.8);
-            opacity: 0.8;
-        }
+    70% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
 
-        100% {
-            transform: scale(2.5);
-            opacity: 0;
-        }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+
+    }
+    @@keyframes pulsing {
+        0%
+
+    {
+        transform: scale(0.8);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+
     }
 
     .sos-flashing {
         transition: background-color 0.2s ease-in-out;
     }
 
-    /* DARK MODE OVERRIDES */
-    [data-bs-theme="dark"] .custom-header-card,
-    [data-bs-theme="dark"] .bg-card-custom {
+    [data-bs-theme="dark"] .custom-header-card, [data-bs-theme="dark"] .bg-card-custom {
         background-color: #1e1e1e !important;
         border-color: #333 !important;
     }
@@ -572,76 +709,216 @@
 </style>
 
 <script>
-    let rawSlots = @Html.Raw(Json.Serialize(danhSachXeDangDau ?? new List<string>()));
-    let occupiedSlotsNormalized = rawSlots.map(s => s ? s.replace(/\s+/g, '').toUpperCase() : "");
+    let rawData = @Html.Raw(Json.Serialize(danhSachXeDangDau));
 
-    // LOGIC CHUYỂN TAB
+    let parkedCars = {};
+    if (rawData) {
+        rawData.forEach(car => {
+            if(car.viTri) {
+                let slotNormalized = car.viTri.replace(/\s+/g, '').toUpperCase();
+                parkedCars[slotNormalized] = {
+                    role: car.loai,
+                    plate: car.bienSo,
+                    name: car.ten
+                };
+            }
+        });
+    }
+
+    let totalViolations = 0;
+
+    // ==========================================
+    // 1. ZOOM & PAN ENGINE
+    // ==========================================
+    let scale = 1; let panning = false; let pointX = 0; let pointY = 0; let startX, startY;
+    const frame = document.getElementById('blueprint-frame');
+    const zoomWrapper = document.getElementById('map-zoom-wrapper');
+
+    function setTransform() { zoomWrapper.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
+
+    frame.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button') || e.target.closest('.cam-marker') || e.target.closest('.slot-cam')) return;
+        e.preventDefault(); panning = true; frame.style.cursor = 'grabbing';
+        startX = e.clientX - pointX; startY = e.clientY - pointY;
+    });
+    frame.addEventListener('mousemove', (e) => { if (!panning) return; pointX = e.clientX - startX; pointY = e.clientY - startY; setTransform(); });
+    frame.addEventListener('mouseup', () => { panning = false; frame.style.cursor = 'grab'; });
+    frame.addEventListener('mouseleave', () => { panning = false; frame.style.cursor = 'grab'; });
+
+    frame.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const xs = (e.clientX - frame.getBoundingClientRect().left - pointX) / scale;
+        const ys = (e.clientY - frame.getBoundingClientRect().top - pointY) / scale;
+        const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
+        (delta > 0) ? (scale *= 1.1) : (scale /= 1.1);
+        scale = Math.max(0.5, Math.min(scale, 3));
+        pointX = e.clientX - frame.getBoundingClientRect().left - xs * scale;
+        pointY = e.clientY - frame.getBoundingClientRect().top - ys * scale;
+        setTransform();
+    });
+
+    window.zoomMap = function(amount) { scale += amount; scale = Math.max(0.5, Math.min(scale, 3)); setTransform(); }
+    window.resetZoom = function() { scale = 1; pointX = 0; pointY = 0; setTransform(); }
+
+    // ==========================================
+    // 2. THUẬT TOÁN SINH BÃI XE CHUẨN
+    // ==========================================
+    function generateBasementLayout(prefix, totalSlots, targetParkingId, targetCamId) {
+        const container = document.getElementById(targetParkingId);
+        const camContainer = document.getElementById(targetCamId);
+        if (!container || !camContainer) return;
+
+        container.innerHTML = '';
+        camContainer.innerHTML = '';
+
+        let html = '';
+        let currentSlot = 1;
+        let camHtml = '';
+
+        while (currentSlot <= totalSlots) {
+            let endSlot = Math.min(currentSlot + 23, totalSlots);
+
+            html += `<div class="parking-block mb-1"><div class="parking-grid">`;
+            for (let i = currentSlot; i <= endSlot; i++) {
+                let slotId = `${prefix}-${i}`;
+                let parkedCarInfo = parkedCars[slotId];
+                let isOccupied = !!parkedCarInfo;
+                let isViolation = false;
+
+                let roleClass = ''; let roleLabel = ''; let roleIcon = '';
+                let intendedRole = '';
+
+                if (prefix === 'A') {
+                    if (i <= 24) { intendedRole = 'VIP'; roleClass = 'slot-vip'; roleLabel = 'VIP/SẾP'; roleIcon = '<i class="bi bi-star-fill mb-1"></i>'; }
+                    else { intendedRole = 'Khách'; roleClass = 'slot-customer'; roleLabel = 'KHÁCH'; roleIcon = '<i class="bi bi-person-badge mb-1"></i>'; }
+                } else if (prefix === 'B') {
+                    intendedRole = 'Nhân Viên'; roleClass = 'slot-employee'; roleLabel = 'NHÂN VIÊN'; roleIcon = '<i class="bi bi-person-vcard mb-1"></i>';
+                }
+
+                if (isOccupied) {
+                    let actualRole = parkedCarInfo.role.toLowerCase();
+                    if (intendedRole === 'VIP' && !actualRole.includes('giám đốc') && !actualRole.includes('vip')) isViolation = true;
+                    if (intendedRole === 'Khách' && actualRole.includes('nhân viên')) isViolation = true;
+                    if (intendedRole === 'Nhân Viên' && actualRole.includes('khách')) isViolation = true;
+
+                    if (isViolation) totalViolations++;
+                }
+
+                let cssClass = isOccupied ? (isViolation ? 'slot-violation' : 'slot-occupied') : roleClass;
+
+                let content = '';
+                if (isOccupied) {
+                    if (isViolation) {
+                        content = `<i class="bi bi-exclamation-triangle-fill text-danger fs-3 mb-1" title="Vi phạm: Biển số ${parkedCarInfo.plate} (${parkedCarInfo.role}) đỗ sai"></i><span style="font-size:0.55rem; color:#fff" class="bg-danger px-1 rounded">${parkedCarInfo.plate}</span>`;
+                    } else {
+                        content = `<i class="bi bi-car-front-fill car-icon animate__animated animate__zoomIn text-success"></i><span style="font-size:0.55rem">${parkedCarInfo.plate}</span>`;
+                    }
+                } else {
+                    content = `${roleIcon}<span style="font-size: 0.5rem; opacity: 0.8">${roleLabel}</span><span class="fw-bold mt-1">${slotId}</span>`;
+                }
+
+                let camIcon = `<i class="bi bi-webcam-fill slot-cam text-info" title="Xem Camera ô ${slotId}" onclick="openSlotCamera(event, '${slotId}')"></i>`;
+                html += `<div class="parking-slot ${cssClass}">${camIcon}${content}</div>`;
+
+                camHtml += `
+                <div class="col-md-4 col-lg-3 dynamic-cam-item" data-slot="${slotId}">
+                    <div class="cam-feed">
+                        <div class="cam-content"><i class="bi bi-car-front text-white opacity-25"></i></div>
+                        <div class="cam-status"><i class="bi bi-circle-fill text-white small me-1"></i> REC</div>
+                        <div class="cam-title"><i class="bi bi-geo-alt-fill text-info me-1"></i>Cam Ô ${slotId}</div>
+                        <button class="btn-fullscreen" onclick="toggleFullscreen(this.parentElement)" title="Phóng to"><i class="bi bi-arrows-fullscreen"></i></button>
+                        <div class="cam-overlay"><span>CHK-IN // ${slotId}</span><span class="live-clock-cam text-info fw-bold"></span></div>
+                    </div>
+                </div>`;
+            }
+            html += `</div></div>`;
+            currentSlot = endSlot + 1;
+
+            if (currentSlot <= totalSlots) {
+                if (currentSlot === 49) {
+                    html += `<div class="driveway-clean"><i class="bi bi-chevron-double-left fs-3 driveway-arrow left"></i><span><i class="bi bi-car-front"></i> LÀN LƯU THÔNG CHÍNH <i class="bi bi-car-front"></i></span><i class="bi bi-chevron-double-right fs-3 driveway-arrow right"></i></div>`;
+                } else {
+                    html += `<div class="mini-driveway my-2 text-center text-warning opacity-50 small font-monospace"><i class="bi bi-arrows-expand"></i> LỐI ĐI NỘI BỘ (LÙI XE) <i class="bi bi-arrows-expand"></i></div>`;
+                }
+            }
+        }
+        html += `<div class="d-flex justify-content-end mt-4"><div class="zone-badge bg-danger animate__animated animate__pulse animate__infinite">LỐI RA (EXIT) <i class="bi bi-arrow-right-square-fill"></i></div></div>`;
+        container.innerHTML = html;
+        camContainer.innerHTML = camHtml; // Đổ camera vào đúng container của tầng đó
+    }
+
+    function initParking() {
+        totalViolations = 0;
+        generateBasementLayout('A', 120, 'dynamic-parking-A', 'cam-container-basement_A');
+        generateBasementLayout('B', 120, 'dynamic-parking-B', 'cam-container-basement_B');
+
+        let occupiedCount = Object.keys(parkedCars).length;
+        document.getElementById('occupiedCount').innerText = occupiedCount;
+        document.getElementById('emptyCount').innerText = 240 - occupiedCount;
+        document.getElementById('violationCount').innerText = totalViolations;
+    }
+
+    // ==========================================
+    // 3. LOGIC UI TABS & CAMERA FULLSCREEN
+    // ==========================================
     function switchTab(tab) {
         const btnBlueprint = document.getElementById('btn-tab-blueprint');
         const btnCamera = document.getElementById('btn-tab-camera');
         const viewBlueprint = document.getElementById('view-blueprint');
         const viewCamera = document.getElementById('view-camera');
-        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
 
         if (tab === 'blueprint') {
             btnBlueprint.className = 'btn btn-primary rounded-pill fw-bold w-50 active tab-btn';
-            btnCamera.className = `btn btn-light rounded-pill fw-bold w-50 text-muted border-0 tab-btn ${isDark ? 'bg-transparent text-secondary' : ''}`;
-
-            viewBlueprint.classList.remove('d-none');
-            viewCamera.classList.add('d-none');
+            btnCamera.className = 'btn btn-light rounded-pill fw-bold w-50 text-muted border-0 tab-btn';
+            viewBlueprint.classList.remove('d-none'); viewCamera.classList.add('d-none');
         } else {
             btnCamera.className = 'btn btn-primary rounded-pill fw-bold w-50 active tab-btn';
-            btnBlueprint.className = `btn btn-light rounded-pill fw-bold w-50 text-muted border-0 tab-btn ${isDark ? 'bg-transparent text-secondary' : ''}`;
-
-            viewCamera.classList.remove('d-none');
-            viewBlueprint.classList.add('d-none');
+            btnBlueprint.className = 'btn btn-light rounded-pill fw-bold w-50 text-muted border-0 tab-btn';
+            viewCamera.classList.remove('d-none'); viewBlueprint.classList.add('d-none');
         }
     }
 
-    function initParking() {
-        const gridA1 = document.getElementById('grid-A-1');
-        const gridA2 = document.getElementById('grid-A-2');
-        const gridB1 = document.getElementById('grid-B-1');
-        const gridB2 = document.getElementById('grid-B-2');
-
-        gridA1.innerHTML = ''; gridA2.innerHTML = '';
-        gridB1.innerHTML = ''; gridB2.innerHTML = '';
-
-        for(let i=1; i<=60; i++) {
-            let slotId = `A-${i}`;
-            let isOccupied = occupiedSlotsNormalized.includes(slotId);
-            let cssClass = isOccupied ? 'slot-occupied' : 'slot-empty';
-            let iconOrText = isOccupied ? '<i class="bi bi-car-front-fill car-icon animate__animated animate__zoomIn"></i>' : `<span>${slotId}</span>`;
-            gridA1.innerHTML += `<div class="parking-slot ${cssClass}">${iconOrText}</div>`;
+    window.openSlotCamera = function(event, slotId) {
+        event.stopPropagation();
+        switchTab('camera');
+        let targetCam = document.querySelector(`.dynamic-cam-item[data-slot="${slotId}"]`);
+        if(targetCam) {
+            targetCam.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetCam.firstElementChild.style.borderColor = '#ffc107';
+            targetCam.firstElementChild.style.boxShadow = '0 0 20px rgba(255,193,7,0.8)';
+            setTimeout(() => {
+                targetCam.firstElementChild.style.borderColor = '#333';
+                targetCam.firstElementChild.style.boxShadow = '0 4px 10px rgba(0,0,0,0.5)';
+            }, 2500);
         }
-        for(let i=61; i<=120; i++) {
-            let slotId = `A-${i}`;
-            let isOccupied = occupiedSlotsNormalized.includes(slotId);
-            let cssClass = isOccupied ? 'slot-occupied' : 'slot-empty';
-            let iconOrText = isOccupied ? '<i class="bi bi-car-front-fill car-icon animate__animated animate__zoomIn"></i>' : `<span>${slotId}</span>`;
-            gridA2.innerHTML += `<div class="parking-slot ${cssClass}">${iconOrText}</div>`;
-        }
-        for(let i=121; i<=180; i++) {
-            let slotId = `B-${i}`;
-            let isOccupied = occupiedSlotsNormalized.includes(slotId);
-            let cssClass = isOccupied ? 'slot-occupied' : 'slot-empty';
-            let iconOrText = isOccupied ? '<i class="bi bi-car-front-fill car-icon animate__animated animate__zoomIn"></i>' : `<span>${slotId}</span>`;
-            gridB1.innerHTML += `<div class="parking-slot ${cssClass}">${iconOrText}</div>`;
-        }
-        for(let i=181; i<=240; i++) {
-            let slotId = `B-${i}`;
-            let isOccupied = occupiedSlotsNormalized.includes(slotId);
-            let cssClass = isOccupied ? 'slot-occupied' : 'slot-empty';
-            let iconOrText = isOccupied ? '<i class="bi bi-car-front-fill car-icon animate__animated animate__zoomIn"></i>' : `<span>${slotId}</span>`;
-            gridB2.innerHTML += `<div class="parking-slot ${cssClass}">${iconOrText}</div>`;
-        }
-
-        let occupiedCount = occupiedSlotsNormalized.filter(s => s !== "").length;
-        document.getElementById('occupiedCount').innerText = occupiedCount;
-        document.getElementById('emptyCount').innerText = 240 - occupiedCount;
     }
 
-    // LOGIC ĐỔI TẦNG & TỰ ĐỘNG ĐỔI TÊN CAMERA
+    window.toggleFullscreen = function(camElement) {
+        if (!document.fullscreenElement) {
+            camElement.classList.add('cam-fullscreen');
+            camElement.querySelector('.btn-fullscreen').innerHTML = '<i class="bi bi-fullscreen-exit text-danger fs-3"></i>';
+            if (camElement.requestFullscreen) { camElement.requestFullscreen(); }
+            else if (camElement.webkitRequestFullscreen) { camElement.webkitRequestFullscreen(); }
+            else if (camElement.msRequestFullscreen) { camElement.msRequestFullscreen(); }
+        } else {
+            if (document.exitFullscreen) { document.exitFullscreen(); }
+        }
+    }
+
+    document.addEventListener('fullscreenchange', exitHandler);
+    document.addEventListener('webkitfullscreenchange', exitHandler);
+    document.addEventListener('mozfullscreenchange', exitHandler);
+    document.addEventListener('MSFullscreenChange', exitHandler);
+
+    function exitHandler() {
+        if (!document.fullscreenElement && !document.webkitIsFullScreen && !document.mozFullScreen && !document.msFullscreenElement) {
+            document.querySelectorAll('.cam-fullscreen').forEach(el => {
+                el.classList.remove('cam-fullscreen');
+                el.querySelector('.btn-fullscreen').innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+            });
+        }
+    }
+
     function switchFloor() {
         const selectEl = document.getElementById('floorSelector');
         const val = selectEl.value;
@@ -650,42 +927,38 @@
         document.getElementById('blueprintTitle').innerHTML = `<i class="bi bi-map"></i> Blueprint - ${text}`;
         document.getElementById('cam-zone-name').innerText = text.toUpperCase();
 
-        // 1. Ẩn tất cả bản đồ
+        // Ẩn tất cả bản đồ
         document.querySelectorAll('.blueprint-container, .basement-clean-layout').forEach(el => el.classList.add('d-none'));
 
-        // 2. Mở bản đồ được chọn
-        const targetMap = document.getElementById('map-' + val);
-        if(targetMap) targetMap.classList.remove('d-none');
+        // CHÍNH LÀ ĐÂY: Ẩn tất cả ngăn chứa Camera ô đỗ xe phụ
+        document.getElementById('cam-container-basement_A').classList.add('d-none');
+        document.getElementById('cam-container-basement_B').classList.add('d-none');
 
-        // 3. Đổi tên Camera trong Tab Camera
+        const targetMap = document.getElementById('map-' + val);
+        if(targetMap) {
+            targetMap.classList.remove('d-none');
+            resetZoom();
+        }
+
         const cam1 = document.getElementById('cam1-name');
         const cam2 = document.getElementById('cam2-name');
         const cam3 = document.getElementById('cam3-name');
 
         if(val === 'ground') {
-            cam1.innerText = "Cam Sảnh 360 (PTZ)";
-            cam2.innerText = "Cam Nhiệt Kho Vật Tư";
-            cam3.innerText = "FaceID Cổng Chính";
+            cam1.innerText = "Cam Sảnh 360 (PTZ)"; cam2.innerText = "Cam Nhiệt Kho Vật Tư"; cam3.innerText = "FaceID Cổng Chính";
         } else if(val === 'floor1' || val === 'floor2' || val === 'floor3') {
-            cam1.innerText = "Cam Hành Lang (Tầng)";
-            cam2.innerText = "Cam Thang Máy";
-            cam3.innerText = "Cam Cửa Văn Phòng";
+            cam1.innerText = "Cam Hành Lang (Tầng)"; cam2.innerText = "Cam Thang Máy"; cam3.innerText = "Cam Cửa Văn Phòng";
         } else if(val === 'basement_A') {
-            cam1.innerText = "ALPR Lối Vào A";
-            cam2.innerText = "ALPR Lối Ra A";
-            cam3.innerText = "Toàn Cảnh Hầm A";
+            cam1.innerText = "ALPR Lối Vào A"; cam2.innerText = "ALPR Lối Ra A"; cam3.innerText = "Toàn Cảnh Hầm A";
+            document.getElementById('cam-container-basement_A').classList.remove('d-none'); // Mở khóa ngăn chứa Cam A
         } else if(val === 'basement_B') {
-            cam1.innerText = "ALPR Lối Vào B";
-            cam2.innerText = "ALPR Lối Ra B";
-            cam3.innerText = "Toàn Cảnh Hầm B";
+            cam1.innerText = "ALPR Lối Vào B"; cam2.innerText = "ALPR Lối Ra B"; cam3.innerText = "Toàn Cảnh Hầm B";
+            document.getElementById('cam-container-basement_B').classList.remove('d-none'); // Mở khóa ngăn chứa Cam B
         } else if(val === 'basement_moto') {
-            cam1.innerText = "Cam Bãi Xe Máy 01";
-            cam2.innerText = "Cam Bãi Xe Máy 02";
-            cam3.innerText = "Lối Ra Xe Máy";
+            cam1.innerText = "Cam Bãi Xe Máy 01"; cam2.innerText = "Cam Bãi Xe Máy 02"; cam3.innerText = "Lối Ra Xe Máy";
         }
     }
 
-    // Đếm mili-giây cho Camera
     setInterval(() => {
         const now = new Date();
         const timeStr = now.toLocaleTimeString('en-US', { hour12: false }) + ':' + now.getMilliseconds().toString().padStart(3, '0').substring(0,2);
@@ -694,21 +967,8 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         initParking();
-
-        // Lắng nghe sự thay đổi theme để chỉnh lại màu Tab Inactive
-        const observer = new MutationObserver(() => {
-            const btnBlueprint = document.getElementById('btn-tab-blueprint');
-            const btnCamera = document.getElementById('btn-tab-camera');
-            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-
-            if(!btnBlueprint.classList.contains('active')) {
-                btnBlueprint.className = `btn btn-light rounded-pill fw-bold w-50 text-muted border-0 tab-btn ${isDark ? 'bg-transparent text-secondary' : ''}`;
-            }
-            if(!btnCamera.classList.contains('active')) {
-                btnCamera.className = `btn btn-light rounded-pill fw-bold w-50 text-muted border-0 tab-btn ${isDark ? 'bg-transparent text-secondary' : ''}`;
-            }
-        });
-        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+        // Chạy ngay lần đầu để ẩn/hiện đúng camera theo tầng mặc định
+        switchFloor();
     });
 
     function triggerSOS() {

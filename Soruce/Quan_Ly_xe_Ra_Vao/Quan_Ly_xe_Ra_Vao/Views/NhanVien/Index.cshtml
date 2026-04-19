@@ -2,6 +2,19 @@
 
 @{
     ViewData["Title"] = "Quản Lý Sinh Trắc Học";
+
+    // TỰ ĐỘNG PHÂN QUYỀN BẰNG CÁCH ĐỌC TÊN TÀI KHOẢN
+    bool isAdmin = false;
+    if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        string userName = User.Identity.Name.ToLower();
+        if (userName.Contains("admin") || userName.Contains("quản trị") || userName.Contains("giám đốc"))
+        {
+            isAdmin = true;
+        }
+    }
+    // Dự phòng nếu dùng ViewBag
+    if (ViewBag.UserRole == "Admin" || ViewBag.UserRole == "GiamDoc") { isAdmin = true; }
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
@@ -43,9 +56,12 @@
                     </button>
                 </form>
 
-                <a asp-action="Create" class="btn btn-primary fw-bold px-4 shadow-sm rounded-3 ms-xl-2 text-nowrap">
-                    <i class="bi bi-person-plus-fill"></i> THÊM MỚI
-                </a>
+                @if (isAdmin)
+                {
+                    <a asp-action="Create" class="btn btn-primary fw-bold px-4 shadow-sm rounded-3 ms-xl-2 text-nowrap">
+                        <i class="bi bi-person-plus-fill"></i> THÊM MỚI
+                    </a>
+                }
             </div>
         </div>
 
@@ -102,12 +118,16 @@
                                             <a asp-action="Details" asp-route-id="@nv.Id" class="btn btn-sm btn-outline-info" title="Xem hồ sơ">
                                                 <i class="bi bi-person-vcard"></i>
                                             </a>
-                                            <a asp-action="Edit" asp-route-id="@nv.Id" class="btn btn-sm btn-outline-primary" title="Cập nhật">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            <a href="javascript:void(0)" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="confirmDelete('@nv.Id', '@nv.HoTen')">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
+
+                                            @if (isAdmin)
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@nv.Id" class="btn btn-sm btn-outline-primary" title="Cập nhật">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <a href="javascript:void(0)" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="confirmDelete('@nv.Id', '@nv.HoTen')">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            }
                                         </div>
                                     </td>
                                 </tr>
@@ -173,8 +193,8 @@
     }
 
     /* =========================================
-           CSS TƯƠNG THÍCH DARK MODE ĐỒNG BỘ
-        ========================================= */
+                   CSS TƯƠNG THÍCH DARK MODE ĐỒNG BỘ
+                ========================================= */
     [data-bs-theme="dark"] .bg-card-custom {
         background-color: #1e1e1e !important;
         border-color: #333 !important;

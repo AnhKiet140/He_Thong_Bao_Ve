@@ -23,9 +23,12 @@
                 </div>
             </form>
 
-            <button onclick="exportToExcel()" class="btn btn-success fw-bold shadow-sm rounded-pill px-4 pulse-button">
-                <i class="bi bi-file-earmark-excel-fill"></i> XUẤT EXCEL
-            </button>
+            <form asp-controller="BaoCao" asp-action="ExportExcel" method="get" class="m-0 p-0">
+                <input type="hidden" name="selectedDate" value="@ViewBag.SelectedDate" />
+                <button type="submit" class="btn btn-success fw-bold shadow-sm rounded-pill px-4 pulse-button">
+                    <i class="bi bi-file-earmark-excel-fill"></i> XUẤT EXCEL
+                </button>
+            </form>
         </div>
     </div>
 
@@ -232,22 +235,24 @@
     }
 
     @@keyframes pulse {
-        0% {
-            box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.6);
-        }
+        0%
 
-        70% {
-            box-shadow: 0 0 0 10px rgba(25, 135, 84, 0);
-        }
+    {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.6);
+    }
 
-        100% {
-            box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
-        }
+    70% {
+        box-shadow: 0 0 0 10px rgba(25, 135, 84, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
+    }
+
     }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -287,40 +292,6 @@
         });
     });
 
-    // --- HÀM XUẤT EXCEL (Giữ nguyên code cực xịn của bạn) ---
-    function exportToExcel() {
-        let table = document.getElementById("reportTable");
-        if (!table) return;
-
-        let ws = XLSX.utils.table_to_sheet(table);
-        const borderStyle = {
-            top: { style: "thin", color: { rgb: "000000" } }, bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } }, right: { style: "thin", color: { rgb: "000000" } }
-        };
-
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = range.s.r; R <= range.e.r; ++R) {
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                let cell_address = { c: C, r: R };
-                let cell_ref = XLSX.utils.encode_cell(cell_address);
-                if (!ws[cell_ref]) continue;
-                if (!ws[cell_ref].s) ws[cell_ref].s = {};
-
-                ws[cell_ref].s.border = borderStyle;
-                ws[cell_ref].s.alignment = { horizontal: "center", vertical: "center" };
-                ws[cell_ref].s.font = { name: "Arial", sz: 11 };
-
-                if (R === 0) {
-                    ws[cell_ref].s.fill = { fgColor: { rgb: "0D6EFD" } };
-                    ws[cell_ref].s.font = { color: { rgb: "FFFFFF" }, bold: true, sz: 12 };
-                }
-            }
-        }
-
-        ws['!cols'] = [ {wch: 15}, {wch: 25}, {wch: 15}, {wch: 30}, {wch: 12}, {wch: 15} ];
-        let wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Bao_Cao_An_Ninh");
-        let reportDate = document.getElementById("selectedDate").value || 'today';
-        XLSX.writeFile(wb, "BaoCao_AnNinh_" + reportDate + ".xlsx");
-    }
+    // NOTE: ĐÃ XOÁ HÀM exportToExcel() BẰNG JAVASCRIPT
+    // Vì bây giờ nút bấm đã được cấu hình để Submit Form gọi thẳng xuống C# EPPlus
 </script>

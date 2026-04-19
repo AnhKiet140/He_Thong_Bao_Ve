@@ -13,15 +13,47 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
     <script>
+        // 1. Chặn Intro nếu đã xem
+        if (sessionStorage.getItem('chkInPro_IntroPlayed')) {
+            document.documentElement.classList.add('skip-splash');
+        }
+
+        // 2. Đọc Theme (Dark/Light)
         const savedTheme = localStorage.getItem('chkInTheme') || 'light';
         document.documentElement.setAttribute('data-bs-theme', savedTheme);
 
+        // 3. Đọc trạng thái Sidebar
         if (localStorage.getItem('sidebarState') === 'collapsed') {
             document.documentElement.classList.add('sidebar-collapsed');
         }
     </script>
 
     <style>
+        /* Nếu có class skip-splash ở trên cùng -> Xóa sổ luôn màn hình Intro */
+        html.skip-splash #app-splash-screen {
+            display: none !important;
+        }
+
+        /* CSS CHO MÀN HÌNH INTRO */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #0b132b;
+            background-image: radial-gradient(circle at center, #1c2541 0%, #0b132b 100%);
+            z-index: 999999;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+
+        .splash-hidden {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none;
+        }
+
+        /* Các style giao diện chung (giữ nguyên) */
         .login-wrapper {
             display: flex;
             align-items: center;
@@ -61,7 +93,7 @@
         #sidebar {
             min-width: 260px;
             max-width: 260px;
-            background: #1c2331; /* Màu xanh đen gốc cho Light Mode */
+            background: #1c2331;
             color: #fff;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             display: flex;
@@ -69,8 +101,6 @@
             box-shadow: 4px 0 15px rgba(0,0,0,0.05);
             z-index: 100;
         }
-
-        /* Mini Sidebar Logic */
         @@media (min-width: 769px) {
             .sidebar-collapsed #sidebar
 
@@ -118,7 +148,6 @@
             }
 
         }
-
         @@media (max-width: 768px) {
             #sidebar
 
@@ -192,8 +221,7 @@
                     transition: all 0.3s ease;
                 }
 
-                #sidebar ul li a:hover i,
-                #sidebar ul li a.active i {
+                #sidebar ul li a:hover i, #sidebar ul li a.active i {
                     color: #ffffff !important;
                     transform: scale(1.15);
                 }
@@ -276,21 +304,16 @@
             font-weight: bold;
         }
 
-        /* =========================================
-                   SIÊU CSS ÉP DARK MODE TOÀN BỘ HỆ THỐNG
-                ========================================= */
-        [data-bs-theme="dark"] body,
-        [data-bs-theme="dark"] html {
+        /* DARK MODE */
+        [data-bs-theme="dark"] body, [data-bs-theme="dark"] html {
             background-color: #121212 !important;
         }
 
-        /* Đồng bộ Sidebar mất màu xanh */
         [data-bs-theme="dark"] #sidebar {
             background-color: #181818 !important;
             border-right: 1px solid #333 !important;
         }
 
-        /* Đồng bộ Navbar & Footer */
         [data-bs-theme="dark"] .top-navbar {
             background-color: #1e1e1e !important;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
@@ -303,24 +326,16 @@
             color: #888 !important;
         }
 
-        /* ÉP MẢNG TRẮNG Ở CÁC TRANG CON (.bg-white, .card) VỀ DARK */
-        [data-bs-theme="dark"] .bg-white,
-        [data-bs-theme="dark"] .card {
+        [data-bs-theme="dark"] .bg-white, [data-bs-theme="dark"] .card {
             background-color: #1e1e1e !important;
             border-color: #333 !important;
         }
 
-        /* Ép Text đen thành Trắng */
-        [data-bs-theme="dark"] .text-dark,
-        [data-bs-theme="dark"] h1, [data-bs-theme="dark"] h2, [data-bs-theme="dark"] h3,
-        [data-bs-theme="dark"] h4, [data-bs-theme="dark"] h5, [data-bs-theme="dark"] h6 {
+        [data-bs-theme="dark"] .text-dark, [data-bs-theme="dark"] h1, [data-bs-theme="dark"] h2, [data-bs-theme="dark"] h3, [data-bs-theme="dark"] h4, [data-bs-theme="dark"] h5, [data-bs-theme="dark"] h6 {
             color: #e0e0e0 !important;
         }
 
-        /* Form Controls (Ô nhập, Select) */
-        [data-bs-theme="dark"] .form-control,
-        [data-bs-theme="dark"] .form-select,
-        [data-bs-theme="dark"] .input-group-text {
+        [data-bs-theme="dark"] .form-control, [data-bs-theme="dark"] .form-select, [data-bs-theme="dark"] .input-group-text {
             background-color: #2c2c2c !important;
             color: #e0e0e0 !important;
             border-color: #444 !important;
@@ -330,7 +345,6 @@
                 color: #888 !important;
             }
 
-        /* Dropdown & List Groups */
         [data-bs-theme="dark"] .dropdown-menu {
             background-color: #1e1e1e !important;
             border: 1px solid #333 !important;
@@ -360,9 +374,7 @@
             color: #e0e0e0 !important;
         }
 
-        /* Fix nút bấm trên Navbar */
-        [data-bs-theme="dark"] #btn-sidebar-toggle,
-        [data-bs-theme="dark"] .header-icon-btn {
+        [data-bs-theme="dark"] #btn-sidebar-toggle, [data-bs-theme="dark"] .header-icon-btn {
             color: #e0e0e0;
         }
 
@@ -432,6 +444,24 @@
             notifTitle = "Tất cả khách đang chờ duyệt";
         }
     }
+
+    <div id="app-splash-screen" class="splash-screen d-flex flex-column align-items-center justify-content-center">
+        <div class="splash-content text-center">
+            <div class="splash-icon-wrapper animate__animated animate__zoomIn mb-3">
+                <img src="/images/logo.png" alt="Logo" style="max-height: 120px; filter: drop-shadow(0 0 20px rgba(13, 110, 253, 0.6));" onerror="this.src='/images/app_icon.png'" />
+            </div>
+
+            <h2 class="text-white fw-bold mt-4 animate__animated animate__fadeInUp" style="letter-spacing: 2px;">CHK-IN PRO</h2>
+            <p class="text-info fw-bold animate__animated animate__fadeInUp animate__delay-1s" style="letter-spacing: 1px;">HỆ THỐNG KIỂM SOÁT AN NINH</p>
+
+            <div class="mt-5 animate__animated animate__fadeIn animate__delay-1s">
+                <div class="spinner-grow text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="mt-3 text-white-50 small fw-bold font-monospace">ĐANG KHỞI ĐỘNG HỆ THỐNG...</div>
+            </div>
+        </div>
+    </div>
 
     <div class="wrapper">
         <nav id="sidebar">
@@ -623,6 +653,19 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // KIỂM TRA & TẮT MÀN HÌNH INTRO TỰ ĐỘNG
+        if (!document.documentElement.classList.contains('skip-splash')) {
+            var splash = document.getElementById('app-splash-screen');
+            if(splash) {
+                // Ép ẩn sau 2 giây một cách trực tiếp (không đợi window load)
+                setTimeout(function () {
+                    splash.classList.add('splash-hidden');
+                    sessionStorage.setItem('chkInPro_IntroPlayed', 'true');
+                    setTimeout(function() { splash.style.display = 'none'; }, 600);
+                }, 2000);
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             // Sidebar Logic
             const sidebarToggleBtn = document.getElementById('btn-sidebar-toggle');

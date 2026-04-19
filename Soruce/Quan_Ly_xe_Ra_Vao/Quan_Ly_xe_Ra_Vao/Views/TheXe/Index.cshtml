@@ -1,6 +1,19 @@
 ﻿@model IEnumerable<Quan_Ly_xe_Ra_Vao.Models.TheXe>
 @{
     ViewData["Title"] = "Quản Lý Thẻ Cứng";
+
+    // TỰ ĐỘNG PHÂN QUYỀN BẰNG CÁCH ĐỌC TÊN TÀI KHOẢN
+    bool isAdmin = false;
+    if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        string userName = User.Identity.Name.ToLower();
+        if (userName.Contains("admin") || userName.Contains("quản trị") || userName.Contains("giám đốc"))
+        {
+            isAdmin = true;
+        }
+    }
+    // Dự phòng nếu dùng ViewBag
+    if (ViewBag.UserRole == "Admin" || ViewBag.UserRole == "GiamDoc") { isAdmin = true; }
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
@@ -20,7 +33,11 @@
                     <option value="2" selected="@(ViewData["CurrentTrangThai"]?.ToString() == "2")">Đã Khóa / Mất</option>
                 </select>
                 <button type="submit" class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm"><i class="bi bi-funnel-fill"></i> LỌC</button>
-                <a asp-action="Create" class="btn btn-dark fw-bold rounded-pill px-4 shadow-sm ms-2 pulse-btn"><i class="bi bi-plus-circle-fill"></i> TẠO THẺ MỚI</a>
+
+                @if (isAdmin)
+                {
+                    <a asp-action="Create" class="btn btn-dark fw-bold rounded-pill px-4 shadow-sm ms-2 pulse-btn"><i class="bi bi-plus-circle-fill"></i> TẠO THẺ MỚI</a>
+                }
             </form>
         </div>
     </div>
@@ -40,7 +57,8 @@
 
     <div class="tab-content" id="cardTabsContent">
         @functions {
-            public void RenderCardGrid(IEnumerable<Quan_Ly_xe_Ra_Vao.Models.TheXe> cards, string icon)
+            // Đã truyền thêm biến isAdmin vào hàm này
+            public void RenderCardGrid(IEnumerable<Quan_Ly_xe_Ra_Vao.Models.TheXe> cards, string icon, bool isAdmin)
             {
                 if (!cards.Any())
                 {
@@ -55,7 +73,7 @@
                         string statusText = the.TrangThai == 2 ? "Đã Khóa" : (the.TrangThai == 1 ? "Đang Sử Dụng" : "Sẵn Sàng");
 
                         <div class="col-xl-3 col-lg-4 col-md-6">
-                            <div class="card border-0 rounded-4 shadow-sm card-hover h-100 position-relative overflow-hidden">
+                            <div class="card border-0 rounded-4 shadow-sm @(isAdmin ? "card-hover" : "") h-100 position-relative overflow-hidden">
                                 <div class="position-absolute top-0 start-0 w-100 border-top border-4 @borderColor"></div>
                                 <div class="card-body p-4 d-flex flex-column">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
@@ -75,10 +93,14 @@
                                     {
                                         <div class="mt-auto p-3 rounded-4 border border-dashed text-center"><small class="text-muted fw-bold"><i class="bi bi-inbox me-1"></i> Thẻ đang rỗng</small></div>
                                     }
-                                    <div class="action-overlay position-absolute w-100 h-100 top-0 start-0 d-flex align-items-center justify-content-center gap-3">
-                                        <a href="/TheXe/Edit/@the.Id" class="btn btn-light text-primary btn-lg rounded-circle shadow fw-bold"><i class="bi bi-pencil-fill"></i></a>
-                                        <a href="javascript:void(0)" class="btn btn-light text-danger btn-lg rounded-circle shadow fw-bold" onclick="confirmDelete('@the.Id', '@the.MaThe')"><i class="bi bi-trash3-fill"></i></a>
-                                    </div>
+
+                                    @if (isAdmin)
+                                    {
+                                        <div class="action-overlay position-absolute w-100 h-100 top-0 start-0 d-flex align-items-center justify-content-center gap-3">
+                                            <a href="/TheXe/Edit/@the.Id" class="btn btn-light text-primary btn-lg rounded-circle shadow fw-bold"><i class="bi bi-pencil-fill"></i></a>
+                                            <a href="javascript:void(0)" class="btn btn-light text-danger btn-lg rounded-circle shadow fw-bold" onclick="confirmDelete('@the.Id', '@the.MaThe')"><i class="bi bi-trash3-fill"></i></a>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -89,12 +111,14 @@
 
         <div class="tab-pane fade show active" id="tab-nhanvien" role="tabpanel">
             @{
-                RenderCardGrid(Model.Where(t => t.LoaiThe == "Thẻ Nhân Viên"), "bi-person-vcard-fill");
+                // Gọi hàm với biến isAdmin
+                RenderCardGrid(Model.Where(t => t.LoaiThe == "Thẻ Nhân Viên"), "bi-person-vcard-fill", isAdmin);
             }
         </div>
         <div class="tab-pane fade" id="tab-khach" role="tabpanel">
             @{
-                RenderCardGrid(Model.Where(t => t.LoaiThe == "Thẻ Khách"), "bi-person-badge-fill");
+                // Gọi hàm với biến isAdmin
+                RenderCardGrid(Model.Where(t => t.LoaiThe == "Thẻ Khách"), "bi-person-badge-fill", isAdmin);
             }
         </div>
     </div>
@@ -151,17 +175,20 @@
     }
 
     @@keyframes pulseButton {
-        0% {
-            box-shadow: 0 0 0 0 rgba(33,37,41,0.5);
-        }
+        0%
 
-        70% {
-            box-shadow: 0 0 0 10px rgba(33,37,41,0);
-        }
+    {
+        box-shadow: 0 0 0 0 rgba(33,37,41,0.5);
+    }
 
-        100% {
-            box-shadow: 0 0 0 0 rgba(33,37,41,0);
-        }
+    70% {
+        box-shadow: 0 0 0 10px rgba(33,37,41,0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(33,37,41,0);
+    }
+
     }
 
     .nav-pills .nav-link {

@@ -5,60 +5,62 @@
 }
 
 <div class="container-fluid mt-3 animate__animated animate__fadeIn">
-    <div class="card shadow-sm border-0 rounded-4 bg-card-custom overflow-hidden">
-
-        <div class="card-header bg-transparent border-0 p-4 pb-2">
-            <h4 class="fw-bold text-primary mb-0">
-                <i class="bi bi-clock-history me-2 fs-4"></i> TRUY XUẤT LỊCH SỬ RA VÀO
-            </h4>
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-primary">
+        <div>
+            <h5 class="fw-bold text-primary mb-1"><i class="bi bi-clock-history me-2"></i>TRUY XUẤT LỊCH SỬ RA VÀO</h5>
+            <small class="text-muted fw-bold">QUẢN LÝ LƯỢT VÀO RA CỦA PHƯƠNG TIỆN VÀ NHÂN SỰ</small>
         </div>
-
-        <form method="get" asp-action="Index" class="d-flex flex-wrap align-items-end gap-4 px-4 pb-4 border-bottom bg-transparent">
-
-            <div style="width: 200px;">
-                <label class="small fw-bold text-muted mb-2"><i class="bi bi-calendar-check me-1"></i> Lọc theo ngày</label>
-                <input type="date" name="selectedDate" value="@selectedDate"
-                       class="form-control shadow-sm border-secondary text-body bg-transparent input-custom"
-                       onchange="this.form.submit()" style="cursor: pointer;">
-            </div>
-
-            <div class="flex-grow-1" style="max-width: 500px;">
-                <label class="small fw-bold text-muted mb-2">Tìm theo tên hoặc biển số</label>
-                <div class="input-group shadow-sm rounded-3">
-                    <span class="input-group-text bg-transparent border-secondary text-muted border-end-0"><i class="bi bi-search"></i></span>
-                    <input type="text" name="searchName" value="@ViewBag.SearchName"
-                           class="form-control border-secondary shadow-none bg-transparent text-body border-start-0"
-                           placeholder="Nhập tên nhân viên, biển số xe cần tìm...">
-                    <button class="btn btn-primary px-4 fw-bold" type="submit">Tìm kiếm</button>
-                </div>
-            </div>
-
-            <div class="ms-auto d-flex gap-2 mt-3 mt-xl-0">
-                <a asp-action="Index" class="btn btn-light border fw-bold shadow-sm text-nowrap btn-refresh-custom">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i> Làm mới
-                </a>
-
-                <button type="submit" asp-action="ExportExcel" formmethod="get" class="btn btn-success fw-bold shadow-sm text-nowrap d-flex align-items-center">
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index")" class="btn btn-light border fw-bold text-dark rounded-pill px-3 shadow-sm btn-refresh-custom">
+                <i class="bi bi-arrow-clockwise"></i> Làm mới
+            </a>
+            <form method="get" asp-action="ExportExcel" class="m-0 p-0">
+                <input type="hidden" name="selectedDate" value="@selectedDate" />
+                <input type="hidden" name="searchName" value="@ViewBag.SearchName" />
+                <button type="submit" class="btn btn-success fw-bold rounded-pill px-3 shadow-sm text-nowrap d-flex align-items-center">
                     <i class="bi bi-file-earmark-excel-fill me-2"></i> Xuất Excel chi tiết
                 </button>
-            </div>
-        </form>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 bg-card-custom overflow-hidden">
+        <div class="card-header bg-transparent border-bottom p-3">
+            <form method="get" asp-action="Index" class="row g-2 align-items-center m-0">
+                <div class="col-md-3">
+                    <label class="small fw-bold text-muted mb-1"><i class="bi bi-calendar-check me-1"></i> Lọc theo ngày</label>
+                    <input type="date" name="selectedDate" value="@selectedDate"
+                           class="form-control form-control-sm rounded-3 shadow-none border-secondary text-body bg-transparent input-custom"
+                           onchange="this.form.submit()" style="cursor: pointer;">
+                </div>
+                <div class="col-md-5">
+                    <label class="small fw-bold text-muted mb-1">Tìm theo tên hoặc biển số</label>
+                    <div class="input-group input-group-sm rounded-3 shadow-sm">
+                        <span class="input-group-text bg-transparent border-secondary text-muted border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" name="searchName" value="@ViewBag.SearchName"
+                               class="form-control border-secondary shadow-none bg-transparent text-body border-start-0"
+                               placeholder="Nhập tên nhân viên, biển số xe cần tìm...">
+                        <button class="btn btn-primary fw-bold px-3" type="submit">Tìm kiếm</button>
+                    </div>
+                </div>
+            </form>
+        </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 650px; overflow-y: auto;">
+            <div class="table-responsive" style="min-height: 450px; max-height: 650px; overflow-y: auto;">
                 <table class="table table-hover align-middle mb-0 text-center custom-table">
-                    <thead class="table-dark text-uppercase small fw-bold sticky-top custom-thead">
+                    <thead class="table-light text-muted fw-bold text-uppercase sticky-top" style="font-size: 0.8rem; z-index: 2;">
                         <tr>
-                            <th class="ps-4 text-start py-3">Thời Gian</th>
-                            <th class="text-start py-3">Đối Tượng Kiểm Soát</th>
-                            <th class="py-3">Loại Xe</th>
-                            <th class="py-3">Biển Số Xe</th>
-                            <th class="py-3">Phương Thức</th>
-                            <th class="py-3">Hướng</th>
-                            <th class="text-end pe-4 py-3">Trạng Thái</th>
+                            <th class="ps-4 text-start py-3 border-bottom-0">Thời Gian</th>
+                            <th class="text-start py-3 border-bottom-0">Đối Tượng Kiểm Soát</th>
+                            <th class="py-3 border-bottom-0">Loại Xe</th>
+                            <th class="py-3 border-bottom-0">Biển Số Xe</th>
+                            <th class="py-3 border-bottom-0">Phương Thức</th>
+                            <th class="py-3 border-bottom-0">Hướng</th>
+                            <th class="text-end pe-4 py-3 border-bottom-0">Trạng Thái</th>
                         </tr>
                     </thead>
-                    <tbody class="text-body">
+                    <tbody class="text-body border-top-0">
                         @if (Model != null && Model.Any())
                         {
                             foreach (var log in Model)
@@ -66,19 +68,19 @@
                                 <tr class="animate__animated animate__fadeIn">
                                     <td class="text-start ps-4">
                                         <div class="fw-bold text-danger fs-6">@log.ThoiGian.ToString("HH:mm:ss")</div>
-                                        <small class="text-muted">@log.ThoiGian.ToString("dd/MM/yyyy")</small>
+                                        <small class="text-muted fw-bold" style="font-size: 0.75rem;">@log.ThoiGian.ToString("dd/MM/yyyy")</small>
                                     </td>
                                     <td class="text-start">
                                         <div class="d-flex align-items-center">
                                             <div class="position-relative">
                                                 <img src="@(string.IsNullOrEmpty(log.HinhAnh) ? "/images/no-avatar.png" : log.HinhAnh)"
                                                      class="rounded border shadow-sm me-3 img-avatar-custom"
-                                                     style="width: 45px; height: 45px; object-fit: cover;"
+                                                     style="width: 42px; height: 42px; object-fit: cover;"
                                                      onerror="this.src='/images/no-avatar.png'" />
                                             </div>
                                             <div>
-                                                <span class="fw-bold text-uppercase text-body">@(string.IsNullOrEmpty(log.HoTen) ? "Khách vãng lai" : log.HoTen)</span><br>
-                                                <small class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-2 py-1 mt-1">@(log.LoaiDoiTuong ?? "NHÂN VIÊN")</small>
+                                                <span class="fw-bold text-body" style="font-size: 0.95rem;">@(string.IsNullOrEmpty(log.HoTen) ? "Khách vãng lai" : log.HoTen)</span><br>
+                                                <small class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary mt-1" style="font-size: 0.65rem;">@(log.LoaiDoiTuong ?? "NHÂN VIÊN")</small>
                                             </div>
                                         </div>
                                     </td>
@@ -96,7 +98,7 @@
                                             <span class="text-muted">---</span>
                                         }
                                     </td>
-                                    <td class="font-monospace fw-bold">
+                                    <td class="font-monospace fw-bold" style="letter-spacing: 1px;">
                                         <span class="px-2 py-1 rounded license-plate border">@(string.IsNullOrEmpty(log.BienSoXe) || log.BienSoXe == "---" ? "N/A" : log.BienSoXe)</span>
                                     </td>
                                     <td>
@@ -107,21 +109,21 @@
                                     <td>
                                         @if (log.Huong == "Đi Vào")
                                         {
-                                            <span class="text-success fw-bold"><i class="bi bi-box-arrow-in-right"></i> Vào</span>
+                                            <span class="text-success fw-bold"><i class="bi bi-box-arrow-in-right"></i> VÀO</span>
                                         }
                                         else
                                         {
-                                            <span class="text-warning text-dark fw-bold"><i class="bi bi-box-arrow-left"></i> Ra</span>
+                                            <span class="text-warning text-dark fw-bold"><i class="bi bi-box-arrow-left"></i> RA</span>
                                         }
                                     </td>
                                     <td class="text-end pe-4">
                                         @if (log.TrangThai == "Thành Công" || log.TrangThai == "Hợp lệ")
                                         {
-                                            <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-check-lg"></i> Hợp lệ</span>
+                                            <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-check-circle-fill me-1"></i> Hợp lệ</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-x-circle"></i> @log.TrangThai</span>
+                                            <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-x-circle-fill me-1"></i> @log.TrangThai</span>
                                         }
                                     </td>
                                 </tr>
@@ -132,9 +134,9 @@
                             <tr>
                                 <td colspan="7" class="text-center py-5 text-muted">
                                     <div class="py-5">
-                                        <i class="bi bi-clipboard-x fs-1 d-block mb-3 opacity-25" style="font-size: 3rem !important;"></i>
-                                        <h5 class="fw-bold text-body">Dữ liệu trống!</h5>
-                                        <p class="small">Không tìm thấy lịch sử ra vào cho ngày @DateTime.Parse(selectedDate).ToString("dd/MM/yyyy").</p>
+                                        <i class="bi bi-inbox fs-1 d-block mb-3 opacity-25" style="font-size: 3rem !important;"></i>
+                                        <h6 class="fw-bold text-body">Không tìm thấy bản ghi nào!</h6>
+                                        <p class="small">Dữ liệu trống trong ngày @DateTime.Parse(selectedDate).ToString("dd/MM/yyyy").</p>
                                     </div>
                                 </td>
                             </tr>
@@ -174,33 +176,21 @@
         border-color: #dee2e6;
     }
 
+    /* Hiệu ứng bảng đồng bộ */
     .custom-table tbody tr {
         transition: all 0.2s ease;
         border-left: 4px solid transparent;
     }
 
         .custom-table tbody tr:hover {
-            background-color: rgba(13, 110, 253, 0.04);
+            background-color: rgba(13, 110, 253, 0.03);
             border-left-color: #0d6efd;
         }
 
     .custom-table td {
         padding: 12px 10px;
         border-bottom: 1px solid #f1f3f5;
-    }
-
-    /* Làm viền header đen đẹp hơn */
-    .custom-thead th {
-        border-bottom: 0 !important;
-    }
-
-    .sticky-top {
-        top: 0;
-        z-index: 10;
-    }
-
-    .font-monospace {
-        letter-spacing: 1px;
+        vertical-align: middle;
     }
 
     /* =========================================
@@ -215,7 +205,8 @@
         color: #e0e0e0 !important;
     }
 
-    [data-bs-theme="dark"] .input-custom {
+    [data-bs-theme="dark"] .input-custom,
+    [data-bs-theme="dark"] .form-select {
         background-color: #2c2c2c !important;
         color: #e0e0e0 !important;
         border-color: #444 !important;
@@ -243,14 +234,15 @@
         color: #888 !important;
     }
 
-    /* Bảng dữ liệu */
+    /* Bảng dữ liệu Dark Mode */
     [data-bs-theme="dark"] .custom-table {
         color: #e0e0e0;
     }
 
-    [data-bs-theme="dark"] .table-dark {
+    [data-bs-theme="dark"] .table-light {
         background-color: #0a0a0a !important;
         color: #ccc !important;
+        border-bottom: 1px solid #333 !important;
     }
 
     [data-bs-theme="dark"] .custom-table td {
