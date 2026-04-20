@@ -4,6 +4,9 @@
 @{
     ViewData["Title"] = "Bản Đồ An Ninh Tổng Hợp";
 
+    // PHÂN QUYỀN ADMIN
+    string userRole = User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value : "Guest";
+
     // NÂNG CẤP LẤY DỮ LIỆU: Lấy thêm Loại Đối Tượng và Biển Số để check đỗ sai
     var danhSachXeDangDau = DbContext.LichSuCheckIns
         .Where(x => x.ViTriDo != null && x.TrangThai != null && x.TrangThai.Contains("đậu"))
@@ -37,7 +40,7 @@
             </button>
         </div>
 
-        <div class="d-flex gap-3 align-items-center">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
             <div class="input-group input-group-sm w-auto shadow-sm">
                 <span class="input-group-text bg-dark text-white border-dark"><i class="bi bi-layers"></i> Tầng</span>
                 <select id="floorSelector" class="form-select border-dark fw-bold text-body bg-transparent" onchange="switchFloor()">
@@ -50,7 +53,21 @@
                     <option value="basement_moto">Tầng Hầm - Xe Máy</option>
                 </select>
             </div>
-            <button class="btn btn-danger fw-bold shadow-sm rounded-pill px-4 btn-sos text-nowrap" onclick="triggerSOS()">
+
+            @if (userRole == "Admin")
+            {
+                <div class="dropdown">
+                    <button class="btn btn-success btn-sm fw-bold shadow-sm rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-pencil-square"></i> Q.Trị Bản Đồ
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                        <li><a class="dropdown-item fw-bold text-primary" href="#" data-bs-toggle="modal" data-bs-target="#addMapCameraModal"><i class="bi bi-camera-video me-2"></i>Thêm Camera Giám Sát</a></li>
+                        <li><a class="dropdown-item fw-bold text-success" href="#" data-bs-toggle="modal" data-bs-target="#addMapParkingModal"><i class="bi bi-p-square me-2"></i>Vẽ thêm Ô Đỗ Xe</a></li>
+                    </ul>
+                </div>
+            }
+
+            <button class="btn btn-danger btn-sm fw-bold shadow-sm rounded-pill px-4 btn-sos text-nowrap" onclick="triggerSOS()">
                 <i class="bi bi-exclamation-triangle-fill"></i> S.O.S
             </button>
         </div>
@@ -80,14 +97,60 @@
                     <div id="map-zoom-wrapper" style="transform-origin: 0 0; width: 100%; height: 100%; position: relative; padding: 20px;">
 
                         <div id="map-ground" class="blueprint-container d-none w-100 h-100">
-                            <div class="room-box" style="top: 5%; left: 40%; width: 55%; height: 60%;"><i class="bi bi-building room-bg-icon"></i><div class="room-title">SẢNH TIẾP TÂN</div><div class="cam-marker" style="top: 15px; right: 15px;" onclick="switchTab('camera')"><div class="cam-pulse bg-success"></div><i class="bi bi-webcam-fill text-success fs-3"></i><div class="cam-label">Cam Sảnh 360</div></div></div>
-                            <div class="room-box border-warning text-warning" style="top: 5%; left: 5%; width: 30%; height: 40%; background: rgba(255,193,7,0.05);"><i class="bi bi-box-seam room-bg-icon text-warning"></i><div class="room-title text-warning">KHO VẬT TƯ</div><div class="cam-marker" style="top: 15px; left: 15px;" onclick="switchTab('camera')"><div class="cam-pulse bg-warning"></div><i class="bi bi-thermometer-sun text-warning fs-3"></i><div class="cam-label border-warning text-warning">Cam Nhiệt Kho</div></div></div>
-                            <div class="room-box" style="top: 70%; left: 40%; width: 55%; height: 25%;"><i class="bi bi-door-open room-bg-icon"></i><div class="room-title">CỔNG CHÍNH RA VÀO</div><div class="cam-marker" style="bottom: 15px; left: 50%; transform: translateX(-50%);" onclick="switchTab('camera')"><div class="cam-pulse bg-info"></div><i class="bi bi-person-bounding-box text-info fs-3"></i><div class="cam-label border-info text-info">FaceID Cổng</div></div></div>
+                            <div class="room-box" style="top: 5%; left: 40%; width: 55%; height: 60%;">
+                                <i class="bi bi-building room-bg-icon"></i><div class="room-title">SẢNH TIẾP TÂN</div>
+                                <div class="cam-marker" style="top: 15px; right: 15px;" onclick="switchTab('camera')">
+                                    @if (userRole == "Admin")
+                                    {
+                                        <button class="btn btn-sm btn-danger position-absolute rounded-circle btn-delete-cam" onclick="deleteMapElement(this, event, 'Cam Sảnh 360')"><i class="bi bi-x"></i></button>
+                                    }
+                                    <div class="cam-pulse bg-success"></div><i class="bi bi-webcam-fill text-success fs-3"></i><div class="cam-label">Cam Sảnh 360</div>
+                                </div>
+                            </div>
+                            <div class="room-box border-warning text-warning" style="top: 5%; left: 5%; width: 30%; height: 40%; background: rgba(255,193,7,0.05);">
+                                <i class="bi bi-box-seam room-bg-icon text-warning"></i><div class="room-title text-warning">KHO VẬT TƯ</div>
+                                <div class="cam-marker" style="top: 15px; left: 15px;" onclick="switchTab('camera')">
+                                    @if (userRole == "Admin")
+                                    {
+                                        <button class="btn btn-sm btn-danger position-absolute rounded-circle btn-delete-cam" onclick="deleteMapElement(this, event, 'Cam Nhiệt Kho')"><i class="bi bi-x"></i></button>
+                                    }
+                                    <div class="cam-pulse bg-warning"></div><i class="bi bi-thermometer-sun text-warning fs-3"></i><div class="cam-label border-warning text-warning">Cam Nhiệt Kho</div>
+                                </div>
+                            </div>
+                            <div class="room-box" style="top: 70%; left: 40%; width: 55%; height: 25%;">
+                                <i class="bi bi-door-open room-bg-icon"></i><div class="room-title">CỔNG CHÍNH RA VÀO</div>
+                                <div class="cam-marker" style="bottom: 15px; left: 50%; transform: translateX(-50%);" onclick="switchTab('camera')">
+                                    @if (userRole == "Admin")
+                                    {
+                                        <button class="btn btn-sm btn-danger position-absolute rounded-circle btn-delete-cam" onclick="deleteMapElement(this, event, 'FaceID Cổng')"><i class="bi bi-x"></i></button>
+                                    }
+                                    <div class="cam-pulse bg-info"></div><i class="bi bi-person-bounding-box text-info fs-3"></i><div class="cam-label border-info text-info">FaceID Cổng</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div id="map-floor1" class="blueprint-container d-none w-100 h-100"><div class="room-box border-primary" style="top: 10%; left: 40%; width: 55%; height: 80%; background: rgba(13,110,253,0.05);"><i class="bi bi-hdd-network room-bg-icon text-primary"></i><div class="room-title text-primary">TRUNG TÂM DỮ LIỆU (IT)</div></div></div>
-                        <div id="map-floor2" class="blueprint-container d-none w-100 h-100"><div class="room-box" style="top: 10%; left: 10%; width: 80%; height: 80%;"><i class="bi bi-people-fill room-bg-icon"></i><div class="room-title">VĂN PHÒNG NHÂN SỰ</div></div></div>
-                        <div id="map-floor3" class="blueprint-container d-none w-100 h-100"><div class="room-box" style="top: 10%; left: 10%; width: 80%; height: 80%;"><i class="bi bi-safe-fill room-bg-icon"></i><div class="room-title">PHÒNG KẾ TOÁN & KÉT SẮT</div></div></div>
+                        <div id="map-floor1" class="blueprint-container d-none w-100 h-100">
+                            <div class="room-box border-primary" style="top: 10%; left: 40%; width: 55%; height: 80%; background: rgba(13,110,253,0.05);">
+                                <i class="bi bi-hdd-network room-bg-icon text-primary"></i><div class="room-title text-primary">TRUNG TÂM DỮ LIỆU (IT)</div>
+                                <div class="cam-marker" style="top: 15px; left: 15px;" onclick="switchTab('camera')">
+                                    @if (userRole == "Admin")
+                                    {
+                                        <button class="btn btn-sm btn-danger position-absolute rounded-circle btn-delete-cam" onclick="deleteMapElement(this, event, 'Server Room Scan')"><i class="bi bi-x"></i></button>
+                                    }
+                                    <div class="cam-pulse bg-primary"></div><i class="bi bi-webcam-fill text-primary fs-3"></i><div class="cam-label border-primary text-primary">Server Room Scan</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="map-floor2" class="blueprint-container d-none w-100 h-100">
+                            <div class="room-box" style="top: 10%; left: 10%; width: 80%; height: 80%;">
+                                <i class="bi bi-people-fill room-bg-icon"></i><div class="room-title">VĂN PHÒNG NHÂN SỰ</div>
+                            </div>
+                        </div>
+                        <div id="map-floor3" class="blueprint-container d-none w-100 h-100">
+                            <div class="room-box" style="top: 10%; left: 10%; width: 80%; height: 80%;">
+                                <i class="bi bi-safe-fill room-bg-icon"></i><div class="room-title">PHÒNG KẾ TOÁN & KÉT SẮT</div>
+                            </div>
+                        </div>
 
                         <div id="map-basement_A" class="basement-clean-layout w-100">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -200,6 +263,82 @@
     </div>
 </div>
 
+@if (userRole == "Admin")
+{
+    <div class="modal fade" id="addMapCameraModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header bg-primary text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-camera-video me-2"></i>Gắn Camera Giám Sát</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên Camera</label>
+                        <input type="text" id="newCamName" class="form-control" placeholder="VD: Cam Hành Lang Tầng 2">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Chọn Tầng Đặt Camera</label>
+                        <select id="newCamFloor" class="form-select">
+                            <option value="ground">Tầng Trệt</option>
+                            <option value="floor1">Tầng 1</option>
+                            <option value="floor2">Tầng 2</option>
+                            <option value="floor3">Tầng 3</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-secondary rounded-pill fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary rounded-pill fw-bold" onclick="saveMapCamera()">
+                        <i class="bi bi-geo-alt"></i> Gắn Lên Bản Đồ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addMapParkingModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header bg-success text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-p-square me-2"></i>Vẽ Thêm Ô Đỗ Xe</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mã Vị Trí Mới</label>
+                        <input type="text" id="mapSlotCode" class="form-control text-uppercase" placeholder="VD: A-99, VIP-01">
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Chọn Khu Vực Hầm</label>
+                            <select id="mapSlotFloor" class="form-select">
+                                <option value="A">Khu A (Khách & VIP)</option>
+                                <option value="B">Khu B (Nhân Viên)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Thuộc Đối Tượng</label>
+                            <select id="mapSlotType" class="form-select">
+                                <option value="Khach">Khách Tham Quan</option>
+                                <option value="NhanVien">Nhân Viên</option>
+                                <option value="Sep" class="fw-bold text-warning">Sếp / VIP</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-secondary rounded-pill fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-success rounded-pill fw-bold" onclick="saveMapParkingSlot()">
+                        <i class="bi bi-check-circle"></i> Tạo Ô Đỗ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <style>
     /* CSS CHUNG */
     .custom-header-card, .bg-card-custom {
@@ -271,6 +410,7 @@
         pointer-events: none;
     }
 
+    /* NÂNG CẤP CAMERA MARKER VÀ NÚT XÓA ADMIN */
     .cam-marker {
         position: absolute;
         display: flex;
@@ -308,7 +448,27 @@
         border: 1px solid rgba(255,255,255,0.2);
     }
 
-    /* BÃI XE VÀ ĐƯỜNG ĐI CHUẨN MỚI */
+    .btn-delete-cam {
+        top: -10px;
+        right: -15px;
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        font-size: 12px;
+        z-index: 100;
+        opacity: 0;
+        transition: 0.2s;
+    }
+
+    .cam-marker:hover .btn-delete-cam {
+        opacity: 1;
+    }
+
+    .btn-delete-cam:hover {
+        transform: scale(1.2);
+    }
+
+    /* BÃI XE VÀ ĐƯỜNG ĐI */
     .basement-clean-layout {
         display: flex;
         flex-direction: column;
@@ -349,7 +509,7 @@
         width: 100%;
     }
 
-    /* Ô ĐỖ XE */
+    /* NÂNG CẤP Ô ĐỖ XE VÀ NÚT XÓA ADMIN */
     .parking-slot {
         height: 75px;
         border: 1px solid rgba(13,202,240,0.3);
@@ -396,6 +556,24 @@
         color: #ff4d4d !important;
         animation: violationFlash 1s infinite alternate;
     }
+
+    .btn-delete-slot {
+        width: 22px;
+        height: 22px;
+        transform: translate(30%, -30%);
+        z-index: 5;
+        transition: 0.2s;
+        opacity: 0;
+    }
+
+    .parking-slot:hover .btn-delete-slot {
+        opacity: 1;
+    }
+
+    .btn-delete-slot:hover {
+        transform: translate(30%, -30%) scale(1.2);
+    }
+
     @@keyframes violationFlash {
         0%
 
@@ -504,7 +682,7 @@
 
     }
 
-    /* NÂNG CẤP GIAO DIỆN CAMERA: SỬA LỖI TEXT LỆCH CHUẨN XÁC */
+    /* NÂNG CẤP GIAO DIỆN CAMERA */
     .cam-feed {
         background: #1a1a1a;
         border: 1px solid #333;
@@ -523,7 +701,6 @@
             box-shadow: 0 0 15px rgba(13, 110, 253, 0.4);
         }
 
-    /* Gắn Background Camera vào tuyệt đối để không đẩy text */
     .cam-content {
         position: absolute;
         top: 0;
@@ -541,7 +718,6 @@
             font-size: 4rem;
         }
 
-    /* Các thành phần Text đặt lên trên z-index 2 */
     .cam-status {
         position: absolute;
         top: 10px;
@@ -611,7 +787,6 @@
         z-index: 2;
     }
 
-    /* Chế độ Phóng To Camera */
     .cam-fullscreen {
         position: fixed !important;
         top: 0 !important;
@@ -709,6 +884,9 @@
 </style>
 
 <script>
+    // BIẾN TOÀN CỤC CHỨA QUYỀN USER ĐỂ JS SỬ DỤNG
+    const isAdmin = '@userRole' === 'Admin';
+
     let rawData = @Html.Raw(Json.Serialize(danhSachXeDangDau));
 
     let parkedCars = {};
@@ -761,7 +939,7 @@
     window.resetZoom = function() { scale = 1; pointX = 0; pointY = 0; setTransform(); }
 
     // ==========================================
-    // 2. THUẬT TOÁN SINH BÃI XE CHUẨN
+    // 2. THUẬT TOÁN SINH BÃI XE VÀ NÚT XÓA ADMIN
     // ==========================================
     function generateBasementLayout(prefix, totalSlots, targetParkingId, targetCamId) {
         const container = document.getElementById(targetParkingId);
@@ -817,8 +995,10 @@
                     content = `${roleIcon}<span style="font-size: 0.5rem; opacity: 0.8">${roleLabel}</span><span class="fw-bold mt-1">${slotId}</span>`;
                 }
 
+                // Gắn nút xóa cho Admin
+                let adminDeleteBtn = isAdmin ? `<button class="btn btn-danger position-absolute top-0 end-0 p-0 rounded-circle d-flex align-items-center justify-content-center btn-delete-slot" onclick="deleteSlot('${slotId}', event)" title="Xóa bãi đỗ này"><i class="bi bi-x" style="font-size: 14px; margin: 0;"></i></button>` : '';
                 let camIcon = `<i class="bi bi-webcam-fill slot-cam text-info" title="Xem Camera ô ${slotId}" onclick="openSlotCamera(event, '${slotId}')"></i>`;
-                html += `<div class="parking-slot ${cssClass}">${camIcon}${content}</div>`;
+                html += `<div class="parking-slot ${cssClass}">${adminDeleteBtn}${camIcon}${content}</div>`;
 
                 camHtml += `
                 <div class="col-md-4 col-lg-3 dynamic-cam-item" data-slot="${slotId}">
@@ -844,7 +1024,7 @@
         }
         html += `<div class="d-flex justify-content-end mt-4"><div class="zone-badge bg-danger animate__animated animate__pulse animate__infinite">LỐI RA (EXIT) <i class="bi bi-arrow-right-square-fill"></i></div></div>`;
         container.innerHTML = html;
-        camContainer.innerHTML = camHtml; // Đổ camera vào đúng container của tầng đó
+        camContainer.innerHTML = camHtml;
     }
 
     function initParking() {
@@ -927,10 +1107,8 @@
         document.getElementById('blueprintTitle').innerHTML = `<i class="bi bi-map"></i> Blueprint - ${text}`;
         document.getElementById('cam-zone-name').innerText = text.toUpperCase();
 
-        // Ẩn tất cả bản đồ
         document.querySelectorAll('.blueprint-container, .basement-clean-layout').forEach(el => el.classList.add('d-none'));
 
-        // CHÍNH LÀ ĐÂY: Ẩn tất cả ngăn chứa Camera ô đỗ xe phụ
         document.getElementById('cam-container-basement_A').classList.add('d-none');
         document.getElementById('cam-container-basement_B').classList.add('d-none');
 
@@ -950,10 +1128,10 @@
             cam1.innerText = "Cam Hành Lang (Tầng)"; cam2.innerText = "Cam Thang Máy"; cam3.innerText = "Cam Cửa Văn Phòng";
         } else if(val === 'basement_A') {
             cam1.innerText = "ALPR Lối Vào A"; cam2.innerText = "ALPR Lối Ra A"; cam3.innerText = "Toàn Cảnh Hầm A";
-            document.getElementById('cam-container-basement_A').classList.remove('d-none'); // Mở khóa ngăn chứa Cam A
+            document.getElementById('cam-container-basement_A').classList.remove('d-none');
         } else if(val === 'basement_B') {
             cam1.innerText = "ALPR Lối Vào B"; cam2.innerText = "ALPR Lối Ra B"; cam3.innerText = "Toàn Cảnh Hầm B";
-            document.getElementById('cam-container-basement_B').classList.remove('d-none'); // Mở khóa ngăn chứa Cam B
+            document.getElementById('cam-container-basement_B').classList.remove('d-none');
         } else if(val === 'basement_moto') {
             cam1.innerText = "Cam Bãi Xe Máy 01"; cam2.innerText = "Cam Bãi Xe Máy 02"; cam3.innerText = "Lối Ra Xe Máy";
         }
@@ -967,7 +1145,6 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         initParking();
-        // Chạy ngay lần đầu để ẩn/hiện đúng camera theo tầng mặc định
         switchFloor();
     });
 
@@ -1012,5 +1189,111 @@
                 });
             }
         });
+    }
+
+    // ==========================================
+    // 4. JAVASCRIPT CHO ADMIN (THÊM / XÓA)
+    // ==========================================
+    @if (userRole == "Admin")
+    {
+            <text>
+            // XÓA CAMERA
+            function deleteMapElement(btnElement, event, name) {
+                event.stopPropagation();
+                Swal.fire({
+                    title: 'Gỡ Camera?',
+                    html: `Xóa Camera <b>${name}</b> khỏi Bản đồ giám sát?`,
+                    icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Xóa ngay', cancelButtonText: 'Hủy'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const cam = btnElement.closest('.cam-marker');
+                        cam.classList.add('animate__animated', 'animate__zoomOut');
+                        setTimeout(() => cam.remove(), 500);
+                        Swal.fire('Đã xóa!', 'Thiết bị đã bị ngắt kết nối.', 'success');
+                    }
+                });
+            }
+
+            // XÓA BÃI ĐỖ
+            function deleteSlot(slotId, event) {
+                event.stopPropagation();
+                Swal.fire({
+                    title: 'Xóa vị trí đỗ?',
+                    text: `Bạn có chắc chắn muốn gỡ bỏ ô đỗ ${slotId}?`,
+                    icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Xóa ngay', cancelButtonText: 'Hủy'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const slotEl = event.target.closest('.parking-slot');
+                        if(slotEl) {
+                            slotEl.classList.add('animate__animated', 'animate__zoomOut');
+                            setTimeout(() => slotEl.remove(), 500);
+                        }
+                        Swal.fire('Đã xóa!', `Vị trí ${slotId} đã bị thu hồi.`, 'success');
+                    }
+                });
+            }
+
+            // LƯU CAMERA MỚI
+            function saveMapCamera() {
+                const name = document.getElementById('newCamName').value;
+                const floor = document.getElementById('newCamFloor').value;
+                if(!name) { Swal.fire('Lỗi', 'Vui lòng nhập tên Camera', 'error'); return; }
+
+                const html = `
+                    <div class="cam-marker animate__animated animate__bounceIn" style="top: 50%; left: 50%; transform: translate(-50%, -50%);" onclick="switchTab('camera')">
+                        <button class="btn btn-sm btn-danger position-absolute rounded-circle btn-delete-cam" onclick="deleteMapElement(this, event, '${name}')"><i class="bi bi-x"></i></button>
+                        <div class="cam-pulse bg-primary"></div><i class="bi bi-webcam-fill text-primary fs-3"></i><div class="cam-label border-primary text-primary">${name}</div>
+                    </div>
+                `;
+
+                const targetMap = document.getElementById('map-' + floor);
+                if(targetMap) targetMap.insertAdjacentHTML('beforeend', html);
+
+                bootstrap.Modal.getInstance(document.getElementById('addMapCameraModal')).hide();
+                Swal.fire('Thành công', 'Đã gắn Camera vào chính giữa bản đồ.', 'success');
+                document.getElementById('newCamName').value = '';
+            }
+
+            // LƯU BÃI ĐỖ MỚI
+            function saveMapParkingSlot() {
+                const code = document.getElementById('mapSlotCode').value.toUpperCase();
+                const floor = document.getElementById('mapSlotFloor').value; // A or B
+                const type = document.getElementById('mapSlotType').value;
+
+                if(!code) { Swal.fire('Lỗi', 'Vui lòng nhập Mã Vị Trí', 'error'); return; }
+
+                let typeIcon = type === 'Sep' ? '<i class="bi bi-star-fill mb-1"></i>' : (type === 'Khach' ? '<i class="bi bi-person-badge mb-1"></i>' : '<i class="bi bi-person-vcard mb-1"></i>');
+                let typeLabel = type === 'Sep' ? 'VIP/SẾP' : (type === 'Khach' ? 'KHÁCH' : 'NHÂN VIÊN');
+                let textColor = type === 'Sep' ? 'text-warning' : (type === 'Khach' ? 'text-info' : 'text-secondary');
+                let borderClass = type === 'Sep' ? 'slot-vip' : (type === 'Khach' ? 'slot-customer' : 'slot-employee');
+
+                const html = `
+                    <div class="parking-slot ${borderClass} position-relative animate__animated animate__bounceIn">
+                        <button class="btn btn-danger position-absolute top-0 end-0 p-0 rounded-circle d-flex align-items-center justify-content-center btn-delete-slot" onclick="deleteSlot('${code}', event)" title="Xóa bãi đỗ này">
+                            <i class="bi bi-x" style="font-size: 14px; margin: 0;"></i>
+                        </button>
+                        <span class="${textColor}">${typeIcon}</span>
+                        <span style="font-size: 0.5rem; opacity: 0.8" class="${textColor}">${typeLabel}</span>
+                        <span class="fw-bold mt-1 ${textColor}">${code}</span>
+                    </div>
+                `;
+
+                const container = document.getElementById(`dynamic-parking-${floor}`);
+                if (container) {
+                    const grids = container.querySelectorAll('.parking-grid');
+                    if(grids.length > 0) {
+                        grids[grids.length - 1].insertAdjacentHTML('beforeend', html);
+                    } else {
+                        container.insertAdjacentHTML('beforeend', `<div class="parking-block mb-1"><div class="parking-grid">${html}</div></div>`);
+                    }
+                }
+
+                Swal.fire('Hoàn tất!', `Đã vẽ thêm vị trí <b>${code}</b> vào Khu ${floor}.`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addMapParkingModal')).hide();
+                document.getElementById('mapSlotCode').value = '';
+            }
+            </text>
     }
 </script>

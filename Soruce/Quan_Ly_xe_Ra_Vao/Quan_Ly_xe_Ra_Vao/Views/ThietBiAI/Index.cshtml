@@ -1,261 +1,429 @@
 ﻿@{
     ViewData["Title"] = "Quản lý thiết bị";
+    // Phân quyền: Lấy Role của User để ẩn hiện các nút bấm nhạy cảm
+    var userRole = User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value : "Guest";
 }
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <div class="container-fluid mt-2 animate__animated animate__fadeIn">
-    <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-primary">
-        <div>
-            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-cpu-fill text-primary"></i> QUẢN LÝ THIẾT BỊ (HỆ THỐNG ĐỒNG BỘ)</h4>
-            <small class="text-muted fw-bold">QUẢN LÝ EDGE AI SERVER & 11 CỤM THIẾT BỊ NGOẠI VI</small>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-primary">
+        <div class="d-flex align-items-center mb-3 mb-xl-0">
+            <div class="bg-primary text-white rounded-3 me-3 shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                <i class="bi bi-cpu-fill fs-4"></i>
+            </div>
+            <div>
+                <h4 class="fw-bold text-dark mb-0">HỆ THỐNG THIẾT BỊ HỢP NHẤT</h4>
+                <small class="text-muted fw-bold">QUẢN LÝ EDGE AI SERVER & 11 CỤM THIẾT BỊ NGOẠI VI</small>
+            </div>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-secondary fw-bold rounded-pill shadow-sm" onclick="scanNetwork()">
+
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <div class="input-group shadow-sm rounded-pill overflow-hidden border">
+                <span class="input-group-text bg-white border-0 text-primary"><i class="bi bi-layers-fill"></i></span>
+                <select id="floorFilter" class="form-select border-0 fw-bold text-dark shadow-none" style="min-width: 180px; cursor: pointer;" onchange="filterByFloor()">
+                    <option value="all">Tất cả khu vực</option>
+                    <option value="ground">Tầng Trệt (Sảnh/Kho)</option>
+                    <option value="basement">Tầng Hầm (Bãi xe)</option>
+                    <option value="floors">Tầng Lầu (1, 2, 3)</option>
+                </select>
+            </div>
+
+            <button class="btn btn-outline-secondary fw-bold rounded-pill shadow-sm ms-2" onclick="scanNetwork(this)">
                 <i class="bi bi-broadcast"></i> Quét mạng nội bộ
             </button>
+
+            @if (userRole == "Admin")
+            {
+                <button class="btn btn-success fw-bold rounded-pill shadow-sm ms-2" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
+                    <i class="bi bi-plus-circle"></i> Thêm TB
+                </button>
+            }
         </div>
     </div>
 
     <div class="row g-3">
         <div class="col-lg-3 d-flex flex-column gap-3">
             <div class="card border-0 shadow-sm rounded-4 bg-dark text-white h-100">
-                <div class="card-header bg-black border-bottom border-secondary py-3 text-center">
-                    <h6 class="fw-bold mb-0 text-uppercase text-info"><i class="bi bi-hdd-network"></i> NANO EDGE AI SERVER</h6>
-                    <small class="text-secondary">IP: 192.168.1.100 | Uptime: 48h 12m</small>
+                <div class="card-header bg-black border-bottom border-secondary py-3 text-center position-relative">
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-success pulse-green small">LIVE</span>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-uppercase text-info mt-2"><i class="bi bi-hdd-network me-1"></i> <span id="serverNameText">AI SERVER</span></h6>
+                    <small class="text-secondary font-monospace" id="serverIpUptime">Đang đồng bộ phần cứng...</small>
                 </div>
                 <div class="card-body p-4 sticky-top" style="top: 15px; z-index: 1;">
                     <div class="mb-4">
                         <div class="d-flex justify-content-between mb-1">
                             <span class="small fw-bold text-uppercase">CPU Usage</span>
-                            <span class="small fw-bold text-success" id="cpuText">45%</span>
+                            <span class="small fw-bold text-success font-monospace" id="cpuText">--%</span>
                         </div>
-                        <div class="progress" style="height: 8px; background-color: #333;">
-                            <div class="progress-bar bg-success transition-all" id="cpuBar" style="width: 45%"></div>
+                        <div class="progress rounded-pill" style="height: 6px; background-color: #333;">
+                            <div class="progress-bar bg-success transition-all" id="cpuBar" style="width: 0%"></div>
                         </div>
                     </div>
                     <div class="mb-4">
                         <div class="d-flex justify-content-between mb-1">
-                            <span class="small fw-bold text-uppercase">RAM (16GB)</span>
-                            <span class="small fw-bold text-warning" id="ramText">78%</span>
+                            <span class="small fw-bold text-uppercase">RAM Load</span>
+                            <span class="small fw-bold text-warning font-monospace" id="ramText">--%</span>
                         </div>
-                        <div class="progress" style="height: 8px; background-color: #333;">
-                            <div class="progress-bar bg-warning transition-all" id="ramBar" style="width: 78%"></div>
+                        <div class="progress rounded-pill" style="height: 6px; background-color: #333;">
+                            <div class="progress-bar bg-warning transition-all" id="ramBar" style="width: 0%"></div>
                         </div>
                     </div>
                     <div class="mb-4">
                         <div class="d-flex justify-content-between mb-1">
                             <span class="small fw-bold text-uppercase">NPU / GPU Load</span>
-                            <span class="small fw-bold text-danger" id="gpuText">92%</span>
+                            <span class="small fw-bold text-danger font-monospace" id="gpuText">--%</span>
                         </div>
-                        <div class="progress" style="height: 8px; background-color: #333;">
-                            <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated transition-all" id="gpuBar" style="width: 92%"></div>
+                        <div class="progress rounded-pill" style="height: 6px; background-color: #333;">
+                            <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated transition-all" id="gpuBar" style="width: 0%"></div>
                         </div>
                     </div>
-                    <hr class="border-secondary">
+                    <hr class="border-secondary mt-5">
                     <div class="d-grid gap-2">
-                        <button class="btn btn-outline-info btn-sm fw-bold" onclick="clearCache()">Giải phóng RAM</button>
-                        <button class="btn btn-outline-danger btn-sm fw-bold" onclick="rebootServer()">Khởi động lại Server</button>
+                        <button class="btn btn-outline-info rounded-pill btn-sm fw-bold" onclick="clearCache(this)">Giải phóng RAM</button>
+                        <button class="btn btn-outline-danger rounded-pill btn-sm fw-bold" onclick="rebootMainServer(this)">Khởi động lại Server</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-9">
-            <div class="row g-3">
 
-                <div class="col-12"><h6 class="fw-bold text-muted text-uppercase small mt-2">Khu vực Tầng Trệt</h6></div>
-
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-bold mb-0">FaceID Scanner</h6>
-                                <span class="status-dot bg-success pulse-green"></span>
+            <div class="floor-section" data-floor="ground">
+                <h6 class="fw-bold text-muted text-uppercase small mt-2"><i class="bi bi-building me-1"></i> Khu vực Tầng Trệt</h6>
+                <div class="row g-3 mb-4" id="grid-ground">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success position-relative">
+                            @if (userRole == "Admin")
+                            {
+                                <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, 'FaceID Scanner')"><i class="bi bi-x-lg"></i></button>
+                            }
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                    <h6 class="fw-bold mb-0">FaceID Scanner</h6>
+                                    <span class="status-dot bg-success pulse-green"></span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Cổng chính - Tầng trệt</small>
+                                <div class="small mb-3 bg-light p-2 rounded border font-monospace text-primary">IP: 192.168.1.105</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-light border flex-grow-1 fw-bold" onclick="pingDevice('192.168.1.105', this)"><i class="bi bi-activity"></i> Ping</button>
+                                    <a href="/BanDoAnNinh/Index?focus=CAM_CONG" class="btn btn-sm btn-outline-primary fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                                </div>
                             </div>
-                            <small class="text-muted d-block mb-2">Cổng chính - Tầng trệt</small>
-                            <div class="small mb-3"><span class="text-muted">IP:</span> 192.168.1.105</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-light border flex-grow-1" onclick="pingDevice('192.168.1.105')">Ping</button>
-                                <a href="/BanDoAnNinh/Index?focus=CAM_CONG" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success position-relative">
+                            @if (userRole == "Admin")
+                            {
+                                <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, 'Cam Sảnh 360')"><i class="bi bi-x-lg"></i></button>
+                            }
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                    <h6 class="fw-bold mb-0">Cam Sảnh 360</h6>
+                                    <span class="status-dot bg-success pulse-green"></span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Sảnh tiếp tân - Tầng trệt</small>
+                                <div class="small mb-3 bg-light p-2 rounded border font-monospace text-primary">IP: 192.168.1.107</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-light border flex-grow-1 fw-bold" onclick="pingDevice('192.168.1.107', this)"><i class="bi bi-activity"></i> Ping</button>
+                                    <a href="/BanDoAnNinh/Index?focus=CAM_SANH" class="btn btn-sm btn-outline-primary fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-warning position-relative">
+                            @if (userRole == "Admin")
+                            {
+                                <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, 'Cam Nhiệt Kho')"><i class="bi bi-x-lg"></i></button>
+                            }
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                    <h6 class="fw-bold mb-0">Cam Nhiệt Kho</h6>
+                                    <span class="status-dot bg-warning"></span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Kho vật tư - Tầng trệt</small>
+                                <div class="small mb-3 bg-warning bg-opacity-10 border-warning p-2 rounded border font-monospace text-warning">IP: 192.168.1.115</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-light border flex-grow-1 fw-bold" onclick="pingDevice('192.168.1.115', this)"><i class="bi bi-activity"></i> Ping</button>
+                                    <a href="/BanDoAnNinh/Index?focus=CAM_KHO" class="btn btn-sm btn-outline-warning fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-danger bg-danger bg-opacity-10 position-relative">
+                            @if (userRole == "Admin")
+                            {
+                                <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, 'Cam Hành Lang')"><i class="bi bi-x-lg"></i></button>
+                            }
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                    <h6 class="fw-bold text-danger mb-0">Cam Hành Lang</h6>
+                                    <span class="status-dot bg-danger pulse-red"></span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Lối thoát hiểm - Tầng trệt</small>
+                                <div class="small mb-3 text-danger fw-bold font-monospace bg-white p-2 rounded border border-danger">DISCONNECTED</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-danger text-white flex-grow-1 fw-bold shadow-sm" onclick="rebootDevice('Cam Hành Lang', this)"><i class="bi bi-power"></i> Ép Reboot</button>
+                                    <a href="/BanDoAnNinh/Index?focus=CAM_HL" class="btn btn-sm btn-outline-danger fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-bold mb-0">Cam Sảnh 360</h6>
-                                <span class="status-dot bg-success pulse-green"></span>
-                            </div>
-                            <small class="text-muted d-block mb-2">Sảnh tiếp tân - Tầng trệt</small>
-                            <div class="small mb-3"><span class="text-muted">IP:</span> 192.168.1.107</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-light border flex-grow-1" onclick="pingDevice('192.168.1.107')">Ping</button>
-                                <a href="/BanDoAnNinh/Index?focus=CAM_SANH" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Vị trí</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-warning">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-bold mb-0">Cam Nhiệt Kho</h6>
-                                <span class="status-dot bg-warning"></span>
-                            </div>
-                            <small class="text-muted d-block mb-2">Kho vật tư - Tầng trệt</small>
-                            <div class="small mb-3"><span class="text-muted">IP:</span> 192.168.1.115</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-light border flex-grow-1" onclick="pingDevice('192.168.1.115')">Ping</button>
-                                <a href="/BanDoAnNinh/Index?focus=CAM_KHO" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Vị trí</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12"><h6 class="fw-bold text-muted text-uppercase small mt-3">Khu vực Tầng Hầm (Bãi Xe)</h6></div>
-
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-info">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-bold mb-0">ALPR Cổng A (Ô tô)</h6>
-                                <span class="status-dot bg-success pulse-green"></span>
-                            </div>
-                            <small class="text-muted d-block mb-2">Lối vào bãi xe Khu A</small>
-                            <div class="small mb-3"><span class="text-muted">IP:</span> 192.168.1.111</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-light border flex-grow-1" onclick="pingDevice('192.168.1.111')">Ping</button>
-                                <a href="/BanDoAnNinh/Index?focus=CAM_HAM_A" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Vị trí</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-info">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-bold mb-0">ALPR Cổng B (Ô tô)</h6>
-                                <span class="status-dot bg-success pulse-green"></span>
-                            </div>
-                            <small class="text-muted d-block mb-2">Lối vào bãi xe Khu B</small>
-                            <div class="small mb-3"><span class="text-muted">IP:</span> 192.168.1.112</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-light border flex-grow-1" onclick="pingDevice('192.168.1.112')">Ping</button>
-                                <a href="/BanDoAnNinh/Index?focus=CAM_HAM_B" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Vị trí</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-bold mb-0">Cam Bãi Xe Máy</h6>
-                                <span class="status-dot bg-success pulse-green"></span>
-                            </div>
-                            <small class="text-muted d-block mb-2">Khu vực đỗ xe máy</small>
-                            <div class="small mb-3"><span class="text-muted">IP:</span> 192.168.1.113</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-light border flex-grow-1" onclick="pingDevice('192.168.1.113')">Ping</button>
-                                <a href="/BanDoAnNinh/Index?focus=CAM_MOTO" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Vị trí</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12"><h6 class="fw-bold text-muted text-uppercase small mt-3">Khu vực Tầng Lầu</h6></div>
-
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-primary">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-bold mb-0">Server Room Scan</h6>
-                                <span class="status-dot bg-success pulse-green"></span>
-                            </div>
-                            <small class="text-muted d-block mb-2">Phòng IT - Tầng 1</small>
-                            <div class="small mb-3"><span class="text-muted">IP:</span> 192.168.1.120</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-light border flex-grow-1" onclick="pingDevice('192.168.1.120')">Ping</button>
-                                <a href="/BanDoAnNinh/Index?focus=CAM_SERVER" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Vị trí</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-bold mb-0">Cam Nhân Sự</h6>
-                                <span class="status-dot bg-success pulse-green"></span>
-                            </div>
-                            <small class="text-muted d-block mb-2">Phòng Nhân sự - Tầng 2</small>
-                            <div class="small mb-3"><span class="text-muted">IP:</span> 192.168.1.130</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-light border flex-grow-1" onclick="pingDevice('192.168.1.130')">Ping</button>
-                                <a href="/BanDoAnNinh/Index?focus=CAM_NS" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Vị trí</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-bold mb-0">Cam Kế Toán</h6>
-                                <span class="status-dot bg-success pulse-green"></span>
-                            </div>
-                            <small class="text-muted d-block mb-2">Phòng Kế toán - Tầng 3</small>
-                            <div class="small mb-3"><span class="text-muted">IP:</span> 192.168.1.140</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-light border flex-grow-1" onclick="pingDevice('192.168.1.140')">Ping</button>
-                                <a href="/BanDoAnNinh/Index?focus=CAM_KT" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Vị trí</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-danger bg-danger bg-opacity-10">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-bold text-danger mb-0">Cam Hành Lang</h6>
-                                <span class="status-dot bg-danger pulse-red"></span>
-                            </div>
-                            <small class="text-muted d-block mb-2">Lối thoát hiểm - Tầng trệt</small>
-                            <div class="small mb-3 text-danger fw-bold">DISCONNECTED</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-danger text-white flex-grow-1" onclick="rebootDevice('Cam Hành Lang')">Ép Reboot</button>
-                                <a href="/BanDoAnNinh/Index?focus=CAM_HL" class="btn btn-sm btn-outline-danger"><i class="bi bi-geo-alt"></i> Vị trí</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
+
+            <div class="floor-section" data-floor="floors">
+                <h6 class="fw-bold text-muted text-uppercase small mt-3"><i class="bi bi-layers-half me-1"></i> Khu vực Tầng Lầu</h6>
+                <div class="row g-3 mb-4" id="grid-floors">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-primary position-relative">
+                            @if (userRole == "Admin")
+                            {
+                                <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, 'Server Room Scan')"><i class="bi bi-x-lg"></i></button>
+                            }
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                    <h6 class="fw-bold mb-0">Server Room Scan</h6>
+                                    <span class="status-dot bg-success pulse-green"></span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Phòng IT - Tầng 1</small>
+                                <div class="small mb-3 bg-light p-2 rounded border font-monospace text-primary">IP: 192.168.1.120</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-light border flex-grow-1 fw-bold" onclick="pingDevice('192.168.1.120', this)"><i class="bi bi-activity"></i> Ping</button>
+                                    <a href="/BanDoAnNinh/Index?focus=CAM_SERVER" class="btn btn-sm btn-outline-primary fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success position-relative">
+                            @if (userRole == "Admin")
+                            {
+                                <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, 'Cam Nhân Sự')"><i class="bi bi-x-lg"></i></button>
+                            }
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                    <h6 class="fw-bold mb-0">Cam Nhân Sự</h6>
+                                    <span class="status-dot bg-success pulse-green"></span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Phòng Nhân sự - Tầng 2</small>
+                                <div class="small mb-3 bg-light p-2 rounded border font-monospace text-primary">IP: 192.168.1.130</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-light border flex-grow-1 fw-bold" onclick="pingDevice('192.168.1.130', this)"><i class="bi bi-activity"></i> Ping</button>
+                                    <a href="/BanDoAnNinh/Index?focus=CAM_NS" class="btn btn-sm btn-outline-primary fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success position-relative">
+                            @if (userRole == "Admin")
+                            {
+                                <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, 'Cam Kế Toán')"><i class="bi bi-x-lg"></i></button>
+                            }
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                    <h6 class="fw-bold mb-0">Cam Kế Toán</h6>
+                                    <span class="status-dot bg-success pulse-green"></span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Phòng Kế toán - Tầng 3</small>
+                                <div class="small mb-3 bg-light p-2 rounded border font-monospace text-primary">IP: 192.168.1.140</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-light border flex-grow-1 fw-bold" onclick="pingDevice('192.168.1.140', this)"><i class="bi bi-activity"></i> Ping</button>
+                                    <a href="/BanDoAnNinh/Index?focus=CAM_KT" class="btn btn-sm btn-outline-primary fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="floor-section" data-floor="basement">
+                <h6 class="fw-bold text-muted text-uppercase small mt-3"><i class="bi bi-p-square-fill me-1"></i> Khu vực Tầng Hầm (Bãi Xe)</h6>
+                <div class="row g-3 mb-4" id="grid-basement">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-info position-relative">
+                            @if (userRole == "Admin")
+                            {
+                                <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, 'ALPR Cổng A')"><i class="bi bi-x-lg"></i></button>
+                            }
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                    <h6 class="fw-bold mb-0">ALPR Cổng A (Ô tô)</h6>
+                                    <span class="status-dot bg-success pulse-green"></span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Lối vào bãi xe Khu A</small>
+                                <div class="small mb-3 bg-light p-2 rounded border font-monospace text-primary">IP: 192.168.1.111</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-light border flex-grow-1 fw-bold" onclick="pingDevice('192.168.1.111', this)"><i class="bi bi-activity"></i> Ping</button>
+                                    <a href="/BanDoAnNinh/Index?focus=CAM_HAM_A" class="btn btn-sm btn-outline-primary fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-info position-relative">
+                            @if (userRole == "Admin")
+                            {
+                                <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, 'ALPR Cổng B')"><i class="bi bi-x-lg"></i></button>
+                            }
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                    <h6 class="fw-bold mb-0">ALPR Cổng B (Ô tô)</h6>
+                                    <span class="status-dot bg-success pulse-green"></span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Lối vào bãi xe Khu B</small>
+                                <div class="small mb-3 bg-light p-2 rounded border font-monospace text-primary">IP: 192.168.1.112</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-light border flex-grow-1 fw-bold" onclick="pingDevice('192.168.1.112', this)"><i class="bi bi-activity"></i> Ping</button>
+                                    <a href="/BanDoAnNinh/Index?focus=CAM_HAM_B" class="btn btn-sm btn-outline-primary fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success position-relative">
+                            @if (userRole == "Admin")
+                            {
+                                <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, 'Cam Bãi Xe Máy')"><i class="bi bi-x-lg"></i></button>
+                            }
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                    <h6 class="fw-bold mb-0">Cam Bãi Xe Máy</h6>
+                                    <span class="status-dot bg-success pulse-green"></span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Khu vực đỗ xe máy</small>
+                                <div class="small mb-3 bg-light p-2 rounded border font-monospace text-primary">IP: 192.168.1.113</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-light border flex-grow-1 fw-bold" onclick="pingDevice('192.168.1.113', this)"><i class="bi bi-activity"></i> Ping</button>
+                                    <a href="/BanDoAnNinh/Index?focus=CAM_MOTO" class="btn btn-sm btn-outline-primary fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+                    <h6 class="fw-bold text-muted text-uppercase mb-0"><i class="bi bi-camera-video-fill me-2"></i> Lưới Camera Ô Đỗ Xe (240 Slots)</h6>
+                    <div class="btn-group btn-group-sm rounded-pill shadow-sm overflow-hidden border">
+                        <button class="btn btn-primary px-4 fw-bold" onclick="showSlotZone('A', this)">KHU A</button>
+                        <button class="btn btn-light px-4 fw-bold" onclick="showSlotZone('B', this)">KHU B</button>
+                    </div>
+                </div>
+
+                <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden mb-4">
+                    <div class="card-header bg-light py-2 border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="fw-bold text-muted" id="slot-zone-title">ĐANG HIỂN THỊ: CAMERA KHU A (1-120)</small>
+                            <span class="badge bg-info text-dark rounded-pill"><i class="bi bi-sync"></i> Đồng bộ Real-time</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-3 overflow-auto custom-scrollbar" style="max-height: 350px;">
+                        <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-2" id="slot-camera-grid">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
 
-<style>
-    .icon-box {
-        width: 35px;
-        height: 35px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-    }
+@if (userRole == "Admin")
+{
+    <div class="modal fade" id="addDeviceModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header bg-success text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-cpu-fill me-2"></i>Thêm Thiết Bị Mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên thiết bị</label>
+                        <input type="text" id="newDevName" class="form-control" placeholder="VD: Cam Hành Lang Tầng 2">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Địa chỉ IP</label>
+                        <input type="text" id="newDevIP" class="form-control font-monospace" placeholder="192.168.1.xxx">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Khu vực (Tầng)</label>
+                        <select id="newDevFloor" class="form-select">
+                            <option value="ground">Tầng Trệt</option>
+                            <option value="floors">Tầng Lầu</option>
+                            <option value="basement">Tầng Hầm (Bãi xe)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-secondary rounded-pill fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-success rounded-pill fw-bold" onclick="submitAddDevice()">
+                        <i class="bi bi-check-circle"></i> Lưu Thiết Bị
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <div class="modal fade" id="addParkingSlotModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header bg-dark text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-car-front-fill me-2"></i>Thiết Lập Vị Trí Đỗ Xe</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mã Vị Trí</label>
+                        <input type="text" id="slotCode" class="form-control text-uppercase" placeholder="VD: B-01, VIP-05">
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Thuộc Tầng</label>
+                            <select id="slotFloor" class="form-select">
+                                <option value="B1">Tầng Hầm B1</option>
+                                <option value="B2">Tầng Hầm B2</option>
+                                <option value="G">Sảnh Trệt (VIP)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Phân loại đối tượng</label>
+                            <select id="slotType" class="form-select">
+                                <option value="NhanVien">Nhân Viên</option>
+                                <option value="Khach">Khách Tham Quan</option>
+                                <option value="Sep" class="fw-bold text-warning">Sếp / VIP</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-secondary rounded-pill fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-dark rounded-pill fw-bold" onclick="saveParkingSlot()">
+                        Lưu Cấu Hình
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
     .device-card {
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         border: 1px solid rgba(0,0,0,0.05) !important;
@@ -276,19 +444,21 @@
     .transition-all {
         transition: all 0.5s ease;
     }
-
     @@keyframes pulsing {
-        0% {
-            box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7);
-        }
+        0%
 
-        70% {
-            box-shadow: 0 0 0 10px rgba(25, 135, 84, 0);
-        }
+    {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7);
+    }
 
-        100% {
-            box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
-        }
+    70% {
+        box-shadow: 0 0 0 10px rgba(25, 135, 84, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
+    }
+
     }
 
     .pulse-green {
@@ -300,21 +470,358 @@
         background-color: #dc3545 !important;
         box-shadow: 0 0 0 rgba(220, 53, 69, 0.4);
     }
+
+    .slot-item {
+        background: #fdfdfd;
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+        .slot-item:hover {
+            background: #eef4ff;
+            border-color: #0d6efd;
+        }
+
+        .slot-item i {
+            font-size: 1.2rem;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .slot-item b {
+            font-size: 0.75rem;
+            display: block;
+            color: #444;
+        }
+
+        .slot-item small {
+            font-size: 0.65rem;
+            color: #888;
+        }
+
+    [data-bs-theme="dark"] .bg-white {
+        background-color: #1e1e1e !important;
+        border-color: #333 !important;
+    }
+
+    [data-bs-theme="dark"] .bg-light {
+        background-color: #2c2c2c !important;
+        border-color: #444 !important;
+    }
+
+    [data-bs-theme="dark"] .device-card {
+        background-color: #252525 !important;
+        border-color: #333 !important;
+    }
+
+    [data-bs-theme="dark"] .text-dark {
+        color: #f0f0f0 !important;
+    }
+
+    [data-bs-theme="dark"] .slot-item {
+        background: #2c2c2c;
+        border-color: #444;
+    }
+
+        [data-bs-theme="dark"] .slot-item b {
+            color: #ccc;
+        }
 </style>
 
 <script>
-    // --- GIỮ NGUYÊN CÁC HÀM JS MÔ PHỎNG CỦA BẠN ---
-    let currentRamBase = 75;
-    function startServerSimulation() {
-        setInterval(() => {
-            let cpu = Math.floor(Math.random() * 25) + 35;
-            if(document.getElementById('cpuText')) {
-                document.getElementById('cpuText').innerText = cpu + '%';
-                document.getElementById('cpuBar').style.width = cpu + '%';
+    // 1. LỌC TẦNG
+    function filterByFloor() {
+        const selected = document.getElementById('floorFilter').value;
+        const sections = document.querySelectorAll('.floor-section');
+
+        sections.forEach(sec => {
+            if (selected === 'all' || sec.getAttribute('data-floor') === selected) {
+                sec.style.display = 'block';
+                sec.classList.add('animate__animated', 'animate__fadeIn');
+            } else {
+                sec.style.display = 'none';
             }
+        });
+    }
+
+    // 2. SINH GRID CAMERA BÃI XE
+    function generateSlotCameras(zone) {
+        const grid = document.getElementById('slot-camera-grid');
+        const title = document.getElementById('slot-zone-title');
+        grid.innerHTML = '';
+        title.innerText = `ĐANG HIỂN THỊ: CAMERA KHU ${zone} (1-120)`;
+
+        for (let i = 1; i <= 120; i++) {
+            const ipSub = zone === 'A' ? 2 : 3;
+            const html = `
+                <div class="col animate__animated animate__fadeIn" style="animation-delay: ${i * 5}ms">
+                    <div class="slot-item shadow-sm" onclick="pingDevice('192.168.${ipSub}.${i}', this)">
+                        <i class="bi bi-webcam-fill text-primary"></i>
+                        <b>Cam ${zone}-${i}</b>
+                        <small class="font-monospace">IP: .${ipSub}.${i}</small>
+                    </div>
+                </div>
+            `;
+            grid.insertAdjacentHTML('beforeend', html);
+        }
+    }
+
+    window.showSlotZone = function(zone, btn) {
+        const btns = btn.parentElement.querySelectorAll('button');
+        btns.forEach(b => {
+            b.classList.remove('btn-primary');
+            b.classList.add('btn-light');
+        });
+        btn.classList.replace('btn-light', 'btn-primary');
+        generateSlotCameras(zone);
+    };
+
+    // 3. QUÉT MẠNG
+    function scanNetwork(btnElement) {
+        const originalHtml = btnElement.innerHTML;
+        btnElement.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Đang quét...';
+        btnElement.disabled = true;
+
+        setTimeout(() => {
+            btnElement.innerHTML = originalHtml;
+            btnElement.disabled = false;
+            Swal.fire({ title: 'Hoàn tất quét mạng', text: 'Đã tìm thấy 11 thiết bị ngoại vi và 240 camera bãi xe.', icon: 'success', confirmButtonColor: '#0d6efd' });
         }, 2000);
     }
-    document.addEventListener("DOMContentLoaded", startServerSimulation);
-    function pingDevice(ip) { Swal.fire('Ping', `Gói tin ICMP gửi tới ${ip} ổn định (12ms)`, 'success'); }
-    function rebootDevice(name) { Swal.fire('Reboot', `Đang khởi động lại ${name}...`, 'info'); }
+
+    // 4. HIỆU ỨNG PING
+    function pingDevice(ip, btnElement) {
+        const originalHtml = btnElement.innerHTML;
+        btnElement.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Ping...';
+        btnElement.disabled = true;
+
+        fetch('/ThietBiAI/PingDevice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ip)
+        })
+        .then(response => response.json())
+        .then(data => {
+            btnElement.innerHTML = originalHtml;
+            btnElement.disabled = false;
+
+            if (data.success) {
+                Swal.fire({
+                    title: 'Ping Thành Công',
+                    html: `Gói tin ICMP gửi tới <b>${ip}</b><br/>Phản hồi ổn định (Time = ${data.latency}ms)`,
+                    icon: 'success', timer: 2500, showConfirmButton: false, toast: true, position: 'bottom-end'
+                });
+            } else {
+                Swal.fire({
+                    title: 'Mất kết nối',
+                    html: `Không thể Ping tới <b>${ip}</b><br/><small class="text-danger">${data.message}</small>`,
+                    icon: 'error', confirmButtonColor: '#d33'
+                });
+            }
+        })
+        .catch(err => {
+            btnElement.innerHTML = originalHtml;
+            btnElement.disabled = false;
+            Swal.fire('Lỗi', 'Không thể kết nối đến Máy chủ.', 'error');
+        });
+    }
+
+    // 5. HIỆU ỨNG REBOOT
+    function rebootDevice(name, btnElement) {
+        const originalHtml = btnElement.innerHTML;
+        btnElement.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang Reboot...';
+        btnElement.disabled = true;
+
+        setTimeout(() => {
+            btnElement.innerHTML = originalHtml;
+            btnElement.disabled = false;
+            Swal.fire('Đã gửi lệnh Reboot', `Thiết bị ${name} đang tiến hành khởi động lại.`, 'info');
+        }, 2000);
+    }
+
+    // 6. GỌI API LẤY PHẦN CỨNG
+    function startServerSimulation() {
+        fetchHardwareData();
+        setInterval(fetchHardwareData, 3000);
+    }
+
+    function fetchHardwareData() {
+        fetch('/ThietBiAI/GetServerHardwareInfo')
+            .then(response => response.json())
+            .then(data => {
+                const nameEl = document.getElementById('serverNameText');
+                if (nameEl) nameEl.innerText = data.serverName;
+
+                const ipEl = document.getElementById('serverIpUptime');
+                if (ipEl) ipEl.innerText = `IP: ${data.ip} | Uptime: ${data.uptime}`;
+
+                if(document.getElementById('cpuText')) {
+                    document.getElementById('cpuText').innerText = data.cpu + '%';
+                    document.getElementById('cpuBar').style.width = data.cpu + '%';
+
+                    let ramPercent = Math.min(100, Math.round((data.appRam / 16384) * 100) + 40);
+                    document.getElementById('ramText').innerText = ramPercent + '% (' + data.appRam + 'MB App)';
+                    document.getElementById('ramBar').style.width = ramPercent + '%';
+
+                    document.getElementById('gpuText').innerText = data.gpu + '%';
+                    document.getElementById('gpuBar').style.width = data.gpu + '%';
+                }
+            })
+            .catch(err => console.log("Đang chờ kết nối đến Server...", err));
+    }
+
+    // 7. XỬ LÝ SERVER CHÍNH
+    function clearCache(btnElement) {
+        const originalHtml = btnElement.innerHTML;
+        btnElement.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang dọn dẹp...';
+        btnElement.disabled = true;
+
+        fetch('/ThietBiAI/FreeMemory', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                btnElement.innerHTML = originalHtml;
+                btnElement.disabled = false;
+
+                if(data.success) {
+                    Swal.fire({
+                        title: 'Tối ưu hóa hoàn tất', text: data.message, icon: 'success',
+                        toast: true, position: 'top-end', showConfirmButton: false, timer: 3000
+                    });
+                    fetchHardwareData();
+                } else {
+                    Swal.fire('Lỗi', data.message, 'error');
+                }
+            })
+            .catch(err => {
+                btnElement.innerHTML = originalHtml;
+                btnElement.disabled = false;
+                Swal.fire('Lỗi mạng', 'Không thể kết nối đến máy chủ.', 'error');
+            });
+    }
+
+    function rebootMainServer(btnElement) {
+        Swal.fire({
+            title: 'CẢNH BÁO HỆ THỐNG',
+            html: "Việc khởi động lại <b>NANO EDGE AI SERVER</b> sẽ làm gián đoạn toàn bộ camera nhận diện tại các cổng.<br/><br/>Bạn có chắc chắn muốn thực hiện?",
+            icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-power"></i> Vâng, Khởi động lại!', cancelButtonText: 'Hủy bỏ'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const originalHtml = btnElement.innerHTML;
+                btnElement.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Rebooting...';
+                btnElement.disabled = true;
+
+                Swal.fire({
+                    title: 'Server đang Reboot...',
+                    html: 'Đang thiết lập lại nhân AI. Vui lòng không tắt trình duyệt.',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading() }
+                });
+
+                fetch('/ThietBiAI/RebootMainServer', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        btnElement.innerHTML = originalHtml;
+                        btnElement.disabled = false;
+                        if(data.success) {
+                            Swal.fire({ title: 'Khôi phục thành công', text: data.message, icon: 'success', confirmButtonText: 'Đã rõ', confirmButtonColor: '#0d6efd' });
+                        }
+                    });
+            }
+        });
+    }
+
+    // ==========================================
+    // 8. LỆNH DÀNH RIÊNG CHO ADMIN (THÊM / XÓA)
+    // ==========================================
+
+    function deleteDevice(btnElement, deviceName) {
+        Swal.fire({
+            title: 'Xóa thiết bị?',
+            html: `Bạn có chắc chắn muốn gỡ bỏ thiết bị <b>${deviceName}</b> khỏi hệ thống?`,
+            icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Xóa ngay', cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const card = btnElement.closest('.col-md-4');
+                card.classList.add('animate__animated', 'animate__zoomOut');
+                setTimeout(() => card.remove(), 500);
+
+                Swal.fire('Đã xóa!', 'Thiết bị đã bị ngắt kết nối và gỡ khỏi CSDL.', 'success');
+            }
+        });
+    }
+
+    function submitAddDevice() {
+        const name = document.getElementById('newDevName').value;
+        const ip = document.getElementById('newDevIP').value;
+        const floor = document.getElementById('newDevFloor').value;
+
+        if (!name || !ip) {
+            Swal.fire('Lỗi', 'Vui lòng nhập đủ tên và IP', 'error'); return;
+        }
+
+        // Tạo thẻ thiết bị mới chèn vào màn hình
+        const html = `
+            <div class="col-md-4 animate__animated animate__bounceIn">
+                <div class="card border-0 shadow-sm rounded-4 h-100 device-card border-top border-4 border-success position-relative">
+                    <button class="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-1 rounded-circle" onclick="deleteDevice(this, '${name}')"><i class="bi bi-x-lg"></i></button>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                            <h6 class="fw-bold mb-0">${name}</h6>
+                            <span class="status-dot bg-success pulse-green"></span>
+                        </div>
+                        <small class="text-muted d-block mb-2">Vừa thêm mới</small>
+                        <div class="small mb-3 bg-light p-2 rounded border font-monospace text-primary">IP: ${ip}</div>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-light border flex-grow-1 fw-bold" onclick="pingDevice('${ip}', this)"><i class="bi bi-activity"></i> Ping</button>
+                            <button class="btn btn-sm btn-outline-primary fw-bold"><i class="bi bi-geo-alt"></i> Vị trí</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Chèn vào id tương ứng của Tầng
+        const targetSection = document.getElementById(`grid-${floor}`);
+        if(targetSection) targetSection.insertAdjacentHTML('beforeend', html);
+
+        bootstrap.Modal.getInstance(document.getElementById('addDeviceModal')).hide();
+        Swal.fire('Thành công', 'Đã thêm thiết bị mới vào mạng', 'success');
+
+        document.getElementById('newDevName').value = '';
+        document.getElementById('newDevIP').value = '';
+    }
+
+    function saveParkingSlot() {
+        const code = document.getElementById('slotCode').value.toUpperCase();
+        const floor = document.getElementById('slotFloor').value;
+        const type = document.getElementById('slotType').value;
+
+        if(!code) {
+            Swal.fire('Lỗi', 'Vui lòng nhập Mã Vị Trí', 'error'); return;
+        }
+
+        let typeIcon = type === 'Sep' ? '⭐ VIP' : (type === 'Khach' ? '🛂 Khách' : '💼 Nhân viên');
+        let colorClass = type === 'Sep' ? 'text-warning' : (type === 'Khach' ? 'text-info' : 'text-success');
+
+        Swal.fire({
+            title: 'Đã thiết lập Bãi Đỗ!',
+            html: `Mã vị trí: <b>${code}</b><br/>Tầng: <b>${floor}</b><br/>Dành cho: <b class="${colorClass}">${typeIcon}</b>`,
+            icon: 'success'
+        });
+
+        bootstrap.Modal.getInstance(document.getElementById('addParkingSlotModal')).hide();
+    }
+
+    // KHỞI CHẠY KHI LOAD TRANG
+    document.addEventListener("DOMContentLoaded", () => {
+        startServerSimulation();
+        generateSlotCameras('A');
+    });
 </script>

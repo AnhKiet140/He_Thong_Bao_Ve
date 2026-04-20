@@ -2,6 +2,9 @@
 @{
     ViewData["Title"] = "Quản Lý Bãi Xe Thông Minh";
 
+    // LẤY QUYỀN USER HIỆN TẠI
+    string userRole = User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value : "Guest";
+
     string currentTang = ViewBag.CurrentTang ?? "B1";
     int currentPage = ViewBag.CurrentPage ?? 1;
     string selectedDate = ViewBag.SelectedDate ?? DateTime.Today.ToString("yyyy-MM-dd");
@@ -86,6 +89,7 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <div class="container-fluid mt-2 animate__animated animate__fadeIn">
 
@@ -119,23 +123,40 @@
                             <h5 class="fw-bold text-primary mb-0">
                                 <i class="bi bi-grid-3x3-gap"></i> SƠ ĐỒ VỊ TRÍ - TẦNG @currentTang (TRANG @currentPage)
                             </h5>
-                            <div class="btn-group shadow-sm">
-                                <a href="@Url.Action("Index", new { tang = "B1", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
-                                   class="btn btn-sm @(currentTang == "B1" ? "btn-dark" : "btn-outline-secondary")">Tầng B1</a>
-                                <a href="@Url.Action("Index", new { tang = "B2", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
-                                   class="btn btn-sm @(currentTang == "B2" ? "btn-dark" : "btn-outline-secondary")">Tầng B2</a>
+                            <div class="d-flex gap-2">
+                                <div class="btn-group shadow-sm">
+                                    <a href="@Url.Action("Index", new { tang = "B1", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
+                                       class="btn btn-sm @(currentTang == "B1" ? "btn-dark" : "btn-outline-secondary") fw-bold">Tầng B1</a>
+                                    <a href="@Url.Action("Index", new { tang = "B2", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
+                                       class="btn btn-sm @(currentTang == "B2" ? "btn-dark" : "btn-outline-secondary") fw-bold">Tầng B2</a>
+                                </div>
+                                @if (userRole == "Admin")
+                                {
+                                    <button class="btn btn-sm btn-success shadow-sm fw-bold rounded-end" data-bs-toggle="modal" data-bs-target="#addParkingSlotModal">
+                                        <i class="bi bi-plus-circle"></i> Thêm Vị Trí
+                                    </button>
+                                }
                             </div>
                         </div>
 
-                        <div class="parking-grid">
+                        <div class="parking-grid" id="main-parking-grid">
                             @for (int i = 1; i <= 40; i++)
                             {
                                 int slotNumber = ((currentPage - 1) * 40) + i;
                                 var slotId = prefix + "-" + slotNumber.ToString("D2");
                                 var userInSlot = xeTangNay.FirstOrDefault(x => x.ViTriDo == slotId);
 
-                                <div class="slot @(userInSlot != null ? "occupied" : "available")"
+                                <div class="slot @(userInSlot != null ? "occupied" : "available") position-relative"
                                      onclick="showSlotInfo('@slotId', '@(userInSlot?.HoTen)', '@(userInSlot?.BienSoXe)', '@(userInSlot?.HinhAnh)')">
+
+                                    @if (userRole == "Admin")
+                                    {
+                                        <button class="btn btn-danger position-absolute top-0 end-0 p-0 rounded-circle d-flex align-items-center justify-content-center btn-delete-slot"
+                                                onclick="deleteSlot('@slotId', event)" title="Xóa bãi đỗ này">
+                                            <i class="bi bi-x" style="margin: 0; font-size: 14px;"></i>
+                                        </button>
+                                    }
+
                                     <i class="bi @(userInSlot != null ? "bi-car-front-fill" : "bi-plus-circle")"></i>
                                     <span>@slotId</span>
                                 </div>
@@ -165,7 +186,7 @@
                         </div>
                         <h4 id="slotUser" class="fw-bold text-dark mb-1 text-capitalize"></h4>
                         <div id="slotPlate" class="badge bg-primary fs-5 mb-3 px-3 py-2 shadow-sm font-monospace"></div>
-                        <button class="btn btn-sm btn-outline-secondary w-100 rounded-pill mt-2" onclick="resetSlot()">Đóng xem nhanh</button>
+                        <button class="btn btn-sm btn-outline-secondary w-100 rounded-pill mt-2 fw-bold" onclick="resetSlot()">Đóng xem nhanh</button>
                     </div>
 
                     <div id="emptySlotNotify" class="p-4 bg-light text-center rounded-4 border border-2 border-primary border-opacity-10 shadow-sm d-flex flex-column justify-content-center h-100">
@@ -203,7 +224,7 @@
                                 </div>
                                 <input type="hidden" name="tang" value="@currentTang" />
                                 <div class="col-md-2">
-                                    <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">Lọc dữ liệu</button>
+                                    <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm fw-bold">Lọc dữ liệu</button>
                                 </div>
                                 <div class="col-md-2 text-end">
                                     <h5 class="fw-bold mb-0 text-primary">LỊCH SỬ</h5>
@@ -330,6 +351,51 @@
     </div>
 </div>
 
+@if (userRole == "Admin")
+{
+    <div class="modal fade" id="addParkingSlotModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header bg-dark text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-car-front-fill me-2"></i>Thiết Lập Vị Trí Đỗ Xe</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mã Vị Trí Mới</label>
+                        <input type="text" id="slotCode" class="form-control text-uppercase" placeholder="VD: A-99, VIP-01">
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Thuộc Tầng</label>
+                            <select id="slotFloor" class="form-select">
+                                <option value="B1">Tầng Hầm B1</option>
+                                <option value="B2">Tầng Hầm B2</option>
+                                <option value="G">Sảnh Trệt (VIP)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Phân loại đối tượng</label>
+                            <select id="slotType" class="form-select">
+                                <option value="NhanVien">Nhân Viên</option>
+                                <option value="Khach">Khách Tham Quan</option>
+                                <option value="Sep" class="fw-bold text-warning">Sếp / VIP</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-secondary rounded-pill fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-dark rounded-pill fw-bold" onclick="saveParkingSlot()">
+                        <i class="bi bi-check-circle"></i> Lưu Cấu Hình
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <style>
     /* GENERAL TABS STYLE */
     .custom-pills .nav-link {
@@ -339,19 +405,13 @@
         transition: 0.2s;
     }
 
-        .custom-pills .nav-link:hover {
+        .custom-pills .nav-link:hover, .custom-pills .nav-link.active {
             color: #fff;
             background-color: #0d6efd;
             border-color: #0d6efd;
         }
 
-        .custom-pills .nav-link.active {
-            color: #fff;
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-        }
-
-    /* CSS CHO TAB 1: SƠ ĐỒ VỊ TRÍ & LỊCH SỬ */
+    /* BẢNG VÀ Ô ĐỖ XE */
     .parking-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
@@ -387,6 +447,37 @@
     .slot:hover {
         transform: translateY(-5px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    /* Thiết kế nút xóa Slot của Admin */
+    .btn-delete-slot {
+        width: 22px;
+        height: 22px;
+        transform: translate(30%, -30%);
+        z-index: 5;
+        transition: 0.2s;
+        opacity: 0;
+    }
+
+    .slot:hover .btn-delete-slot {
+        opacity: 1;
+    }
+
+    .btn-delete-slot:hover {
+        transform: translate(30%, -30%) scale(1.2);
+    }
+
+    /* Custom classes for VIP and Guest slots */
+    .slot-vip {
+        border: 2px solid #ffc107 !important;
+        background-color: #fff8e1 !important;
+        color: #ffc107 !important;
+    }
+
+    .slot-guest {
+        border: 2px solid #0dcaf0 !important;
+        background-color: #e0f7fa !important;
+        color: #0dcaf0 !important;
     }
 
     .font-monospace {
@@ -458,7 +549,6 @@
         pointer-events: none;
     }
 
-    /* Layout Focus 1+N */
     .focus-layout {
         display: grid;
         grid-template-columns: 3fr 1fr;
@@ -471,7 +561,6 @@
         cursor: default;
     }
 
-    /* Side Cam Rows */
     .side-cam-row {
         background-color: #1a1a24;
         border: 1px solid #333;
@@ -528,7 +617,6 @@
         font-size: 0.7rem;
     }
 
-    /* Corner indicators for Focus Cam */
     .cam-frame-indicator {
         position: absolute;
         width: 15px;
@@ -561,7 +649,6 @@
         border-width: 0 3px 3px 0;
     }
 
-    /* Custom Scrollbar Hacker style */
     .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
     }
@@ -583,7 +670,7 @@
 
 <script>
     // =======================================================
-    // JAVASCRIPT CHO TAB 1
+    // JAVASCRIPT: LOGIC SƠ ĐỒ BÃI ĐỖ VÀ XEM NHANH
     // =======================================================
     function showSlotInfo(id, name, plate, img) {
         document.getElementById('slotDetailCard').classList.remove('d-none');
@@ -607,7 +694,79 @@
     }
 
     // =======================================================
-    // JAVASCRIPT CHO TAB 2: CHẾ ĐỘ GIÁM SÁT CAMERA
+    // JAVASCRIPT CHO ADMIN: QUẢN LÝ BÃI ĐỖ (THÊM / XÓA)
+    // =======================================================
+    @if (userRole == "Admin")
+    {
+            <text>
+            function deleteSlot(slotId, event) {
+                // Ngăn chặn click lan truyền làm mở bảng thông tin
+                event.stopPropagation();
+
+                Swal.fire({
+                    title: 'Xóa vị trí đỗ?',
+                    text: `Bạn có chắc chắn muốn gỡ bỏ vị trí ${slotId} khỏi hệ thống?`,
+                    icon: 'warning',
+                    showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Xóa ngay', cancelButtonText: 'Hủy'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Tạo hiệu ứng xóa thẻ HTML trên UI
+                        const slotEl = event.target.closest('.slot');
+                        if(slotEl) {
+                            slotEl.classList.add('animate__animated', 'animate__zoomOut');
+                            setTimeout(() => slotEl.remove(), 500);
+                        }
+                        Swal.fire('Đã xóa!', `Vị trí ${slotId} đã bị thu hồi.`, 'success');
+                        // Lưu ý: Sau này cần gọi API C# để xóa trong Database
+                    }
+                });
+            }
+
+            function saveParkingSlot() {
+                const code = document.getElementById('slotCode').value.toUpperCase();
+                const floor = document.getElementById('slotFloor').value;
+                const type = document.getElementById('slotType').value;
+
+                if(!code) {
+                    Swal.fire('Lỗi', 'Vui lòng nhập Mã Vị Trí', 'error'); return;
+                }
+
+                // Xử lý Phân loại để đổi màu CSS và Icon
+                let typeIcon = type === 'Sep' ? '⭐ VIP' : (type === 'Khach' ? '🛂 Khách' : '💼 Nhân viên');
+                let textColor = type === 'Sep' ? 'text-warning' : (type === 'Khach' ? 'text-info' : 'text-success');
+                let borderClass = type === 'Sep' ? 'slot-vip' : (type === 'Khach' ? 'slot-guest' : 'available');
+
+                // Chèn cục HTML slot đỗ xe mới vào cuối lưới
+                const grid = document.getElementById('main-parking-grid');
+                if (grid) {
+                    const newSlotHTML = `
+                        <div class="slot ${borderClass} position-relative animate__animated animate__bounceIn" onclick="showSlotInfo('${code}', '', '', '')">
+                            <button class="btn btn-danger position-absolute top-0 end-0 p-0 rounded-circle d-flex align-items-center justify-content-center btn-delete-slot"
+                                    onclick="deleteSlot('${code}', event)" title="Xóa bãi đỗ này">
+                                <i class="bi bi-x" style="font-size: 14px; margin: 0;"></i>
+                            </button>
+                            <i class="bi bi-plus-circle ${textColor}"></i>
+                            <span class="${textColor} fw-bold mt-1">${code}</span>
+                        </div>
+                    `;
+                    grid.insertAdjacentHTML('beforeend', newSlotHTML);
+                }
+
+                Swal.fire({
+                    title: 'Đã thiết lập Bãi Đỗ!',
+                    html: `Mã vị trí: <b>${code}</b><br/>Tầng: <b>${floor}</b><br/>Dành cho: <b class="${textColor}">${typeIcon}</b>`,
+                    icon: 'success'
+                });
+
+                bootstrap.Modal.getInstance(document.getElementById('addParkingSlotModal')).hide();
+                document.getElementById('slotCode').value = '';
+            }
+            </text>
+    }
+
+    // =======================================================
+    // JAVASCRIPT CHO TAB 2: CCTV
     // =======================================================
     const cameraList = [
         { id: 'cam1', name: 'FaceID Cổng Chính B1', location: 'Tầng Trệt' },
