@@ -1,8 +1,10 @@
 ﻿@model IEnumerable<Quan_Ly_xe_Ra_Vao.Models.LichSuCheckIn>
+@using Quan_Ly_xe_Ra_Vao.Data
+@inject ApplicationDbContext DbContext
+
 @{
     ViewData["Title"] = "Quản Lý Bãi Xe Thông Minh";
 
-    // LẤY QUYỀN USER HIỆN TẠI
     string userRole = User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value : "Guest";
 
     string currentTang = ViewBag.CurrentTang ?? "B1";
@@ -11,7 +13,18 @@
     string filterStatus = ViewBag.FilterStatus as string ?? "Tất cả";
     string prefix = (currentTang == "B1") ? "A" : "B";
 
-    // 1. MÁY LỌC DỮ LIỆU
+    // ĐÃ FIX LỖI CS0103: Thêm biến lấy dữ liệu xe đang đậu từ Database
+    var danhSachXeDangDau = DbContext.LichSuCheckIns
+        .Where(x => x.ViTriDo != null && x.TrangThai != null && x.TrangThai.Contains("đậu"))
+        .Select(x => new
+        {
+            ViTri = x.ViTriDo,
+            Loai = x.LoaiDoiTuong ?? "Khách",
+            BienSo = x.BienSoXe ?? "N/A",
+            Ten = x.HoTen ?? "Khách vãng lai"
+        })
+        .ToList();
+
     var cleanModel = Model.Where(x =>
         !string.IsNullOrEmpty(x.LoaiXe) &&
         (x.LoaiXe.ToLower().Contains("tô") || x.LoaiXe.ToLower().Contains("oto")) &&
@@ -21,202 +34,153 @@
         x.BienSoXe != "---" &&
         x.BienSoXe != "N/A" &&
         !x.BienSoXe.ToLower().Contains("máy")
-    ).Select(x =>
-    {
-        x.LoaiXe = "Ô tô";
-        x.BienSoXe = x.BienSoXe.ToUpper();
-        return x;
-    }).ToList();
+    ).Select(x => { x.LoaiXe = "Ô tô"; x.BienSoXe = x.BienSoXe.ToUpper(); return x; }).ToList();
 
-    // 2. CHỌN LỌC XE ĐANG TRONG BÃI
     var xeDangTrongBai = cleanModel
         .GroupBy(x => x.HoTen + "_" + x.BienSoXe)
         .Select(g => g.OrderByDescending(x => x.ThoiGian).FirstOrDefault())
-        .Where(last => last != null && last.Huong == "Đi Vào")
-        .ToList();
+        .Where(last => last != null && last.Huong == "Đi Vào").ToList();
 
     int totalOccupied = xeDangTrongBai.Count;
     int availableSlots = 240 - totalOccupied;
-
     var xeTangNay = xeDangTrongBai.Where(x => string.IsNullOrEmpty(x.ViTriDo) || x.ViTriDo.StartsWith(prefix)).ToList();
 
-    // 3. THUẬT TOÁN TÌM CHỖ THÔNG MINH
     List<string> usedSlots = xeTangNay.Where(x => !string.IsNullOrEmpty(x.ViTriDo)).Select(x => x.ViTriDo).ToList();
     foreach (var xe in xeTangNay.Where(x => string.IsNullOrEmpty(x.ViTriDo)))
     {
         int seed = $"{xe.HoTen}_{xe.BienSoXe}".GetHashCode();
         Random rnd = new Random(seed);
-
         bool assigned = false;
         for (int i = 0; i < 50; i++)
         {
             string slotId = $"{prefix}-{rnd.Next(1, 121):D2}";
-            if (!usedSlots.Contains(slotId))
-            {
-                xe.ViTriDo = slotId;
-                usedSlots.Add(slotId);
-                assigned = true;
-                break;
-            }
+            if (!usedSlots.Contains(slotId)) { xe.ViTriDo = slotId; usedSlots.Add(slotId); assigned = true; break; }
         }
-
         if (!assigned)
         {
             for (int i = 1; i <= 120; i++)
             {
                 string slotId = $"{prefix}-{i:D2}";
-                if (!usedSlots.Contains(slotId))
-                {
-                    xe.ViTriDo = slotId;
-                    usedSlots.Add(slotId);
-                    break;
-                }
+                if (!usedSlots.Contains(slotId)) { xe.ViTriDo = slotId; usedSlots.Add(slotId); break; }
             }
         }
     }
 
-    // 4. KÍCH HOẠT LOGIC LỌC BẢNG
     var tableData = cleanModel.OrderByDescending(x => x.ThoiGian).ToList();
-    if (filterStatus == "Đang đậu")
-    {
-        tableData = xeDangTrongBai.OrderByDescending(x => x.ThoiGian).ToList();
-    }
-    else if (filterStatus == "Đã ra")
-    {
-        tableData = cleanModel.Where(x => x.Huong == "Đi Ra").OrderByDescending(x => x.ThoiGian).ToList();
-    }
+    if (filterStatus == "Đang đậu") tableData = xeDangTrongBai.OrderByDescending(x => x.ThoiGian).ToList();
+    else if (filterStatus == "Đã ra") tableData = cleanModel.Where(x => x.Huong == "Đi Ra").OrderByDescending(x => x.ThoiGian).ToList();
 }
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<div class="container-fluid mt-2 animate__animated animate__fadeIn">
+<div class="container-fluid mt-2 animate__animated animate__fadeIn" id="main-container">
 
-    <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border-start border-5 border-primary">
+    <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-2 shadow-sm border-start border-5 border-primary">
         <div>
             <h4 class="fw-bold text-dark mb-1"><i class="bi bi-p-circle-fill text-primary"></i> QUẢN LÝ BÃI XE THÔNG MINH</h4>
             <small class="text-muted fw-bold">ĐIỀU HÀNH BÃI ĐỖ VÀ GIÁM SÁT AN NINH TOÀN DIỆN</small>
         </div>
 
-        <ul class="nav nav-pills custom-pills" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-bold px-4 rounded-pill shadow-sm" id="tab-sodo" data-bs-toggle="pill" data-bs-target="#content-sodo" type="button" role="tab">
-                    <i class="bi bi-grid-3x3-gap-fill"></i> SƠ ĐỒ VỊ TRÍ & LỊCH SỬ
-                </button>
-            </li>
-            <li class="nav-item ms-2" role="presentation">
-                <button class="nav-link fw-bold px-4 rounded-pill shadow-sm" id="tab-cctv" data-bs-toggle="pill" data-bs-target="#content-cctv" type="button" role="tab">
-                    <i class="bi bi-camera-video-fill"></i> GIÁM SÁT CHI TIẾT
-                </button>
-            </li>
-        </ul>
+        <div class="d-flex gap-2 align-items-center">
+            <ul class="nav nav-pills custom-pills me-3" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold px-4 rounded-1 shadow-sm" id="tab-sodo" data-bs-toggle="pill" data-bs-target="#content-sodo" type="button" role="tab">
+                        <i class="bi bi-grid-3x3-gap-fill"></i> SƠ ĐỒ VỊ TRÍ & LỊCH SỬ
+                    </button>
+                </li>
+                <li class="nav-item ms-2" role="presentation">
+                    <button class="nav-link fw-bold px-4 rounded-1 shadow-sm" id="tab-cctv" data-bs-toggle="pill" data-bs-target="#content-cctv" type="button" role="tab" onclick="renderCameras()">
+                        <i class="bi bi-camera-video-fill"></i> GIÁM SÁT CHI TIẾT
+                    </button>
+                </li>
+            </ul>
+
+            @if (userRole == "Admin")
+            {
+                <div class="dropdown">
+                    <button class="btn btn-success fw-bold shadow-sm rounded-1 px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-pencil-square"></i> Q.Trị Bãi Đỗ
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-2">
+                        <li><a class="dropdown-item fw-bold text-primary py-2" href="#" onclick="openFloatingWindow('window-manage-camera')"><i class="bi bi-camera-video me-2"></i>Thêm Camera Giám Sát</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item fw-bold text-success py-2" href="#" onclick="openFloatingWindow('window-manage-parking')"><i class="bi bi-p-square me-2"></i>Thiết lập Ô Đỗ Xe (Tự động)</a></li>
+                    </ul>
+                </div>
+            }
+        </div>
     </div>
 
     <div class="tab-content" id="pills-tabContent">
-
         <div class="tab-pane fade show active" id="content-sodo" role="tabpanel">
             <div class="row g-3">
                 <div class="col-lg-8">
-                    <div class="card border-0 shadow-sm p-4 h-100">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="fw-bold text-primary mb-0">
+                    <div class="card border-0 shadow-sm p-4 h-100 bg-dark" style="background-image: linear-gradient(rgba(59, 130, 246, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.08) 1px, transparent 1px); background-size: 25px 25px;">
+                        <div class="d-flex justify-content-between align-items-center mb-4 bg-black p-3 rounded-2 shadow-sm border border-secondary">
+                            <h5 class="fw-bold text-info mb-0 text-uppercase">
                                 <i class="bi bi-grid-3x3-gap"></i> SƠ ĐỒ VỊ TRÍ - TẦNG @currentTang (TRANG @currentPage)
                             </h5>
+                            <div class="d-flex gap-3 small fw-bold">
+                                <span class="text-warning"><i class="bi bi-star-fill"></i> Sếp/VIP</span>
+                                <span class="text-info"><i class="bi bi-person-badge"></i> Khách</span>
+                                <span class="text-secondary"><i class="bi bi-person-vcard"></i> Nhân Viên</span>
+                            </div>
                             <div class="d-flex gap-2">
                                 <div class="btn-group shadow-sm">
                                     <a href="@Url.Action("Index", new { tang = "B1", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
-                                       class="btn btn-sm @(currentTang == "B1" ? "btn-dark" : "btn-outline-secondary") fw-bold">Tầng B1</a>
+                                       class="btn btn-sm @(currentTang == "B1" ? "btn-info text-dark" : "btn-outline-secondary text-light") fw-bold">Khu A (Khách)</a>
                                     <a href="@Url.Action("Index", new { tang = "B2", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
-                                       class="btn btn-sm @(currentTang == "B2" ? "btn-dark" : "btn-outline-secondary") fw-bold">Tầng B2</a>
+                                       class="btn btn-sm @(currentTang == "B2" ? "btn-info text-dark" : "btn-outline-secondary text-light") fw-bold">Khu B (NV)</a>
                                 </div>
-                                @if (userRole == "Admin")
-                                {
-                                    <button class="btn btn-sm btn-success shadow-sm fw-bold rounded-end" data-bs-toggle="modal" data-bs-target="#addParkingSlotModal">
-                                        <i class="bi bi-plus-circle"></i> Thêm Vị Trí
-                                    </button>
-                                }
                             </div>
                         </div>
 
-                        <div class="parking-grid" id="main-parking-grid">
-                            @for (int i = 1; i <= 40; i++)
-                            {
-                                int slotNumber = ((currentPage - 1) * 40) + i;
-                                var slotId = prefix + "-" + slotNumber.ToString("D2");
-                                var userInSlot = xeTangNay.FirstOrDefault(x => x.ViTriDo == slotId);
+                        <div id="dynamic-main-parking-grid" class="w-100 pb-3"></div>
 
-                                <div class="slot @(userInSlot != null ? "occupied" : "available") position-relative"
-                                     onclick="showSlotInfo('@slotId', '@(userInSlot?.HoTen)', '@(userInSlot?.BienSoXe)', '@(userInSlot?.HinhAnh)')">
-
-                                    @if (userRole == "Admin")
-                                    {
-                                        <button class="btn btn-danger position-absolute top-0 end-0 p-0 rounded-circle d-flex align-items-center justify-content-center btn-delete-slot"
-                                                onclick="deleteSlot('@slotId', event)" title="Xóa bãi đỗ này">
-                                            <i class="bi bi-x" style="margin: 0; font-size: 14px;"></i>
-                                        </button>
-                                    }
-
-                                    <i class="bi @(userInSlot != null ? "bi-car-front-fill" : "bi-plus-circle")"></i>
-                                    <span>@slotId</span>
-                                </div>
-                            }
-                        </div>
-
-                        <div class="d-flex justify-content-center mt-4">
-                            <nav>
-                                <ul class="pagination pagination-sm mb-0 shadow-sm">
-                                    @for (int p = 1; p <= 3; p++)
-                                    {
-                                        <li class="page-item @(currentPage == p ? "active" : "")">
-                                            <a class="page-link" href="@Url.Action("Index", new { page = p, tang = currentTang, selectedDate = selectedDate, searchName = ViewBag.SearchName, filterStatus = ViewBag.FilterStatus })">@p</a>
-                                        </li>
-                                    }
-                                </ul>
-                            </nav>
-                        </div>
                     </div>
                 </div>
 
-                <div class="col-lg-4">
-                    <div id="slotDetailCard" class="card border-0 shadow-lg p-4 bg-white text-center mb-3 d-none animate__animated animate__fadeInRight" style="border-radius: 15px;">
+                <div class="col-lg-4 d-flex flex-column gap-3">
+                    <div id="slotDetailCard" class="card border-0 shadow-sm p-4 bg-white text-center d-none animate__animated animate__fadeInRight rounded-2">
                         <h6 class="fw-bold text-muted border-bottom pb-2 mb-3 text-uppercase">Vị trí <span id="lblSlotId" class="text-primary"></span></h6>
                         <div class="position-relative d-inline-block mb-3">
                             <img id="slotImg" src="/images/no-avatar.png" class="rounded-circle shadow border border-3 border-primary" style="width: 120px; height: 120px; object-fit: cover;" onerror="this.src='/images/no-avatar.png'">
                         </div>
                         <h4 id="slotUser" class="fw-bold text-dark mb-1 text-capitalize"></h4>
                         <div id="slotPlate" class="badge bg-primary fs-5 mb-3 px-3 py-2 shadow-sm font-monospace"></div>
-                        <button class="btn btn-sm btn-outline-secondary w-100 rounded-pill mt-2 fw-bold" onclick="resetSlot()">Đóng xem nhanh</button>
+                        <button class="btn btn-sm btn-outline-secondary w-100 rounded-1 mt-2 fw-bold" onclick="resetSlot()">Đóng xem nhanh</button>
                     </div>
 
-                    <div id="emptySlotNotify" class="p-4 bg-light text-center rounded-4 border border-2 border-primary border-opacity-10 shadow-sm d-flex flex-column justify-content-center h-100">
+                    <div id="emptySlotNotify" class="p-4 bg-white text-center rounded-2 shadow-sm d-flex flex-column justify-content-center h-100">
                         <h6 class="fw-bold text-muted text-uppercase mb-3">BÃI ĐỖ XE TỔNG HỢP</h6>
-                        <h1 class="display-1 fw-bold @(availableSlots < 20 ? "text-danger" : "text-success") mb-0">@availableSlots</h1>
+                        <h1 class="display-1 fw-bold @(availableSlots < 20 ? "text-danger" : "text-success") mb-0" id="ui-empty-slots">@availableSlots</h1>
                         <p class="text-muted small fw-bold">CHỖ TRỐNG TRÊN TOÀN HỆ THỐNG</p>
 
-                        <div class="progress mb-2 mx-auto w-75" style="height: 12px; border-radius: 10px;">
+                        <div class="progress mb-2 mx-auto w-75 rounded-pill" style="height: 12px;">
                             <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: @((availableSlots / 240.0) * 100)%"></div>
                         </div>
-
                         <small class="text-success fw-bold">TRẠNG THÁI: ĐÃ ĐỒNG BỘ</small>
                     </div>
                 </div>
 
-                <div class="col-12 mt-3">
-                    <div class="card border-0 shadow-sm mt-2">
+                <div class="col-12 mt-2">
+                    <div class="card border-0 shadow-sm rounded-2">
                         <div class="card-header bg-white p-3 border-bottom">
                             <form method="get" class="row g-2 align-items-end">
                                 <div class="col-md-2">
                                     <label class="small fw-bold text-muted mb-1"><i class="bi bi-calendar-date"></i> Ngày xem</label>
-                                    <input type="date" name="selectedDate" value="@selectedDate" class="form-control form-control-sm shadow-none" onchange="this.form.submit()">
+                                    <input type="date" name="selectedDate" value="@selectedDate" class="form-control form-control-sm shadow-none rounded-1" onchange="this.form.submit()">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="small fw-bold text-muted mb-1"><i class="bi bi-search"></i> Tìm kiếm</label>
-                                    <input type="text" name="searchName" value="@ViewBag.SearchName" class="form-control form-control-sm shadow-none" placeholder="Tên hoặc biển số...">
+                                    <input type="text" name="searchName" value="@ViewBag.SearchName" class="form-control form-control-sm shadow-none rounded-1" placeholder="Tên hoặc biển số...">
                                 </div>
                                 <div class="col-md-2">
                                     <label class="small fw-bold text-muted mb-1"><i class="bi bi-filter"></i> Trạng thái</label>
-                                    <select name="filterStatus" class="form-select form-select-sm shadow-none" onchange="this.form.submit()">
+                                    <select name="filterStatus" class="form-select form-select-sm shadow-none rounded-1" onchange="this.form.submit()">
                                         <option value="Tất cả" selected="@(ViewBag.FilterStatus == "Tất cả")">Tất cả xe</option>
                                         <option value="Đang đậu" selected="@(ViewBag.FilterStatus == "Đang đậu")">Đang đậu</option>
                                         <option value="Đã ra" selected="@(ViewBag.FilterStatus == "Đã ra")">Đã ra</option>
@@ -224,7 +188,7 @@
                                 </div>
                                 <input type="hidden" name="tang" value="@currentTang" />
                                 <div class="col-md-2">
-                                    <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm fw-bold">Lọc dữ liệu</button>
+                                    <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm fw-bold rounded-1">Lọc dữ liệu</button>
                                 </div>
                                 <div class="col-md-2 text-end">
                                     <h5 class="fw-bold mb-0 text-primary">LỊCH SỬ</h5>
@@ -234,62 +198,35 @@
                         <div class="card-body p-0">
                             <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                                 <table class="table table-hover align-middle mb-0 text-center custom-table">
-                                    <thead class="table-light small fw-bold text-uppercase sticky-top">
-                                        <tr>
-                                            <th class="ps-4 text-start">Thời gian</th>
-                                            <th class="text-start">Nhân viên</th>
-                                            <th>Loại Xe</th>
-                                            <th>Biển số</th>
-                                            <th>Vị trí</th>
-                                            <th class="pe-4 text-end">Trạng thái</th>
-                                        </tr>
+                                    <thead class="table-dark small fw-bold text-uppercase sticky-top">
+                                        <tr><th class="ps-4 text-start">Thời gian</th><th class="text-start">Nhân viên</th><th>Loại Xe</th><th>Biển số</th><th>Vị trí</th><th class="pe-4 text-end">Trạng thái</th></tr>
                                     </thead>
                                     <tbody>
                                         @if (!tableData.Any())
                                         {
-                                            <tr>
-                                                <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy dữ liệu phù hợp với bộ lọc.</td>
-                                            </tr>
+                                            <tr><td colspan="6" class="text-center py-4 text-muted">Không tìm thấy dữ liệu.</td></tr>
                                         }
                                         else
                                         {
                                             @foreach (var item in tableData)
                                             {
                                                 <tr>
-                                                    <td class="ps-4 text-start">
-                                                        <div class="fw-bold">@item.ThoiGian.ToString("HH:mm:ss")</div>
-                                                        <small class="text-muted">@item.ThoiGian.ToString("dd/MM")</small>
-                                                    </td>
-                                                    <td class="text-start">
-                                                        <div class="d-flex align-items-center">
-                                                            <img src="@(string.IsNullOrEmpty(item.HinhAnh) ? "/images/no-avatar.png" : item.HinhAnh)"
-                                                                 class="rounded-circle border shadow-sm me-3"
-                                                                 style="width: 40px; height: 40px; object-fit: cover;"
-                                                                 onerror="this.src='/images/no-avatar.png'">
-                                                            <div>
-                                                                <div class="fw-bold text-dark text-capitalize">@item.HoTen</div>
-                                                                <small class="text-primary fw-bold" style="font-size: 0.7rem;">CHỦ XE</small>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">🚗 Ô TÔ</span>
-                                                    </td>
+                                                    <td class="ps-4 text-start"><div class="fw-bold">@item.ThoiGian.ToString("HH:mm:ss")</div><small class="text-muted">@item.ThoiGian.ToString("dd/MM")</small></td>
+                                                    <td class="text-start"><div class="d-flex align-items-center"><img src="@(string.IsNullOrEmpty(item.HinhAnh) ? "/images/no-avatar.png" : item.HinhAnh)" class="rounded-circle border shadow-sm me-3" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.src='/images/no-avatar.png'"><div><div class="fw-bold text-dark text-capitalize">@item.HoTen</div><small class="text-primary fw-bold" style="font-size: 0.7rem;">CHỦ XE</small></div></div></td>
+                                                    <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">🚗 Ô TÔ</span></td>
                                                     <td class="font-monospace fw-bold">@item.BienSoXe</td>
                                                     <td class="text-danger fw-bold">@(item.Huong == "Đi Ra" ? "---" : (item.ViTriDo ?? "---"))</td>
-                                                    <td class="pe-4 text-end">
-                                                        @if (item.Huong == "Đi Vào")
-                                                        {
-                                                            <span class="badge bg-success rounded-pill px-3 shadow-sm">Đang đậu</span>
-                                                        }
-                                                        else
-                                                        {
-                                                            <span class="badge bg-warning text-dark rounded-pill px-3 shadow-sm">Đã ra</span>
-                                                        }
-                                                    </td>
-                                                </tr>
-                                            }
+                                                    <td class="pe-4 text-end">@if (item.Huong == "Đi Vào") {
+                                                    <span class="badge bg-success rounded-pill px-3 shadow-sm">Đang đậu</span>
+                                                } else
+                                                {
+
+                                                    <span class="badge bg-warning text-dark rounded-pill px-3 shadow-sm">Đã ra</span>
+                                                }
+    </td>
+                                            </tr>
                                         }
+                                                                                }
                                     </tbody>
                                 </table>
                             </div>
@@ -300,49 +237,15 @@
         </div>
 
         <div class="tab-pane fade" id="content-cctv" role="tabpanel">
-            <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-dark">
-
+            <div class="card border-0 shadow-sm rounded-2 overflow-hidden bg-dark">
                 <div class="card-header bg-black text-white d-flex justify-content-between align-items-center py-3 border-0">
                     <div class="d-flex align-items-center gap-3">
-                        <span class="fw-bold text-danger animate__animated animate__pulse animate__infinite">
-                            <i class="bi bi-record-circle-fill"></i> LIVE MONITORING
-                        </span>
-                        <span id="cctv-mode-title" class="text-white-50 small fw-bold">| TỔNG QUAN (TẤT CẢ CAMERA)</span>
+                        <span class="fw-bold text-danger animate__animated animate__pulse animate__infinite"><i class="bi bi-record-circle-fill"></i> LIVE MONITORING</span>
+                        <span class="text-white-50 small fw-bold">| KÉO GÓC ĐỂ CHỈNH KÍCH THƯỚC | KÉO THẢ ĐỂ SẮP XẾP</span>
                     </div>
-
-                    <button id="btn-back-grid" class="btn btn-outline-light btn-sm fw-bold d-none" onclick="backToGridView()">
-                        <i class="bi bi-grid-3x3-gap"></i> QUAY LẠI CAM CHÍNH
-                    </button>
                 </div>
-
-                <div class="card-body p-4" style="background-color: #0b1121;">
-                    <div id="cctv-grid-view" class="row g-4 custom-scrollbar" style="max-height: 700px; overflow-y: auto; overflow-x: hidden;">
-                    </div>
-
-                    <div id="cctv-focus-view" class="d-none focus-layout">
-                        <div class="focus-main-cam position-relative rounded-3 overflow-hidden border border-secondary">
-                            <div class="cam-frame-indicator corner-tl"></div>
-                            <div class="cam-frame-indicator corner-tr"></div>
-                            <div class="cam-frame-indicator corner-bl"></div>
-                            <div class="cam-frame-indicator corner-br"></div>
-                            <div class="cam-feed-loading d-flex flex-column justify-content-center align-items-center h-100 text-success font-monospace">
-                                <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
-                                CONNECTING SECURE FEED...
-                            </div>
-                            <div class="cam-overlay">
-                                <span class="badge bg-danger animate__animated animate__pulse animate__infinite">REC</span>
-                                <span id="focus-cam-title" class="cam-title fs-5">Tên Camera</span>
-                            </div>
-                            <div class="cam-watermark">CHK-IN PRO // <span class="live-clock"></span></div>
-                        </div>
-
-                        <div class="cctv-side-list-wrapper bg-black rounded-3 p-3 border border-secondary d-flex flex-column h-100">
-                            <div class="text-white-50 small fw-bold mb-3 pb-2 border-bottom border-secondary" style="flex-shrink: 0;">
-                                <i class="bi bi-collection-play"></i> CHỌN CAMERA
-                            </div>
-                            <div id="cctv-side-list" class="d-flex flex-column gap-3 custom-scrollbar" style="flex: 1 1 auto; height: 0; overflow-y: auto; padding-right: 5px;">
-                            </div>
-                        </div>
+                <div class="card-body p-4 custom-scrollbar" style="background-color: #0a0a0a; height: 750px; overflow-y: auto; overflow-x: hidden;">
+                    <div class="d-flex flex-wrap gap-3" id="cctv-grid-view">
                     </div>
                 </div>
             </div>
@@ -353,51 +256,98 @@
 
 @if (userRole == "Admin")
 {
-    <div class="modal fade" id="addParkingSlotModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow">
-                <div class="modal-header bg-dark text-white rounded-top-4">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-car-front-fill me-2"></i>Thiết Lập Vị Trí Đỗ Xe</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Mã Vị Trí Mới</label>
-                        <input type="text" id="slotCode" class="form-control text-uppercase" placeholder="VD: A-99, VIP-01">
-                    </div>
+    <div class="floating-window d-none shadow-lg animate__animated" id="window-manage-parking">
+        <div class="resizer resizer-t"></div> <div class="resizer resizer-r"></div> <div class="resizer resizer-b"></div> <div class="resizer resizer-l"></div>
+        <div class="resizer resizer-tl"></div> <div class="resizer resizer-tr"></div> <div class="resizer resizer-bl"></div> <div class="resizer resizer-br"></div>
 
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <label class="form-label fw-bold">Thuộc Tầng</label>
-                            <select id="slotFloor" class="form-select">
-                                <option value="B1">Tầng Hầm B1</option>
-                                <option value="B2">Tầng Hầm B2</option>
-                                <option value="G">Sảnh Trệt (VIP)</option>
-                            </select>
+        <div class="card-header bg-primary text-white p-3 border-0 d-flex justify-content-between align-items-center floating-header" id="header-manage-parking">
+            <div><h6 class="fw-bold mb-0 text-uppercase"><i class="bi bi-p-square-fill me-2"></i>THIẾT LẬP VỊ TRÍ ĐỖ XE TỰ ĐỘNG</h6></div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-light rounded-1 border-0" onclick="toggleMaximize('window-manage-parking')"><i class="bi bi-arrows-fullscreen"></i></button>
+                <button class="btn btn-sm btn-danger rounded-1 border-0" onclick="closeFloatingWindow('window-manage-parking')"><i class="bi bi-x-lg"></i></button>
+            </div>
+        </div>
+
+        <div class="card-body p-4 bg-card-custom" style="overflow-y: auto; flex: 1;">
+            <div class="p-3 rounded-2" style="background-color: rgba(13, 110, 253, 0.05); border: 1px dashed rgba(13, 110, 253, 0.3);">
+                <div class="mb-3 text-center">
+                    <h6 class="fw-bold text-primary">PHÂN LOẠI ĐỐI TƯỢNG ƯU TIÊN</h6>
+                    <p class="text-muted small mb-0">Hệ thống sẽ tự gán Tầng và ID đồng bộ CSDL.</p>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-4"><input type="radio" class="btn-check" name="parkType" id="typeSep" value="Sep" onchange="autoConfigParking()"><label class="btn btn-outline-warning w-100 p-2 rounded-2 fw-bold shadow-sm" for="typeSep"><i class="bi bi-star-fill fs-4 d-block"></i> VIP/SẾP</label></div>
+                    <div class="col-4"><input type="radio" class="btn-check" name="parkType" id="typeKhach" value="Khach" onchange="autoConfigParking()" checked><label class="btn btn-outline-info w-100 p-2 rounded-2 fw-bold shadow-sm" for="typeKhach"><i class="bi bi-person-badge fs-4 d-block"></i> KHÁCH</label></div>
+                    <div class="col-4"><input type="radio" class="btn-check" name="parkType" id="typeNV" value="NhanVien" onchange="autoConfigParking()"><label class="btn btn-outline-secondary w-100 p-2 rounded-2 fw-bold shadow-sm" for="typeNV"><i class="bi bi-person-vcard fs-4 d-block"></i> NHÂN VIÊN</label></div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small">Khu vực (Bị Khóa Cứng)</label>
+                        <div class="input-group input-group-sm shadow-sm">
+                            <span class="input-group-text bg-white rounded-start-1"><i class="bi bi-geo-alt-fill text-primary"></i></span>
+                            <input type="text" class="form-control fw-bold rounded-end-1" id="autoZone" readonly style="background-color: #e9ecef;">
                         </div>
-                        <div class="col-6">
-                            <label class="form-label fw-bold">Phân loại đối tượng</label>
-                            <select id="slotType" class="form-select">
-                                <option value="NhanVien">Nhân Viên</option>
-                                <option value="Khach">Khách Tham Quan</option>
-                                <option value="Sep" class="fw-bold text-warning">Sếp / VIP</option>
-                            </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small">Mã Vị Trí (Tự động cấp)</label>
+                        <div class="input-group input-group-sm shadow-sm">
+                            <span class="input-group-text bg-white rounded-start-1" id="autoIcon"><i class="bi bi-person-badge text-info"></i></span>
+                            <input type="text" class="form-control fw-bold text-info font-monospace rounded-end-1" id="autoSlotId" readonly style="background-color: #e0f7fa;">
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light rounded-bottom-4">
-                    <button type="button" class="btn btn-secondary rounded-pill fw-bold" data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-dark rounded-pill fw-bold" onclick="saveParkingSlot()">
-                        <i class="bi bi-check-circle"></i> Lưu Cấu Hình
-                    </button>
+                <div class="text-center mt-3">
+                    <button class="btn btn-primary btn-sm rounded-1 px-4 fw-bold shadow" onclick="submitCreateParking()"><i class="bi bi-magic me-2"></i> KHỞI TẠO BÃI ĐỖ</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-window d-none shadow-lg animate__animated" id="window-manage-camera">
+        <div class="resizer resizer-t"></div> <div class="resizer resizer-r"></div> <div class="resizer resizer-b"></div> <div class="resizer resizer-l"></div>
+        <div class="resizer resizer-tl"></div> <div class="resizer resizer-tr"></div> <div class="resizer resizer-bl"></div> <div class="resizer resizer-br"></div>
+
+        <div class="card-header bg-dark text-white p-3 border-0 d-flex justify-content-between align-items-center floating-header" id="header-manage-camera">
+            <div><h6 class="fw-bold mb-0 text-uppercase"><i class="bi bi-camera-video-fill text-info me-2"></i>QUẢN TRỊ HỆ THỐNG CAMERA</h6></div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-light rounded-1 border-0" onclick="toggleMaximize('window-manage-camera')"><i class="bi bi-arrows-fullscreen"></i></button>
+                <button class="btn btn-sm btn-danger rounded-1 border-0" onclick="closeFloatingWindow('window-manage-camera')"><i class="bi bi-x-lg"></i></button>
+            </div>
+        </div>
+
+        <div class="card-body p-3 bg-card-custom d-flex flex-column" style="overflow: hidden; flex: 1;">
+            <div class="d-flex justify-content-between mb-3 align-items-center flex-wrap gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <label class="fw-bold text-muted text-nowrap small"><i class="bi bi-funnel-fill"></i> Lọc Tầng:</label>
+                    <select id="adminCamFilter" class="form-select form-select-sm shadow-sm border-secondary fw-bold" onchange="filterAdminCameras()" style="width: 150px;">
+                        <option value="all">Hiển thị Tất Cả</option>
+                        <option value="B1">Tầng Hầm B1</option>
+                        <option value="B2">Tầng Hầm B2</option>
+                    </select>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-info btn-sm fw-bold rounded-1 shadow-sm text-white" onclick="addNewCameraRow()"><i class="bi bi-plus-lg"></i> Thêm Cam Nhanh</button>
+                </div>
+            </div>
+
+            <div class="table-responsive rounded-2 shadow-sm border" style="flex: 1; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0 text-center bg-white" id="cameraAdminTable">
+                    <thead class="table-dark text-uppercase small sticky-top">
+                        <tr>
+                            <th style="width: 80px;">Sắp xếp</th>
+                            <th class="text-start">Tên Camera (Click sửa)</th>
+                            <th>Khu vực</th>
+                            <th>Xóa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 }
 
 <style>
-    /* GENERAL TABS STYLE */
     .custom-pills .nav-link {
         color: #495057;
         background-color: #f8f9fa;
@@ -411,45 +361,81 @@
             border-color: #0d6efd;
         }
 
-    /* BẢNG VÀ Ô ĐỖ XE */
+    .custom-table tbody tr:hover {
+        background-color: #f8f9fa;
+        border-left: 4px solid #0d6efd;
+    }
+
+    /* PARKING GRID */
+    .parking-block {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(13, 202, 240, 0.3);
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+
     .parking-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
         gap: 12px;
+        min-height: 85px;
     }
 
-    .slot {
+    .parking-slot {
         height: 85px;
-        border-radius: 12px;
+        border-radius: 6px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         font-weight: bold;
         font-size: 0.75rem;
-        cursor: pointer;
+        cursor: grab;
         transition: 0.3s;
+        position: relative;
     }
 
-    .available {
-        background: #f1f8e9;
-        color: #388e3c;
-        border: 2px dashed #a5d6a7;
+        .parking-slot:active {
+            cursor: grabbing;
+        }
+
+        .parking-slot:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+    .sortable-ghost {
+        opacity: 0.4;
+        background-color: rgba(255,255,255,0.1) !important;
+        border: 2px dashed #0d6efd !important;
     }
 
-    .occupied {
-        background: #ffebee;
-        color: #d32f2f;
-        border: 2px solid #ef9a9a;
-        box-shadow: 0 4px 10px rgba(211, 47, 47, 0.1);
+    .slot-vip {
+        background: rgba(255, 193, 7, 0.05);
+        border: 2px solid rgba(255, 193, 7, 0.4);
+        color: rgba(255, 193, 7, 0.8);
     }
 
-    .slot:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    .slot-customer {
+        background: rgba(13, 202, 240, 0.05);
+        border: 2px solid rgba(13, 202, 240, 0.4);
+        color: rgba(13, 202, 240, 0.8);
     }
 
-    /* Thiết kế nút xóa Slot của Admin */
+    .slot-employee {
+        background: rgba(108, 117, 125, 0.1);
+        border: 2px solid rgba(108, 117, 125, 0.4);
+        color: rgba(108, 117, 125, 0.8);
+    }
+
+    .slot-occupied {
+        background: rgba(25, 135, 84, 0.15) !important;
+        border: 2px solid #198754 !important;
+        color: #198754 !important;
+        box-shadow: inset 0 0 15px rgba(25, 135, 84, 0.2);
+    }
+
     .btn-delete-slot {
         width: 22px;
         height: 22px;
@@ -459,7 +445,7 @@
         opacity: 0;
     }
 
-    .slot:hover .btn-delete-slot {
+    .parking-slot:hover .btn-delete-slot {
         opacity: 1;
     }
 
@@ -467,401 +453,642 @@
         transform: translate(30%, -30%) scale(1.2);
     }
 
-    /* Custom classes for VIP and Guest slots */
-    .slot-vip {
-        border: 2px solid #ffc107 !important;
-        background-color: #fff8e1 !important;
-        color: #ffc107 !important;
+    .mini-driveway {
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        padding: 5px;
+        border-radius: 4px;
     }
 
-    .slot-guest {
-        border: 2px solid #0dcaf0 !important;
-        background-color: #e0f7fa !important;
-        color: #0dcaf0 !important;
-    }
-
-    .font-monospace {
+    .driveway-clean {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        margin: 15px 0;
+        border-top: 2px dashed rgba(255,193,7,0.5);
+        border-bottom: 2px dashed rgba(255,193,7,0.5);
+        background: rgba(255,193,7,0.05);
+        color: rgba(255,193,7,0.8);
+        font-weight: bold;
+        font-size: 0.8rem;
         letter-spacing: 1px;
     }
 
-    .custom-table tbody tr {
-        transition: all 0.2s ease;
-        border-left: 4px solid transparent;
-    }
-
-        .custom-table tbody tr:hover {
-            background-color: #f8f9fa;
-            border-left-color: #0d6efd;
-        }
-
-    .sticky-top {
-        top: 0;
-        z-index: 10;
-    }
-
-    /* CSS CHO TAB 2: CHẾ ĐỘ GIÁM SÁT CAMERA (CCTV) */
-    .cam-box {
-        background-color: #12121a;
-        aspect-ratio: 16 / 9;
-        border: 2px solid #2b2b36;
-        border-radius: 8px;
+    /* CAMERA FEED (RESIZE 8 HƯỚNG BẰNG CSS) */
+    .cam-feed {
+        background: #1a1a1a;
+        border: 1px solid #333;
         position: relative;
-        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        display: flex;
+        flex-direction: column;
+        transition: border-color 0.3s, box-shadow 0.3s;
+        cursor: grab;
+        resize: both;
         overflow: hidden;
-        transition: all 0.2s ease;
+        min-width: 250px;
+        min-height: 200px;
     }
 
-        .cam-box:hover {
-            border-color: #0dcaf0;
-            box-shadow: 0 0 15px rgba(13, 202, 240, 0.4);
-            transform: scale(1.02);
-            z-index: 10;
+        .cam-feed:active {
+            cursor: grabbing;
         }
 
-    .cam-overlay {
+        .cam-feed:hover {
+            border-color: #0d6efd;
+            box-shadow: 0 0 15px rgba(13, 110, 253, 0.4);
+        }
+
+    .cam-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle, #2a2a2a 0%, #000 100%);
+        z-index: 1;
+    }
+
+        .cam-content i {
+            font-size: 4rem;
+        }
+
+    .cam-status {
         position: absolute;
         top: 10px;
         left: 10px;
-        right: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
+        background: rgba(25, 135, 84, 0.8);
+        color: white;
+        padding: 2px 8px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        z-index: 2;
         pointer-events: none;
     }
 
     .cam-title {
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: bold;
-        border: 1px solid #444;
-    }
-
-    .cam-watermark {
         position: absolute;
-        bottom: 10px;
-        right: 10px;
-        color: rgba(255,255,255,0.4);
-        font-family: monospace;
-        font-size: 0.7rem;
+        top: 10px;
+        right: 40px;
+        color: white;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-shadow: 1px 1px 3px black;
+        z-index: 2;
         pointer-events: none;
     }
 
-    .focus-layout {
-        display: grid;
-        grid-template-columns: 3fr 1fr;
-        gap: 15px;
-        height: 650px;
-    }
-
-    .focus-main-cam {
-        background-color: #050505;
-        cursor: default;
-    }
-
-    .side-cam-row {
-        background-color: #1a1a24;
-        border: 1px solid #333;
-        border-radius: 8px;
-        padding: 12px;
-        cursor: pointer;
+    .btn-fullscreen {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        width: 25px;
+        height: 25px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        justify-content: center;
+        cursor: pointer;
         transition: 0.2s;
+        z-index: 5;
     }
 
-        .side-cam-row:hover {
-            border-color: #0dcaf0;
-            box-shadow: 0 0 10px rgba(13, 202, 240, 0.4);
-            transform: translateX(3px);
+        .btn-fullscreen:hover {
+            background: rgba(255,255,255,0.5);
+            transform: scale(1.1);
         }
 
-        .side-cam-row.active {
-            border-color: #0dcaf0;
-            background: rgba(13, 202, 240, 0.1);
-            pointer-events: none;
-        }
-
-            .side-cam-row.active .side-cam-title {
-                color: #0dcaf0;
-                font-weight: bold;
-            }
-
-    .side-cam-indicator {
-        width: 15px;
-        height: 15px;
-        border-radius: 50%;
-    }
-
-    .indicator-online {
-        background: #198754;
-        box-shadow: 0 0 5px #198754;
-    }
-
-    .indicator-viewing {
-        background: #dc3545;
-        box-shadow: 0 0 5px #dc3545;
-    }
-
-    .side-cam-title {
-        color: white;
-        font-size: 0.8rem;
-        margin-bottom: 2px;
-    }
-
-    .side-cam-location {
-        color: rgba(255,255,255,0.5);
-        font-size: 0.7rem;
-    }
-
-    .cam-frame-indicator {
+    .cam-overlay {
         position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(0,0,0,0.8);
+        padding: 5px 15px;
+        font-family: monospace;
+        color: #0dcaf0;
+        font-size: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        margin: 0;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .cam-fullscreen {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 999999 !important;
+        border-radius: 0 !important;
+        background: #000 !important;
+        cursor: default !important;
+        resize: none;
+    }
+
+        .cam-fullscreen .cam-content i {
+            font-size: 15rem !important;
+        }
+
+    /* FLOATING WINDOW (RESIZE MỌI GÓC) */
+    .floating-window {
+        position: fixed;
+        z-index: 9999;
+        background: #fff;
+        border-radius: 4px;
+        box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+        border: 1px solid rgba(0,0,0,0.15);
+        display: flex;
+        flex-direction: column;
+        width: 750px;
+        height: 550px;
+        min-width: 450px;
+        min-height: 350px;
+        top: 50%;
+        left: 50%;
+    }
+
+    .resizer {
+        position: absolute;
+        z-index: 100;
+    }
+
+    .resizer-t {
+        top: -5px;
+        left: 0;
+        width: 100%;
+        height: 10px;
+        cursor: n-resize;
+    }
+
+    .resizer-b {
+        bottom: -5px;
+        left: 0;
+        width: 100%;
+        height: 10px;
+        cursor: s-resize;
+    }
+
+    .resizer-l {
+        top: 0;
+        left: -5px;
+        width: 10px;
+        height: 100%;
+        cursor: w-resize;
+    }
+
+    .resizer-r {
+        top: 0;
+        right: -5px;
+        width: 10px;
+        height: 100%;
+        cursor: e-resize;
+    }
+
+    .resizer-tl {
+        top: -5px;
+        left: -5px;
         width: 15px;
         height: 15px;
-        border-color: rgba(255,255,255,0.3);
-        border-style: solid;
+        cursor: nw-resize;
+        z-index: 101;
     }
 
-    .corner-tl {
-        top: 0;
-        left: 0;
-        border-width: 3px 0 0 3px;
+    .resizer-tr {
+        top: -5px;
+        right: -5px;
+        width: 15px;
+        height: 15px;
+        cursor: ne-resize;
+        z-index: 101;
     }
 
-    .corner-tr {
-        top: 0;
-        right: 0;
-        border-width: 3px 3px 0 0;
+    .resizer-bl {
+        bottom: -5px;
+        left: -5px;
+        width: 15px;
+        height: 15px;
+        cursor: sw-resize;
+        z-index: 101;
     }
 
-    .corner-bl {
-        bottom: 0;
-        left: 0;
-        border-width: 0 0 3px 3px;
+    .resizer-br {
+        bottom: -5px;
+        right: -5px;
+        width: 15px;
+        height: 15px;
+        cursor: se-resize;
+        z-index: 101;
     }
 
-    .corner-br {
-        bottom: 0;
-        right: 0;
-        border-width: 0 3px 3px 0;
+    .floating-header {
+        cursor: grab;
+        flex-shrink: 0;
+    }
+
+        .floating-header:active {
+            cursor: grabbing;
+        }
+
+    .floating-maximized {
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        border-radius: 0 !important;
+        resize: none;
+        transform: none !important;
     }
 
     .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
+        height: 6px;
     }
 
     .custom-scrollbar::-webkit-scrollbar-track {
-        background: #111;
-        border-radius: 4px;
+        background: transparent;
     }
 
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #444;
+        background: #adb5bd;
         border-radius: 4px;
     }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #0dcaf0;
+            background: #6c757d;
         }
+
+    [data-bs-theme="dark"] .bg-white {
+        background-color: #1e1e1e !important;
+    }
+
+    [data-bs-theme="dark"] .text-dark {
+        color: #f8f9fa !important;
+    }
+
+    [data-bs-theme="dark"] .floating-window {
+        background: #1e1e1e;
+        border: 1px solid #444;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+    }
 </style>
 
 <script>
-    // =======================================================
-    // JAVASCRIPT: LOGIC SƠ ĐỒ BÃI ĐỖ VÀ XEM NHANH
-    // =======================================================
-    function showSlotInfo(id, name, plate, img) {
-        document.getElementById('slotDetailCard').classList.remove('d-none');
-        document.getElementById('emptySlotNotify').classList.add('d-none');
+    const isAdmin = '@userRole' === 'Admin';
+    let currentFloorFilter = '@currentTang';
+    let prefixCode = currentFloorFilter === 'B1' ? 'A' : 'B';
 
-        document.getElementById('lblSlotId').innerText = id;
+    // TÍCH HỢP LOCALSTORAGE ĐỂ ĐỒNG BỘ DATA XUYÊN TRANG
+    let dbCounters = JSON.parse(localStorage.getItem('chkIn_dbCounters')) || { vip: 24, guest: 60, emp: 120 };
+    let cameraList = [];
 
-        if (name && name !== 'null' && name !== '') {
-            document.getElementById('slotUser').innerText = name;
-            document.getElementById('slotPlate').innerText = plate;
-            document.getElementById('slotImg').src = img || '/images/no-avatar.png';
-        } else {
-            resetSlot();
-            Swal.fire({ title: 'Vị trí ' + id, text: 'Vị trí này hiện đang trống.', icon: 'info', timer: 1500, showConfirmButton: false });
+    let rawData = @Html.Raw(Json.Serialize(danhSachXeDangDau));
+    let parkedCars = {};
+    if (rawData) { rawData.forEach(car => { if(car.viTri) { let slotNormalized = car.viTri.replace(/\s+/g, '').toUpperCase(); parkedCars[slotNormalized] = { role: car.loai, plate: car.bienSo, name: car.ten }; } }); }
+    let totalViolations = 0;
+    let sortableCameraGrid = null;
+
+    function saveCounters() { localStorage.setItem('chkIn_dbCounters', JSON.stringify(dbCounters)); }
+
+    // ==========================================
+    // 1. TẠO BÃI ĐỖ VÀ TỰ ĐỘNG CHIA LƯỚI ĐƯỜNG ĐI
+    // ==========================================
+    function renderMainMap() {
+        const container = document.getElementById('dynamic-main-parking-grid');
+        if (!container) return;
+        container.innerHTML = '';
+
+        let totalSlots = prefixCode === 'A' ? (dbCounters.vip + dbCounters.guest) : dbCounters.emp;
+        let html = '';
+        const slotsPerRow = 12;
+        const rowsPerBlock = 2; // Cứ 2 dòng là chèn 1 đường đi
+        let currentSlot = 1;
+
+        while (currentSlot <= totalSlots) {
+            let endSlot = Math.min(currentSlot + (slotsPerRow * rowsPerBlock) - 1, totalSlots);
+            html += `<div class="parking-block mb-3"><div class="parking-grid">`;
+
+            for (let i = currentSlot; i <= endSlot; i++) {
+                let slotId = `${prefixCode}-${i}`;
+                let parkedCarInfo = parkedCars[slotId];
+                let isOccupied = !!parkedCarInfo;
+
+                let roleClass = ''; let roleLabel = ''; let roleIcon = ''; let intendedRole = '';
+                if (prefixCode === 'A') {
+                    if (i <= dbCounters.vip) { intendedRole = 'VIP'; roleClass = 'slot-vip'; roleLabel = 'VIP/SẾP'; roleIcon = '<i class="bi bi-star-fill mb-1"></i>'; }
+                    else { intendedRole = 'Khách'; roleClass = 'slot-customer'; roleLabel = 'KHÁCH'; roleIcon = '<i class="bi bi-person-badge mb-1"></i>'; }
+                } else {
+                    intendedRole = 'Nhân Viên'; roleClass = 'slot-employee'; roleLabel = 'NHÂN VIÊN'; roleIcon = '<i class="bi bi-person-vcard mb-1"></i>';
+                }
+
+                let cssClass = isOccupied ? 'slot-occupied' : roleClass;
+                let content = isOccupied
+                    ? `<i class="bi bi-car-front-fill car-icon animate__animated animate__zoomIn text-success"></i><span style="font-size:0.55rem; color:#fff" class="bg-success px-1 rounded mt-1">${parkedCarInfo.plate}</span>`
+                    : `${roleIcon}<span style="font-size: 0.5rem; opacity: 0.8">${roleLabel}</span><span class="fw-bold mt-1" style="font-size: 0.8rem;">${slotId}</span>`;
+
+                let adminDeleteBtn = isAdmin ? `<button class="btn btn-danger position-absolute top-0 end-0 p-0 rounded-circle d-flex align-items-center justify-content-center btn-delete-slot" onclick="deleteSlot('${slotId}', event)" title="Xóa ô đỗ này"><i class="bi bi-x" style="font-size: 14px; margin: 0;"></i></button>` : '';
+
+                html += `<div class="parking-slot ${cssClass} animate__animated animate__fadeIn" onclick="showSlotInfo('${slotId}', '${isOccupied?parkedCarInfo.name:''}', '${isOccupied?parkedCarInfo.plate:''}', '')">${adminDeleteBtn}${content}</div>`;
+            }
+            html += `</div></div>`;
+            currentSlot = endSlot + 1;
+
+            if (currentSlot <= totalSlots) {
+                // Chèn đường đi nội bộ
+                html += `<div class="driveway-clean"><i class="bi bi-chevron-double-left fs-3 driveway-arrow left"></i><span><i class="bi bi-car-front"></i> LÀN LƯU THÔNG <i class="bi bi-car-front"></i></span><i class="bi bi-chevron-double-right fs-3 driveway-arrow right"></i></div>`;
+            }
+        }
+        container.innerHTML = html;
+
+        // KÍCH HOẠT DRAG & DROP Ô ĐỖ XE (CHỈ ADMIN)
+        if(isAdmin) {
+            document.querySelectorAll('.parking-grid').forEach(grid => {
+                new Sortable(grid, { group: 'shared-parking', animation: 150, ghostClass: 'sortable-ghost' });
+            });
         }
     }
 
-    function resetSlot() {
-        document.getElementById('slotDetailCard').classList.add('d-none');
-        document.getElementById('emptySlotNotify').classList.remove('d-none');
+    // ==========================================
+    // 2. GIAO DIỆN CAMERA: ĐỒNG BỘ TỨC THÌ
+    // ==========================================
+    function initCameraData() {
+        cameraList = [];
+        let totalSlots = prefixCode === 'A' ? (dbCounters.vip + dbCounters.guest) : dbCounters.emp;
+        for(let i=1; i<=totalSlots; i++){
+            let id = `${prefixCode}-${i}`;
+            cameraList.push({ id: id, name: `Cam Ô ${id}`, floor: currentFloorFilter });
+        }
+        cameraList.unshift({ id: 'MAIN-IN', name: `ALPR Lối Vào ${currentFloorFilter}`, floor: currentFloorFilter });
+        cameraList.unshift({ id: 'MAIN-OUT', name: `ALPR Lối Ra ${currentFloorFilter}`, floor: currentFloorFilter });
+        cameraList.unshift({ id: 'MAIN-PTZ', name: `Toàn Cảnh Bãi ${currentFloorFilter} (PTZ)`, floor: currentFloorFilter });
     }
 
-    // =======================================================
-    // JAVASCRIPT CHO ADMIN: QUẢN LÝ BÃI ĐỖ (THÊM / XÓA)
-    // =======================================================
-    @if (userRole == "Admin")
-    {
-            <text>
-            function deleteSlot(slotId, event) {
-                // Ngăn chặn click lan truyền làm mở bảng thông tin
-                event.stopPropagation();
-
-                Swal.fire({
-                    title: 'Xóa vị trí đỗ?',
-                    text: `Bạn có chắc chắn muốn gỡ bỏ vị trí ${slotId} khỏi hệ thống?`,
-                    icon: 'warning',
-                    showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Xóa ngay', cancelButtonText: 'Hủy'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Tạo hiệu ứng xóa thẻ HTML trên UI
-                        const slotEl = event.target.closest('.slot');
-                        if(slotEl) {
-                            slotEl.classList.add('animate__animated', 'animate__zoomOut');
-                            setTimeout(() => slotEl.remove(), 500);
-                        }
-                        Swal.fire('Đã xóa!', `Vị trí ${slotId} đã bị thu hồi.`, 'success');
-                        // Lưu ý: Sau này cần gọi API C# để xóa trong Database
-                    }
-                });
-            }
-
-            function saveParkingSlot() {
-                const code = document.getElementById('slotCode').value.toUpperCase();
-                const floor = document.getElementById('slotFloor').value;
-                const type = document.getElementById('slotType').value;
-
-                if(!code) {
-                    Swal.fire('Lỗi', 'Vui lòng nhập Mã Vị Trí', 'error'); return;
-                }
-
-                // Xử lý Phân loại để đổi màu CSS và Icon
-                let typeIcon = type === 'Sep' ? '⭐ VIP' : (type === 'Khach' ? '🛂 Khách' : '💼 Nhân viên');
-                let textColor = type === 'Sep' ? 'text-warning' : (type === 'Khach' ? 'text-info' : 'text-success');
-                let borderClass = type === 'Sep' ? 'slot-vip' : (type === 'Khach' ? 'slot-guest' : 'available');
-
-                // Chèn cục HTML slot đỗ xe mới vào cuối lưới
-                const grid = document.getElementById('main-parking-grid');
-                if (grid) {
-                    const newSlotHTML = `
-                        <div class="slot ${borderClass} position-relative animate__animated animate__bounceIn" onclick="showSlotInfo('${code}', '', '', '')">
-                            <button class="btn btn-danger position-absolute top-0 end-0 p-0 rounded-circle d-flex align-items-center justify-content-center btn-delete-slot"
-                                    onclick="deleteSlot('${code}', event)" title="Xóa bãi đỗ này">
-                                <i class="bi bi-x" style="font-size: 14px; margin: 0;"></i>
-                            </button>
-                            <i class="bi bi-plus-circle ${textColor}"></i>
-                            <span class="${textColor} fw-bold mt-1">${code}</span>
-                        </div>
-                    `;
-                    grid.insertAdjacentHTML('beforeend', newSlotHTML);
-                }
-
-                Swal.fire({
-                    title: 'Đã thiết lập Bãi Đỗ!',
-                    html: `Mã vị trí: <b>${code}</b><br/>Tầng: <b>${floor}</b><br/>Dành cho: <b class="${textColor}">${typeIcon}</b>`,
-                    icon: 'success'
-                });
-
-                bootstrap.Modal.getInstance(document.getElementById('addParkingSlotModal')).hide();
-                document.getElementById('slotCode').value = '';
-            }
-            </text>
-    }
-
-    // =======================================================
-    // JAVASCRIPT CHO TAB 2: CCTV
-    // =======================================================
-    const cameraList = [
-        { id: 'cam1', name: 'FaceID Cổng Chính B1', location: 'Tầng Trệt' },
-        { id: 'cam2', name: 'FaceID Cổng Chính B2', location: 'Tầng Trệt' },
-        { id: 'cam3', name: 'Cam Lối Vào Hầm A', location: 'Tầng Hầm B1' },
-        { id: 'cam4', name: 'Cam Lối Ra Hầm A', location: 'Tầng Hầm B1' },
-        { id: 'cam5', name: 'Cam Lối Vào Hầm B', location: 'Tầng Hầm B2' },
-        { id: 'cam6', name: 'Cam Lối Ra Hầm B', location: 'Tầng Hầm B2' },
-        { id: 'cam7', name: 'Cam Bãi Xe Máy', location: 'Tầng Hầm B1' },
-        { id: 'cam8', name: 'Cam Góc Khuất B1-01', location: 'Tầng Hầm B1' },
-        { id: 'cam9', name: 'Cam Thang Máy Hầm A', location: 'Tầng Hầm B1' },
-        { id: 'cam10', name: 'Cam Góc Khuất B2-01', location: 'Tầng Hầm B2' },
-        { id: 'cam11', name: 'Cam Thang Máy Hầm B', location: 'Tầng Hầm B2' },
-        { id: 'cam12', name: 'Cam Hành Lang Thoát Hiểm', location: 'Tầng Trệt' }
-    ];
-
-    function updateClocks() {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('en-US', { hour12: false }) + ':' + now.getMilliseconds().toString().padStart(3, '0').slice(0,2);
-        document.querySelectorAll('.live-clock').forEach(el => el.innerText = timeStr);
-        requestAnimationFrame(updateClocks);
-    }
-
-    function renderGridCams() {
+    function renderCameras() {
+        if(cameraList.length === 0) initCameraData();
         const grid = document.getElementById('cctv-grid-view');
         grid.innerHTML = '';
 
         cameraList.forEach(cam => {
-            const html = `
-                <div class="col-lg-4 col-md-6">
-                    <div class="cam-box shadow-sm" onclick="focusCamera('${cam.id}')" title="Bấm để xem chi tiết">
-                        <div class="cam-feed-loading d-flex justify-content-center align-items-center h-100 text-secondary">
-                            <i class="bi bi-camera-video" style="font-size: 2rem; opacity: 0.3;"></i>
+            if(cam.floor === currentFloorFilter) {
+                const isMain = cam.id.startsWith('MAIN');
+                const widthStyle = isMain ? 'width: 450px; height: 280px;' : 'width: 300px; height: 200px;';
+
+                const html = `
+                    <div style="display:inline-block;" class="dynamic-cam-item" data-id="${cam.id}">
+                        <div class="cam-feed rounded-2" style="${widthStyle}">
+                            <div class="cam-content"><i class="bi bi-camera-video text-white opacity-25"></i></div>
+                            <div class="cam-status rounded-1"><i class="bi bi-circle-fill text-white small me-1"></i> ONLINE</div>
+                            <div class="cam-title"><i class="bi bi-geo-alt-fill text-info me-1"></i><span class="cam-name-text">${cam.name}</span></div>
+                            <button class="btn-fullscreen rounded-1" onclick="toggleFullscreen(this.parentElement)" title="Phóng to"><i class="bi bi-arrows-fullscreen"></i></button>
+                            <div class="cam-overlay"><span>CHK-IN // ${cam.id}</span><span class="live-clock-cam text-info fw-bold"></span></div>
                         </div>
-                        <div class="cam-overlay">
-                            <span class="badge bg-success animate__animated animate__pulse animate__infinite">● ONLINE</span>
-                            <span class="cam-title">${cam.name}</span>
-                        </div>
-                        <div class="cam-watermark">CHK-IN PRO // <span class="live-clock"></span></div>
-                    </div>
-                </div>
-            `;
-            grid.innerHTML += html;
+                    </div>`;
+                grid.insertAdjacentHTML('beforeend', html);
+            }
         });
+
+        // Kích hoạt Drag & Drop Camera
+        if(isAdmin) {
+            new Sortable(grid, { animation: 150, ghostClass: 'sortable-ghost', handle: '.cam-feed' });
+        }
     }
 
-    function focusCamera(camId) {
-        const targetCam = cameraList.find(c => c.id === camId);
-
-        document.getElementById('cctv-grid-view').classList.add('d-none');
-        document.getElementById('cctv-focus-view').classList.remove('d-none');
-        document.getElementById('cctv-focus-view').classList.add('focus-layout');
-        document.getElementById('btn-back-grid').classList.remove('d-none');
-        document.getElementById('cctv-mode-title').innerText = '| CHẾ ĐỘ CHI TIẾT';
-
-        document.getElementById('focus-cam-title').innerText = targetCam.name;
-
-        renderSideCams(camId);
+    // ==========================================
+    // UI TABS & FULLSCREEN
+    // ==========================================
+    function switchTab(tab) {
+        const btnB = document.getElementById('btn-tab-blueprint'), btnC = document.getElementById('btn-tab-camera');
+        const viewB = document.getElementById('content-sodo'), viewC = document.getElementById('content-cctv');
+        if (tab === 'blueprint') {
+            btnB.className = 'nav-link active fw-bold px-4 rounded-1 shadow-sm'; btnC.className = 'nav-link fw-bold px-4 rounded-1 shadow-sm';
+            viewB.classList.add('show', 'active'); viewC.classList.remove('show', 'active');
+        } else {
+            btnC.className = 'nav-link active fw-bold px-4 rounded-1 shadow-sm'; btnB.className = 'nav-link fw-bold px-4 rounded-1 shadow-sm';
+            viewC.classList.add('show', 'active'); viewB.classList.remove('show', 'active');
+            renderCameras();
+        }
     }
 
-    function renderSideCams(activeCamId) {
-        const sideList = document.getElementById('cctv-side-list');
-        sideList.innerHTML = '';
-
-        cameraList.forEach(cam => {
-            const isActive = cam.id === activeCamId;
-            const activeClass = isActive ? 'active' : '';
-            const indicatorClass = isActive ? 'indicator-viewing' : 'indicator-online';
-
-            const html = `
-                <div class="side-cam-row shadow-sm ${activeClass}" onclick="focusCamera('${cam.id}')" title="Bấm để xem cam này">
-                    <div class="side-cam-indicator ${indicatorClass}"></div>
-                    <div class="side-cam-info flex-grow-1">
-                        <div class="side-cam-title fw-bold">${cam.name}</div>
-                        <div class="side-cam-location small">${cam.location}</div>
-                    </div>
-                    <div class="side-cam-action text-white-50 small">
-                        ${isActive ? '' : '<i class="bi bi-eye-fill fs-5"></i>'}
-                    </div>
-                </div>
-            `;
-            sideList.innerHTML += html;
-        });
+    window.toggleFullscreen = function(camElement) {
+        if (!document.fullscreenElement) {
+            camElement.classList.add('cam-fullscreen'); camElement.querySelector('.btn-fullscreen').innerHTML = '<i class="bi bi-fullscreen-exit text-danger fs-3"></i>';
+            if (camElement.requestFullscreen) { camElement.requestFullscreen(); } else if (camElement.webkitRequestFullscreen) { camElement.webkitRequestFullscreen(); }
+        } else {
+            if (document.exitFullscreen) { document.exitFullscreen(); }
+        }
     }
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) document.querySelectorAll('.cam-fullscreen').forEach(el => { el.classList.remove('cam-fullscreen'); el.querySelector('.btn-fullscreen').innerHTML = '<i class="bi bi-arrows-fullscreen"></i>'; });
+    });
 
-    function backToGridView() {
-        document.getElementById('cctv-focus-view').classList.add('d-none');
-        document.getElementById('cctv-focus-view').classList.remove('focus-layout');
-        document.getElementById('cctv-grid-view').classList.remove('d-none');
-        document.getElementById('btn-back-grid').classList.add('d-none');
-        document.getElementById('cctv-mode-title').innerText = '| TỔNG QUAN (TẤT CẢ CAMERA)';
-    }
+    setInterval(() => {
+        const now = new Date(); const timeStr = now.toLocaleTimeString('en-US', { hour12: false }) + ':' + now.getMilliseconds().toString().padStart(3, '0').substring(0,2);
+        document.querySelectorAll('.live-clock-cam').forEach(el => el.innerText = timeStr);
+    }, 50);
 
     document.addEventListener("DOMContentLoaded", () => {
-        renderGridCams();
-        updateClocks();
+        renderMainMap();
     });
+
+    // ==========================================
+    // BỘ CÔNG CỤ CỬA SỔ NỔI CHO ADMIN
+    // ==========================================
+    @if (userRole == "Admin")
+    {
+            <text>
+            function openFloatingWindow(winId) {
+                const win = document.getElementById(winId);
+                win.classList.remove('d-none', 'animate__zoomOut');
+                win.classList.add('animate__zoomIn');
+                win.style.transform = "translate(-50%, -50%)"; // Căn giữa lại màn hình
+                win.style.top = "50%";
+                win.style.left = "50%";
+
+                if(winId === 'window-manage-camera') {
+                    document.getElementById('adminCamFilter').value = currentFloorFilter;
+                    syncCameraTable();
+                }
+                if(winId === 'window-manage-parking') autoConfigParking();
+
+                makeDraggableWindow(win);
+            }
+
+            // TỰ ĐỘNG ĐÓNG WINDOW KHI LÀM XONG
+            function closeFloatingWindow(winId) {
+                const win = document.getElementById(winId);
+                win.classList.remove('animate__zoomIn', 'floating-maximized');
+                win.classList.add('animate__zoomOut');
+                setTimeout(() => { win.classList.add('d-none'); }, 300);
+            }
+
+            function toggleMaximize(winId) {
+                const win = document.getElementById(winId);
+                if (win.classList.contains('floating-maximized')) { win.classList.remove('floating-maximized'); }
+                else { win.classList.add('floating-maximized'); win.style.transform = "none"; }
+            }
+
+            // THUẬT TOÁN RESIZE 8 HƯỚNG VÀ DRAG WINDOW
+            function makeDraggableWindow(win) {
+                const header = win.querySelector('.floating-header');
+                const resizers = win.querySelectorAll('.resizer');
+                let isResizing = false; let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+                header.onmousedown = function(e) {
+                    if (e.target.closest('button') || win.classList.contains('floating-maximized')) return;
+                    e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY;
+                    document.onmouseup = closeDragElement; document.onmousemove = elementDrag;
+                };
+                function elementDrag(e) {
+                    e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY;
+                    if (win.style.transform.includes('translate')) {
+                        const rect = win.getBoundingClientRect(); win.style.transform = "none"; win.style.top = rect.top + "px"; win.style.left = rect.left + "px";
+                    }
+                    win.style.top = (win.offsetTop - pos2) + "px"; win.style.left = (win.offsetLeft - pos1) + "px";
+                }
+                function closeDragElement() { document.onmouseup = null; document.onmousemove = null; }
+
+                let original_width = 0, original_height = 0, original_x = 0, original_y = 0, original_mouse_x = 0, original_mouse_y = 0;
+                for (let i = 0; i < resizers.length; i++) {
+                    const currentResizer = resizers[i];
+                    currentResizer.onmousedown = function(e) {
+                        e.preventDefault(); isResizing = true;
+                        original_width = parseFloat(getComputedStyle(win, null).getPropertyValue('width').replace('px', ''));
+                        original_height = parseFloat(getComputedStyle(win, null).getPropertyValue('height').replace('px', ''));
+                        original_x = win.getBoundingClientRect().left; original_y = win.getBoundingClientRect().top;
+                        original_mouse_x = e.pageX; original_mouse_y = e.pageY;
+                        if (win.style.transform.includes('translate')) { win.style.transform = "none"; win.style.left = original_x + "px"; win.style.top = original_y + "px"; }
+                        window.addEventListener('mousemove', resize); window.addEventListener('mouseup', stopResize);
+                    };
+                    function resize(e) {
+                        if (currentResizer.classList.contains('resizer-br')) { win.style.width = original_width + (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height + (e.pageY - original_mouse_y)  + 'px'; }
+                        else if (currentResizer.classList.contains('resizer-bl')) { win.style.width = original_width - (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height + (e.pageY - original_mouse_y)  + 'px'; win.style.left = original_x + (e.pageX - original_mouse_x) + 'px'; }
+                        else if (currentResizer.classList.contains('resizer-tr')) { win.style.width = original_width + (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height - (e.pageY - original_mouse_y)  + 'px'; win.style.top = original_y + (e.pageY - original_mouse_y) + 'px'; }
+                        else if (currentResizer.classList.contains('resizer-tl')) { win.style.width = original_width - (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height - (e.pageY - original_mouse_y)  + 'px'; win.style.left = original_x + (e.pageX - original_mouse_x) + 'px'; win.style.top = original_y + (e.pageY - original_mouse_y) + 'px'; }
+                        else if (currentResizer.classList.contains('resizer-r')) { win.style.width = original_width + (e.pageX - original_mouse_x)  + 'px'; }
+                        else if (currentResizer.classList.contains('resizer-l')) { win.style.width = original_width - (e.pageX - original_mouse_x)  + 'px'; win.style.left = original_x + (e.pageX - original_mouse_x) + 'px'; }
+                        else if (currentResizer.classList.contains('resizer-b')) { win.style.height = original_height + (e.pageY - original_mouse_y)  + 'px'; }
+                        else if (currentResizer.classList.contains('resizer-t')) { win.style.height = original_height - (e.pageY - original_mouse_y)  + 'px'; win.style.top = original_y + (e.pageY - original_mouse_y) + 'px'; }
+                    }
+                    function stopResize() { window.removeEventListener('mousemove', resize); isResizing = false; }
+                }
+            }
+
+            function autoConfigParking() {
+                const type = document.querySelector('input[name="parkType"]:checked').value;
+                const zoneInput = document.getElementById('autoZone');
+                const idInput = document.getElementById('autoSlotId');
+                if (type === 'Sep') { zoneInput.value = 'Tầng Hầm - Khu A (VIP & Khách)'; idInput.value = 'A-' + (dbCounters.vip + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-warning font-monospace fs-5 rounded-end-1'; }
+                else if (type === 'Khach') { zoneInput.value = 'Tầng Hầm - Khu A (VIP & Khách)'; idInput.value = 'A-' + (dbCounters.vip + dbCounters.guest + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-info font-monospace fs-5 rounded-end-1'; }
+                else { zoneInput.value = 'Tầng Hầm - Khu B (Nhân Viên)'; idInput.value = 'B-' + (dbCounters.emp + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-secondary font-monospace fs-5 rounded-end-1'; }
+            }
+
+            // TẠO Ô ĐỖ & ĐÓNG FORM
+            function submitCreateParking() {
+                const type = document.querySelector('input[name="parkType"]:checked').value;
+                const slotId = document.getElementById('autoSlotId').value;
+
+                let processCreation = () => {
+                    closeFloatingWindow('window-manage-parking'); // ĐÓNG FORM NGAY LẬP TỨC
+
+                    Swal.fire('Đồng bộ hoàn tất!', `Đã tạo vị trí <b>${slotId}</b>.`, 'success').then(() => {
+                        renderMainMap(); // Dựng lại lưới kèm đường đi chuẩn 2 dòng
+                    });
+                };
+
+                if (type === 'Sep') {
+                    Swal.fire({ title: 'Đang dời chỗ...', html: 'Hệ thống đang tự động dời các xe Khách xuống 1 vị trí.', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+                    setTimeout(() => { dbCounters.vip++; saveCounters(); processCreation(); }, 1000);
+                } else if (type === 'Khach') { dbCounters.guest++; saveCounters(); processCreation(); }
+                else { dbCounters.emp++; saveCounters(); processCreation(); }
+            }
+
+            function deleteSlot(slotId, event) {
+                event.stopPropagation();
+                Swal.fire({
+                    title: 'Xóa vị trí?', text: `Gỡ bỏ ô đỗ ${slotId}?`, icon: 'warning',
+                    showCancelButton: true, confirmButtonColor: '#d33', cancelButtonText: 'Hủy', confirmButtonText: 'Xóa ngay'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if(slotId.startsWith('A')) { dbCounters.guest--; } else { dbCounters.emp--; }
+                        saveCounters(); renderMainMap();
+                    }
+                });
+            }
+
+            // QUẢN TRỊ CAMERA (BẢNG)
+            function syncCameraTable() {
+                if(cameraList.length === 0) initCameraData();
+                const tbody = document.querySelector('#cameraAdminTable tbody');
+                tbody.innerHTML = '';
+                const filterVal = document.getElementById('adminCamFilter').value;
+
+                cameraList.forEach((cam) => {
+                    if(filterVal === 'all' || cam.floor === filterVal) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>
+                                <div class="btn-group btn-group-sm shadow-sm">
+                                    <button class="btn btn-light border text-muted" onclick="moveRowUp(this)"><i class="bi bi-chevron-up"></i></button>
+                                    <button class="btn btn-light border text-muted" onclick="moveRowDown(this)"><i class="bi bi-chevron-down"></i></button>
+                                </div>
+                            </td>
+                            <td class="text-start fw-bold">
+                                <input type="text" class="form-control form-control-sm border-1 border-light bg-transparent fw-bold text-primary shadow-none" value="${cam.name}" onchange="renameCameraInDB(this, '${cam.id}')">
+                            </td>
+                            <td><span class="badge bg-secondary rounded-1">${cam.floor}</span></td>
+                            <td><button class="btn btn-sm btn-outline-danger rounded-1" onclick="deleteCameraFromTable(this, '${cam.id}')"><i class="bi bi-trash3-fill"></i></button></td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                });
+            }
+
+            function filterAdminCameras() { syncCameraTable(); }
+
+            function renameCameraInDB(inputEl, id) {
+                const cam = cameraList.find(c => c.id === id);
+                if(cam) cam.name = inputEl.value;
+                const liveCamText = document.querySelector(`.dynamic-cam-item[data-id="${id}"] .cam-name-text`);
+                if(liveCamText) liveCamText.innerText = inputEl.value;
+            }
+
+            function deleteCameraFromTable(btn, id) {
+                const row = btn.closest('tr');
+                row.classList.add('animate__animated', 'animate__fadeOutRight');
+                cameraList = cameraList.filter(c => c.id !== id);
+                setTimeout(() => { row.remove(); const liveCam = document.querySelector(`.dynamic-cam-item[data-id="${id}"]`); if(liveCam) liveCam.remove(); }, 500);
+            }
+
+            function addNewCameraRow() {
+                Swal.fire({
+                    title: 'Tên Camera Mới', input: 'text', inputPlaceholder: 'VD: Cam Lối Vào B', showCancelButton: true, confirmButtonText: 'Lưu Camera'
+                }).then((result) => {
+                    if(result.isConfirmed && result.value) {
+                        const name = result.value; const id = 'CUSTOM-' + Math.floor(Math.random()*1000);
+                        cameraList.unshift({ id: id, name: name, floor: currentFloorFilter });
+                        syncCameraTable(); renderCameras();
+                        Swal.fire('Thành công', 'Đã thêm Camera vào hệ thống.', 'success');
+                    }
+                });
+            }
+
+            function moveRowUp(btn) { const row = btn.closest('tr'); const prev = row.previousElementSibling; if (prev) row.parentNode.insertBefore(row, prev); }
+            function moveRowDown(btn) { const row = btn.closest('tr'); const next = row.nextElementSibling; if (next) row.parentNode.insertBefore(next, row); }
+            </text>
+    }
+
+    function showSlotInfo(id, name, plate, img) {
+        document.getElementById('slotDetailCard').classList.remove('d-none'); document.getElementById('emptySlotNotify').classList.add('d-none');
+        document.getElementById('lblSlotId').innerText = id;
+        if (name && name !== 'null' && name !== '') { document.getElementById('slotUser').innerText = name; document.getElementById('slotPlate').innerText = plate; document.getElementById('slotImg').src = img || '/images/no-avatar.png'; }
+        else { resetSlot(); Swal.fire({ title: 'Vị trí ' + id, text: 'Vị trí này hiện đang trống.', icon: 'info', timer: 1500, showConfirmButton: false }); }
+    }
+    function resetSlot() { document.getElementById('slotDetailCard').classList.add('d-none'); document.getElementById('emptySlotNotify').classList.remove('d-none'); }
 </script>
