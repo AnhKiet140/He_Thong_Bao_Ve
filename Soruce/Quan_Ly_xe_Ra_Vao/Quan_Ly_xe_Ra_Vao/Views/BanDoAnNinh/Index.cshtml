@@ -5,8 +5,44 @@
     ViewData["Title"] = "Bản Đồ An Ninh Tổng Hợp";
     string userRole = User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value : "Guest";
 
-    var danhSachXeDangDau = DbContext.LichSuCheckIns
-        .Where(x => x.ViTriDo != null && x.TrangThai != null && x.TrangThai.Contains("đậu"))
+    // 1. Lọc toàn bộ xe ô tô
+    var tatCaLichSu = DbContext.LichSuCheckIns
+        .Where(x => !string.IsNullOrEmpty(x.LoaiXe) && (x.LoaiXe.ToLower().Contains("tô") || x.LoaiXe.ToLower().Contains("oto"))
+                 && !string.IsNullOrEmpty(x.BienSoXe) && x.BienSoXe != "---" && x.BienSoXe.ToLower() != "n/a")
+        .ToList();
+
+    // 2. Tìm xe đang trong bãi (Vào nhưng chưa Ra)
+    var xeDangTrongBai = tatCaLichSu
+        .GroupBy(x => x.BienSoXe)
+        .Select(g => g.OrderByDescending(x => x.ThoiGian).FirstOrDefault())
+        .Where(last => last != null && last.Huong == "Đi Vào").ToList();
+
+    // 3. ĐÃ FIX: Thuật toán Cấp vị trí ảo đồng bộ y hệt trang Bãi Đỗ Xe (Bỏ đuôi số 0)
+    var usedSlots = xeDangTrongBai.Where(x => !string.IsNullOrEmpty(x.ViTriDo)).Select(x => x.ViTriDo).ToList();
+    foreach (var xe in xeDangTrongBai.Where(x => string.IsNullOrEmpty(x.ViTriDo)))
+    {
+        string p = (xe.LoaiDoiTuong != null && xe.LoaiDoiTuong.ToLower().Contains("nhân viên")) ? "B" : "A";
+        int seed = (xe.HoTen + xe.BienSoXe).GetHashCode();
+        Random rnd = new Random(seed);
+        bool assigned = false;
+        for (int i = 0; i < 50; i++)
+        {
+            string slotId = $"{p}-{rnd.Next(1, 121)}";
+            if (!usedSlots.Contains(slotId)) { xe.ViTriDo = slotId; usedSlots.Add(slotId); assigned = true; break; }
+        }
+        if (!assigned)
+        {
+            for (int i = 1; i <= 120; i++)
+            {
+                string slotId = $"{p}-{i}";
+                if (!usedSlots.Contains(slotId)) { xe.ViTriDo = slotId; usedSlots.Add(slotId); break; }
+            }
+        }
+    }
+
+    // 4. Lấy danh sách gửi xuống Javascript SAU KHI đã cấp vị trí xong
+    var danhSachXeDangDau = xeDangTrongBai
+        .Where(x => !string.IsNullOrEmpty(x.ViTriDo))
         .Select(x => new { ViTri = x.ViTriDo, Loai = x.LoaiDoiTuong ?? "Khách", BienSo = x.BienSoXe ?? "N/A", Ten = x.HoTen ?? "Khách" })
         .ToList();
 }
@@ -292,9 +328,12 @@
     }
 
     @@keyframes blinker {
-        50% {
-            opacity: 0.3;
-        }
+        50%
+
+    {
+        opacity: 0.3;
+    }
+
     }
 
     /* PARKING GRID */
@@ -375,15 +414,18 @@
     }
 
     @@keyframes violationFlash {
-        0% {
-            box-shadow: inset 0 0 5px rgba(220, 53, 69, 0.5), 0 0 5px rgba(220, 53, 69, 0.5);
-            border-color: #dc3545;
-        }
+        0%
 
-        100% {
-            box-shadow: inset 0 0 20px rgba(255, 193, 7, 0.8), 0 0 15px rgba(255, 193, 7, 0.8);
-            border-color: #ffc107;
-        }
+    {
+        box-shadow: inset 0 0 5px rgba(220, 53, 69, 0.5), 0 0 5px rgba(220, 53, 69, 0.5);
+        border-color: #dc3545;
+    }
+
+    100% {
+        box-shadow: inset 0 0 20px rgba(255, 193, 7, 0.8), 0 0 15px rgba(255, 193, 7, 0.8);
+        border-color: #ffc107;
+    }
+
     }
 
     .btn-delete-slot {
@@ -573,15 +615,21 @@
     }
 
     @@media (max-width: 1600px) {
-        .cctv-layout-wrapper.cctv-layout-grid {
-            grid-template-columns: repeat(4, 1fr);
-        }
+        .cctv-layout-wrapper.cctv-layout-grid
+
+    {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
     }
 
     @@media (max-width: 1200px) {
-        .cctv-layout-wrapper.cctv-layout-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
+        .cctv-layout-wrapper.cctv-layout-grid
+
+    {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
     }
 
     .cctv-layout-wrapper.cctv-layout-focus {
@@ -746,14 +794,17 @@
     }
 
     @@keyframes sosbtn {
-        0%, 100% {
-            transform: scale(1);
-        }
+        0%, 100%
 
-        50% {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(220, 53, 69, 0.8);
-        }
+    {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(220, 53, 69, 0.8);
+    }
+
     }
 
     .sos-flashing {

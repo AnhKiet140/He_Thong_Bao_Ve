@@ -1,14 +1,17 @@
 wwwroot\css\site.css
+wwwroot\css\smart-parking.css
 wwwroot\favicon.ico
 wwwroot\images\banner_login.png
 wwwroot\images\face-id.png
 wwwroot\images\faces\face_NV-022_639112932382073408.jpg
 wwwroot\images\faces\face_NV-260409-1023_639114908168308379.jpg
 wwwroot\images\faces\face_NV-260409-1023_639114914850522622.jpg
+wwwroot\images\faces\face_NV-260416-0722_639125065092366963.jpg
 wwwroot\images\faces\face_NV2604070736_639113212344042447.jpg
 wwwroot\images\logo.png
 wwwroot\images\LOGO_AI.png
 wwwroot\js\site.js
+wwwroot\js\smart-parking.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css
@@ -66,5 +69,3 @@ wwwroot\lib\jquery\dist\jquery.js
 wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
-wwwroot\js\smart-parking.js
-wwwroot\css\smart-parking.css

@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Mon Chuyen Nganh\\vixanh\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj": {}
+    "D:\\MON CHUYEN NGANH\\Quản Lý Dự Án Agile\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj": {}
   },
   "projects": {
-    "D:\\Mon Chuyen Nganh\\vixanh\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj": {
+    "D:\\MON CHUYEN NGANH\\Quản Lý Dự Án Agile\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Mon Chuyen Nganh\\vixanh\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj",
+        "projectUniqueName": "D:\\MON CHUYEN NGANH\\Quản Lý Dự Án Agile\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj",
         "projectName": "Quan_Ly_xe_Ra_Vao",
-        "projectPath": "D:\\Mon Chuyen Nganh\\vixanh\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "D:\\Mon Chuyen Nganh\\vixanh\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\obj\\",
+        "projectPath": "D:\\MON CHUYEN NGANH\\Quản Lý Dự Án Agile\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao.csproj",
+        "packagesPath": "C:\\Users\\VAN\\.nuget\\packages\\",
+        "outputPath": "D:\\MON CHUYEN NGANH\\Quản Lý Dự Án Agile\\He_Thong_Bao_Ve\\Soruce\\Quan_Ly_xe_Ra_Vao\\Quan_Ly_xe_Ra_Vao\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\VAN\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -100,7 +100,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

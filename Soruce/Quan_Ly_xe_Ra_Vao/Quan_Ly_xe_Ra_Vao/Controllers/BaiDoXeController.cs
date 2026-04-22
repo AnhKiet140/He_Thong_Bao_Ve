@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Quan_Ly_xe_Ra_Vao.Data;
-using System;
+﻿using System;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Quan_Ly_xe_Ra_Vao.Data;
 
 namespace Quan_Ly_xe_Ra_Vao.Controllers
 {
@@ -36,5 +37,20 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
 
             return View(records);
         }
+
+        // LỆNH DỌN RÁC ĐỂ TEST
+        [AllowAnonymous]
+        public async Task<IActionResult> ClearData()
+        {
+            // Xóa sạch toàn bộ lịch sử xe ra vào
+            _context.LichSuCheckIns.RemoveRange(_context.LichSuCheckIns);
+
+            // Xóa sạch toàn bộ khách đăng ký nháp (nếu muốn)
+            // _context.DangKyKhachs.RemoveRange(_context.DangKyKhachs); 
+
+            await _context.SaveChangesAsync();
+            return Content("🚀 ĐÃ XÓA SẠCH DỮ LIỆU CŨ! Bạn hãy quay lại trang web và nhấn F5 để test lại từ đầu.");
+        }
     }
+
 }

@@ -12,17 +12,7 @@
     string filterStatus = ViewBag.FilterStatus as string ?? "Tất cả";
     string prefix = (currentTang == "B1") ? "A" : "B";
 
-    var danhSachXeDangDau = DbContext.LichSuCheckIns
-        .Where(x => x.ViTriDo != null && x.TrangThai != null && x.TrangThai.Contains("đậu"))
-        .Select(x => new
-        {
-            ViTri = x.ViTriDo,
-            Loai = x.LoaiDoiTuong ?? "Khách",
-            BienSo = x.BienSoXe ?? "N/A",
-            Ten = x.HoTen ?? "Khách vãng lai"
-        })
-        .ToList();
-
+    // 1. Chuẩn hóa dữ liệu đầu vào (Chỉ lấy Ô tô)
     var cleanModel = Model.Where(x =>
         !string.IsNullOrEmpty(x.LoaiXe) &&
         (x.LoaiXe.ToLower().Contains("tô") || x.LoaiXe.ToLower().Contains("oto")) &&
@@ -34,14 +24,16 @@
         !x.BienSoXe.ToLower().Contains("máy")
     ).Select(x => { x.LoaiXe = "Ô tô"; x.BienSoXe = x.BienSoXe.ToUpper(); return x; }).ToList();
 
+    // 2. Tìm xe đang đậu trong bãi
     var xeDangTrongBai = cleanModel
         .GroupBy(x => x.HoTen + "_" + x.BienSoXe)
         .Select(g => g.OrderByDescending(x => x.ThoiGian).FirstOrDefault())
         .Where(last => last != null && last.Huong == "Đi Vào").ToList();
 
+    // 3. Cấp vị trí ảo cho xe (ĐÃ FIX: Bỏ đuôi :D2 để tạo mã A-1 thay vì A-01 để đồng bộ với JS)
     var xeTangNay = xeDangTrongBai.Where(x => string.IsNullOrEmpty(x.ViTriDo) || x.ViTriDo.StartsWith(prefix)).ToList();
-
     List<string> usedSlots = xeTangNay.Where(x => !string.IsNullOrEmpty(x.ViTriDo)).Select(x => x.ViTriDo).ToList();
+
     foreach (var xe in xeTangNay.Where(x => string.IsNullOrEmpty(x.ViTriDo)))
     {
         int seed = $"{xe.HoTen}_{xe.BienSoXe}".GetHashCode();
@@ -49,19 +41,32 @@
         bool assigned = false;
         for (int i = 0; i < 50; i++)
         {
-            string slotId = $"{prefix}-{rnd.Next(1, 121):D2}";
+            string slotId = $"{prefix}-{rnd.Next(1, 121)}"; // Đã xóa :D2
             if (!usedSlots.Contains(slotId)) { xe.ViTriDo = slotId; usedSlots.Add(slotId); assigned = true; break; }
         }
         if (!assigned)
         {
             for (int i = 1; i <= 120; i++)
             {
-                string slotId = $"{prefix}-{i:D2}";
+                string slotId = $"{prefix}-{i}"; // Đã xóa :D2
                 if (!usedSlots.Contains(slotId)) { xe.ViTriDo = slotId; usedSlots.Add(slotId); break; }
             }
         }
     }
 
+    // 4. ĐÃ FIX: Lấy danh sách ĐỂ GỬI CHO JS SAU KHI ĐÃ CẤP VỊ TRÍ XONG
+    var danhSachXeDangDau = xeDangTrongBai
+        .Where(x => !string.IsNullOrEmpty(x.ViTriDo))
+        .Select(x => new
+        {
+            ViTri = x.ViTriDo,
+            Loai = x.LoaiDoiTuong ?? "Khách",
+            BienSo = x.BienSoXe ?? "N/A",
+            Ten = x.HoTen ?? "Khách vãng lai"
+        })
+        .ToList();
+
+    // 5. Chuẩn bị bảng hiển thị
     var tableData = cleanModel.OrderByDescending(x => x.ThoiGian).ToList();
     if (filterStatus == "Đang đậu") tableData = xeDangTrongBai.OrderByDescending(x => x.ThoiGian).ToList();
     else if (filterStatus == "Đã ra") tableData = cleanModel.Where(x => x.Huong == "Đi Ra").OrderByDescending(x => x.ThoiGian).ToList();
@@ -115,7 +120,7 @@
 
     <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="content-sodo">
-            
+
             <div class="card border-0 shadow-sm mb-3 bg-white rounded-2 animate__animated animate__fadeInDown">
                 <div class="card-body d-flex justify-content-between align-items-center p-3 flex-wrap gap-3">
                     <div class="text-center px-4 border-end border-2 flex-fill">
@@ -242,39 +247,39 @@
                     </div>
                 </div>
             </div>
-
-            <div id="slotDetailCard" class="card border-0 shadow-lg p-4 bg-white text-center d-none animate__animated animate__fadeInUp rounded-3" style="position: fixed; bottom: 30px; right: 30px; width: 320px; z-index: 1050;">
-                <h6 class="fw-bold text-muted border-bottom pb-2 mb-3 text-uppercase">Thông Tin Vị Trí <span id="lblSlotId" class="text-primary fs-5"></span></h6>
-                <div class="position-relative d-inline-block mb-3">
-                    <img id="slotImg" src="/images/no-avatar.png" class="rounded-circle shadow border border-3 border-primary" style="width: 130px; height: 130px; object-fit: cover;" onerror="this.src='/images/no-avatar.png'">
-                </div>
-                <h4 id="slotUser" class="fw-bold text-dark mb-1 text-capitalize"></h4>
-                <div id="slotPlate" class="badge bg-primary fs-5 mb-3 px-3 py-2 shadow-sm font-monospace"></div>
-                <button class="btn btn-sm btn-secondary w-100 rounded-1 mt-2 fw-bold" onclick="resetSlot()">Đóng</button>
-            </div>
         </div>
 
-        <div class="tab-pane fade d-none" id="content-cctv">
-            <div class="card border-0 shadow-sm rounded-2 overflow-hidden bg-dark">
-                <div class="card-header bg-black text-white d-flex justify-content-between align-items-center py-3 border-0">
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="fw-bold text-danger animate__animated animate__pulse animate__infinite"><i class="bi bi-record-circle-fill"></i> LIVE MONITORING</span>
-                        <span class="text-white-50 small fw-bold d-none d-md-inline">| KÉO THẢ ĐỂ SẮP XẾP ƯU TIÊN</span>
-                    </div>
-                    <div class="btn-group shadow-sm d-none d-md-flex">
-                        <button class="btn btn-sm btn-primary active" id="btn-layout-grid" onclick="changeCamLayout('grid')" title="Lưới Tiêu Chuẩn (5 Cam/Dòng)"><i class="bi bi-grid-3x3-gap-fill me-1"></i> Lưới 5 Ô</button>
-                        <button class="btn btn-sm btn-dark border-secondary" id="btn-layout-focus" onclick="changeCamLayout('focus')" title="Tiêu Điểm (1 Lớn, Nhiều Nhỏ)"><i class="bi bi-layout-sidebar-inset me-1"></i> Tiêu Điểm</button>
-                        <button class="btn btn-sm btn-dark border-secondary" id="btn-layout-list" onclick="changeCamLayout('list')" title="Danh Sách Dọc"><i class="bi bi-view-list me-1"></i> Xếp Dọc</button>
-                        <button class="btn btn-sm btn-dark border-secondary" id="btn-layout-free" onclick="changeCamLayout('free')" title="Tự Do (Kéo góc chỉnh kích thước)"><i class="bi bi-arrows-move me-1"></i> Tự Do</button>
-                    </div>
-                </div>
-                <div class="card-body p-4 custom-scrollbar" style="background-color: #0a0a0a; height: calc(100vh - 200px); min-height: 650px; overflow-y: auto; overflow-x: hidden;">
-                    <div class="cctv-layout-wrapper cctv-layout-grid gap-3" id="main-camera-grid"></div>
-                </div>
+        <div id="slotDetailCard" class="card border-0 shadow-lg p-4 bg-white text-center d-none animate__animated animate__fadeInUp rounded-3" style="position: fixed; bottom: 30px; right: 30px; width: 320px; z-index: 1050;">
+            <h6 class="fw-bold text-muted border-bottom pb-2 mb-3 text-uppercase">Thông Tin Vị Trí <span id="lblSlotId" class="text-primary fs-5"></span></h6>
+            <div class="position-relative d-inline-block mb-3">
+                <img id="slotImg" src="/images/no-avatar.png" class="rounded-circle shadow border border-3 border-primary" style="width: 130px; height: 130px; object-fit: cover;" onerror="this.src='/images/no-avatar.png'">
             </div>
+            <h4 id="slotUser" class="fw-bold text-dark mb-1 text-capitalize"></h4>
+            <div id="slotPlate" class="badge bg-primary fs-5 mb-3 px-3 py-2 shadow-sm font-monospace"></div>
+            <button class="btn btn-sm btn-secondary w-100 rounded-1 mt-2 fw-bold" onclick="resetSlot()">Đóng</button>
         </div>
-
     </div>
+
+    <div class="tab-pane fade d-none" id="content-cctv">
+        <div class="card border-0 shadow-sm rounded-2 overflow-hidden bg-dark">
+            <div class="card-header bg-black text-white d-flex justify-content-between align-items-center py-3 border-0">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="fw-bold text-danger animate__animated animate__pulse animate__infinite"><i class="bi bi-record-circle-fill"></i> LIVE MONITORING</span>
+                    <span class="text-white-50 small fw-bold d-none d-md-inline">| KÉO THẢ ĐỂ SẮP XẾP ƯU TIÊN</span>
+                </div>
+                <div class="btn-group shadow-sm d-none d-md-flex">
+                    <button class="btn btn-sm btn-primary active" id="btn-layout-grid" onclick="changeCamLayout('grid')" title="Lưới Tiêu Chuẩn (5 Cam/Dòng)"><i class="bi bi-grid-3x3-gap-fill me-1"></i> Lưới 5 Ô</button>
+                    <button class="btn btn-sm btn-dark border-secondary" id="btn-layout-focus" onclick="changeCamLayout('focus')" title="Tiêu Điểm (1 Lớn, Nhiều Nhỏ)"><i class="bi bi-layout-sidebar-inset me-1"></i> Tiêu Điểm</button>
+                    <button class="btn btn-sm btn-dark border-secondary" id="btn-layout-list" onclick="changeCamLayout('list')" title="Danh Sách Dọc"><i class="bi bi-view-list me-1"></i> Xếp Dọc</button>
+                    <button class="btn btn-sm btn-dark border-secondary" id="btn-layout-free" onclick="changeCamLayout('free')" title="Tự Do (Kéo góc chỉnh kích thước)"><i class="bi bi-arrows-move me-1"></i> Tự Do</button>
+                </div>
+            </div>
+            <div class="card-body p-4 custom-scrollbar" style="background-color: #0a0a0a; height: calc(100vh - 200px); min-height: 650px; overflow-y: auto; overflow-x: hidden;">
+                <div class="cctv-layout-wrapper cctv-layout-grid gap-3" id="main-camera-grid"></div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 @if (userRole == "Admin")
@@ -336,7 +341,7 @@
                 <button class="btn btn-sm btn-danger rounded-1 border-0" onclick="closeFloatingWindow('window-manage-camera')"><i class="bi bi-x-lg"></i></button>
             </div>
         </div>
-        
+
         <div class="card-body p-3 bg-card-custom d-flex flex-column" style="overflow: hidden; flex: 1;">
             <div class="d-flex justify-content-between mb-3 align-items-center flex-wrap gap-2">
                 <div class="d-flex gap-2 align-items-center">
@@ -368,12 +373,12 @@
             const win = document.getElementById(winId);
             win.classList.remove('d-none', 'animate__zoomOut');
             win.classList.add('animate__zoomIn');
-            win.style.transform = "translate(-50%, -50%)"; 
+            win.style.transform = "translate(-50%, -50%)";
             win.style.top = "50%"; win.style.left = "50%";
 
             if(winId === 'window-manage-camera') { document.getElementById('adminCamFilter').value = window.APP_CONFIG.currentFloor; syncCameraTable(); }
             if(winId === 'window-manage-parking') autoConfigParking();
-            
+
             makeDraggableWindow(win);
         }
 
@@ -386,7 +391,7 @@
 
         function toggleMaximize(winId) {
             const win = document.getElementById(winId);
-            if (win.classList.contains('floating-maximized')) { win.classList.remove('floating-maximized'); } 
+            if (win.classList.contains('floating-maximized')) { win.classList.remove('floating-maximized'); }
             else { win.classList.add('floating-maximized'); win.style.top = "0"; win.style.left = "0"; win.style.transform = "none"; }
         }
 
@@ -439,8 +444,8 @@
             const type = document.querySelector('input[name="parkType"]:checked').value;
             const zoneInput = document.getElementById('autoZone');
             const idInput = document.getElementById('autoSlotId');
-            if (type === 'Sep') { zoneInput.value = 'Tầng Hầm B1'; idInput.value = 'A-' + (dbCounters.vip + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-warning font-monospace fs-5 rounded-end-1'; } 
-            else if (type === 'Khach') { zoneInput.value = 'Tầng Hầm B1'; idInput.value = 'A-' + (dbCounters.vip + dbCounters.guest + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-info font-monospace fs-5 rounded-end-1'; } 
+            if (type === 'Sep') { zoneInput.value = 'Tầng Hầm B1'; idInput.value = 'A-' + (dbCounters.vip + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-warning font-monospace fs-5 rounded-end-1'; }
+            else if (type === 'Khach') { zoneInput.value = 'Tầng Hầm B1'; idInput.value = 'A-' + (dbCounters.vip + dbCounters.guest + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-info font-monospace fs-5 rounded-end-1'; }
             else { zoneInput.value = 'Tầng Hầm B2'; idInput.value = 'B-' + (dbCounters.emp + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-secondary font-monospace fs-5 rounded-end-1'; }
         }
 
@@ -451,15 +456,15 @@
             let pCode = type === 'NhanVien' ? 'B' : 'A';
 
             let processCreation = () => {
-                closeFloatingWindow('window-manage-parking'); 
+                closeFloatingWindow('window-manage-parking');
                 cameraList.push({ id: slotId, name: `Cam Ô ${slotId}`, floor: floor });
-                
-                if (pCode === 'A') { slotOrderA.push(slotId); localStorage.setItem('chkIn_slotOrder_A', JSON.stringify(slotOrderA));} 
+
+                if (pCode === 'A') { slotOrderA.push(slotId); localStorage.setItem('chkIn_slotOrder_A', JSON.stringify(slotOrderA));}
                 else { slotOrderB.push(slotId); localStorage.setItem('chkIn_slotOrder_B', JSON.stringify(slotOrderB));}
 
                 saveGlobalData();
                 Swal.fire('Thành công!', `Đã tạo vị trí <b>${slotId}</b>.`, 'success').then(() => {
-                    renderMainMap(); if(!document.getElementById('view-camera').classList.contains('d-none')) renderCameras(); 
+                    renderMainMap(); if(!document.getElementById('view-camera').classList.contains('d-none')) renderCameras();
                 });
             };
 
@@ -500,7 +505,7 @@
         function renameCameraInDB(inputEl, id) {
             const cam = cameraList.find(c => c.id === id);
             if(cam) cam.name = inputEl.value;
-            saveGlobalData(); 
+            saveGlobalData();
             const liveCamText = document.querySelector(`.dynamic-main-cam[data-id="${id}"] .cam-name-text`);
             if(liveCamText) liveCamText.innerText = inputEl.value;
         }
@@ -510,8 +515,8 @@
             row.classList.add('animate__animated', 'animate__fadeOutRight');
             cameraList = cameraList.filter(c => c.id !== id);
             saveGlobalData();
-            setTimeout(() => { 
-                row.remove(); 
+            setTimeout(() => {
+                row.remove();
                 const liveCam = document.querySelector(`.dynamic-main-cam[data-id="${id}"]`);
                 if(liveCam) liveCam.remove();
             }, 500);
@@ -533,7 +538,7 @@
 
         function moveRowUp(btn) { const row = btn.closest('tr'); const prev = row.previousElementSibling; if (prev) { row.parentNode.insertBefore(row, prev); saveGlobalData(); } }
         function moveRowDown(btn) { const row = btn.closest('tr'); const next = row.nextElementSibling; if (next) { row.parentNode.insertBefore(next, row); saveGlobalData(); } }
-        
+
         function resetAllData() {
             Swal.fire({
                 title: 'Khôi phục CSDL Gốc?', text: "Hành động này sẽ xóa toàn bộ cài đặt ô đỗ xe và Camera đã thêm. Về trạng thái 240 chỗ mặc định. Bạn chắc chắn?",
@@ -550,8 +555,8 @@
                 }
             });
         }
-        </script>
-    }
+    </script>
+}
 
 <script>
     let rawDataMap = @Html.Raw(Json.Serialize(danhSachXeDangDau));
@@ -572,6 +577,48 @@
         prefixCode: '@currentTang' === 'B1' ? 'A' : 'B',
         parkedCars: parkedCarsMap
     };
+
+    // ĐÃ FIX: BƠM DỮ LIỆU LOCALSTORAGE XUỐNG BẢNG LỊCH SỬ NGAY KHI TẢI TRANG
+    document.addEventListener("DOMContentLoaded", () => {
+        let dynamicCars = JSON.parse(localStorage.getItem('chkIn_parkedCars')) || {};
+        let tbody = document.querySelector('.custom-table tbody');
+
+        let filterSelect = document.querySelector('select[name="filterStatus"]');
+        let filterStatus = filterSelect ? filterSelect.value : 'Tất cả';
+
+        if (Object.keys(dynamicCars).length > 0 && (filterStatus === 'Tất cả' || filterStatus === 'Đang đậu')) {
+            let emptyMsg = tbody.querySelector('td[colspan="6"]');
+            if (emptyMsg) emptyMsg.parentElement.remove();
+
+            for (let slotId in dynamicCars) {
+                let car = dynamicCars[slotId];
+                let timeStr = car.time || new Date().toLocaleTimeString('vi-VN', { hour12: false });
+
+                let tr = document.createElement('tr');
+                tr.className = "animate__animated animate__fadeIn bg-success bg-opacity-10";
+                tr.innerHTML = `
+                    <td class="ps-4 text-start">
+                        <div class="fw-bold">${timeStr}</div>
+                        <small class="text-success fw-bold"><i class="bi bi-record-circle-fill pulse-animation"></i> Live</small>
+                    </td>
+                    <td class="text-start">
+                        <div class="d-flex align-items-center">
+                            <img src="/images/no-avatar.png" class="rounded-circle border shadow-sm me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                            <div>
+                                <div class="fw-bold text-dark text-capitalize">${car.name}</div>
+                                <small class="text-primary fw-bold text-uppercase" style="font-size: 0.7rem;">${car.role}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">🚗 Ô TÔ</span></td>
+                    <td class="font-monospace fw-bold">${car.plate}</td>
+                    <td class="text-danger fw-bold">${slotId}</td>
+                    <td class="pe-4 text-end"><span class="badge bg-success rounded-pill px-3 shadow-sm">Đang đậu</span></td>
+                `;
+                tbody.prepend(tr);
+            }
+        }
+    });
 </script>
 
 <script src="~/js/smart-parking.js"></script>

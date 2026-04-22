@@ -2,7 +2,8 @@
 
 @{
     var isGiamDoc = ViewBag.UserRole == "GiamDoc";
-    ViewData["Title"] = isGiamDoc ? "Hộp Thư Giám Đốc" : "Bảo Vệ - Duyệt Khách Vãng Lai";
+    var isAdmin = ViewBag.UserRole == "Admin";
+    ViewData["Title"] = isGiamDoc ? "Hộp Thư Giám Đốc" : (isAdmin ? "Giám Sát: Lịch Khách Hẹn" : "Bảo Vệ - Duyệt Khách Vãng Lai");
 
     var choDuyetList = Model.Where(x => !string.IsNullOrEmpty(x.TrangThaiDuyet) && x.TrangThaiDuyet.ToLower().Contains("chờ")).ToList();
     var daDuyetList = Model.Where(x => !string.IsNullOrEmpty(x.TrangThaiDuyet) && x.TrangThaiDuyet.ToLower().Contains("đã")).ToList();
@@ -16,6 +17,11 @@
             {
                 <h5 class="fw-bold text-primary mb-1"><i class="bi bi-bell-fill text-warning me-2 pulse-animation"></i>HỘP THƯ GIÁM ĐỐC: YÊU CẦU XIN GẶP</h5>
                 <small class="text-muted fw-bold">PHÊ DUYỆT LỊCH HẸN CHO ĐỐI TÁC VÀ KHÁCH HÀNG</small>
+            }
+            else if (isAdmin)
+            {
+                <h5 class="fw-bold text-danger mb-1"><i class="bi bi-eye-fill text-danger me-2"></i>CHẾ ĐỘ GIÁM SÁT: DANH SÁCH LỊCH HẸN</h5>
+                <small class="text-muted fw-bold">THEO DÕI QUÁ TRÌNH DUYỆT KHÁCH CỦA CÁC PHÒNG BAN (CHỈ XEM)</small>
             }
             else
             {
@@ -97,7 +103,7 @@
                         <div class="row">
                             @foreach (var item in choDuyetList)
                             {
-                                RenderGuestCard(item, true);
+                                RenderGuestCard(item, true, isAdmin);
                             }
                         </div>
                     }
@@ -119,7 +125,7 @@
                         <div class="row">
                             @foreach (var item in daDuyetList)
                             {
-                                RenderGuestCard(item, false);
+                                RenderGuestCard(item, false, isAdmin);
                             }
                         </div>
                     }
@@ -130,7 +136,7 @@
 </div>
 
 @functions {
-    void RenderGuestCard(Quan_Ly_xe_Ra_Vao.Models.DangKyKhach item, bool isPending)
+    void RenderGuestCard(Quan_Ly_xe_Ra_Vao.Models.DangKyKhach item, bool isPending, bool isAdmin)
     {
         var userRole = ViewBag.UserRole as string;
         var isBaoVe = userRole == "BaoVe";
@@ -171,13 +177,21 @@
                     </table>
                 </div>
 
-                @if (isPending)
+                @if (isAdmin)
                 {
+                    // 1. ADMIN - CHỈ XEM, KHÔNG NÚT THAO TÁC
+                    <div class="card-footer bg-light border-top p-3 d-flex justify-content-center">
+                        <span class="badge bg-secondary px-4 py-2 fs-6 shadow-sm"><i class="bi bi-eye"></i> Chế độ Giám Sát</span>
+                    </div>
+                }
+                else if (isPending)
+                {
+                    // 2. KHÔNG PHẢI ADMIN & ĐANG CHỜ DUYỆT
                     <div class="card-footer bg-light border-top p-3 d-flex justify-content-between gap-2">
-                        @if (isBaoVe && (item.BoPhanCanGap == "BOD" || item.BoPhanCanGap == "Ban Giám Đốc" || item.BoPhanCanGap == "HR"))
+                        @if (isBaoVe && (item.BoPhanCanGap == "BOD" || item.BoPhanCanGap == "Ban Giám Đốc" || item.BoPhanCanGap == "HR" || item.BoPhanCanGap == "Phòng Nhân Sự"))
                         {
                             <span class="w-100 text-center text-warning fw-bold p-2 border border-warning rounded-3 bg-white shadow-sm" style="font-size: 0.9em;">
-                                <i class="bi bi-lock-fill"></i> CHỜ XÉT DUYỆT
+                                <i class="bi bi-lock-fill"></i> CHỜ P.BAN XÉT DUYỆT
                             </span>
                         }
                         else
@@ -189,6 +203,7 @@
                 }
                 else
                 {
+                    // 3. KHÔNG PHẢI ADMIN & ĐÃ DUYỆT XONG (CHỜ VÀO CỔNG)
                     @if (isBaoVe)
                     {
                         <div class="card-footer bg-light border-top p-3">

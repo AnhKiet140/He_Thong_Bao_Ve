@@ -121,6 +121,16 @@
 </div>
 
 <style>
+
+    /* Khóa tỷ lệ ảnh chụp Face ID, chống bị zoom hoặc méo mặt */
+    #capturedFaceImg, .captured-face-result {
+        object-fit: cover !important;
+        object-position: center top !important;
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: inherit !important;
+    }
+
     body {
         background-color: #f0f2f5;
     }

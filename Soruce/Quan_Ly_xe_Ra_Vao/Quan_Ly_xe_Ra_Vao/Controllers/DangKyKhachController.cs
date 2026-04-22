@@ -63,37 +63,25 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
         {
             var userRole = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
             var currentName = User.Identity.Name ?? "";
-            var homNay = DateTime.Today;
 
+            // ĐÃ FIX: Bỏ điều kiện (x.ThoiGianHen.Date >= homNay) để hệ thống 
+            // hiển thị toàn bộ đơn chờ duyệt bị tồn đọng từ các ngày trước (trong quá khứ)
             var query = _context.DangKyKhachs.Where(x =>
-                (x.TrangThaiDuyet == "Chờ duyệt" || x.TrangThaiDuyet == "Đã duyệt") &&
-                x.ThoiGianHen.Date >= homNay);
+                x.TrangThaiDuyet == "Chờ duyệt" || x.TrangThaiDuyet == "Đã duyệt");
 
-            // ==========================================
-            // ĐÃ CẬP NHẬT: TÌM KIẾM THÔNG MINH, CHỐNG LỆCH TỪ KHÓA
-            // ==========================================
             if (userRole != "Admin" && userRole != "BaoVe")
             {
                 if (userRole == "GiamDoc")
                 {
-                    query = query.Where(x =>
-                        (!string.IsNullOrEmpty(x.BoPhanCanGap) &&
-                        (x.BoPhanCanGap.ToLower().Contains("bod") || x.BoPhanCanGap.ToLower().Contains("giám đốc")))
-                        || x.NhanVienCanGap == currentName);
+                    query = query.Where(x => x.BoPhanCanGap == "Ban Giám Đốc" || x.BoPhanCanGap == "BOD" || x.NhanVienCanGap == currentName);
                 }
                 else if (userRole == "NhanSu")
                 {
-                    query = query.Where(x =>
-                        (!string.IsNullOrEmpty(x.BoPhanCanGap) &&
-                        (x.BoPhanCanGap.ToLower().Contains("hr") || x.BoPhanCanGap.ToLower().Contains("nhân sự")))
-                        || x.NhanVienCanGap == currentName);
+                    query = query.Where(x => x.BoPhanCanGap == "Phòng Nhân Sự" || x.BoPhanCanGap == "HR" || x.NhanVienCanGap == currentName);
                 }
                 else if (userRole == "KeToan")
                 {
-                    query = query.Where(x =>
-                        (!string.IsNullOrEmpty(x.BoPhanCanGap) &&
-                        (x.BoPhanCanGap.ToLower().Contains("accounting") || x.BoPhanCanGap.ToLower().Contains("kế toán")))
-                        || x.NhanVienCanGap == currentName);
+                    query = query.Where(x => x.BoPhanCanGap == "Phòng Kế Toán" || x.BoPhanCanGap == "ACC" || x.NhanVienCanGap == currentName);
                 }
                 else
                 {
@@ -126,22 +114,27 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
 
             bool coQuyenDuyet = false;
 
-            // Xử lý biến rỗng để tránh lỗi NullReferenceException
-            string boPhan = khach.BoPhanCanGap != null ? khach.BoPhanCanGap.ToLower() : "";
+            // Kiểm tra phân quyền duyệt dựa trên Role của người đang đăng nhập
+            // VÀ giá trị Bộ Phận mà khách đã đăng ký
+            if (khach.NhanVienCanGap == currentName)
+                coQuyenDuyet = true;
+            else if (userRole == "GiamDoc" && (khach.BoPhanCanGap == "Ban Giám Đốc" || khach.BoPhanCanGap == "BOD"))
+                coQuyenDuyet = true;
+            else if (userRole == "NhanSu" && (khach.BoPhanCanGap == "Phòng Nhân Sự" || khach.BoPhanCanGap == "HR"))
+                coQuyenDuyet = true;
+            else if (userRole == "KeToan" && (khach.BoPhanCanGap == "Phòng Kế Toán" || khach.BoPhanCanGap == "ACC"))
+                coQuyenDuyet = true;
+            else if (userRole == "BaoVe")
+                coQuyenDuyet = true;
 
-            if (userRole == "Admin" || userRole == "BaoVe")
-                coQuyenDuyet = true;
-            else if (khach.NhanVienCanGap == currentName)
-                coQuyenDuyet = true;
-            else if (userRole == "GiamDoc" && (boPhan.Contains("bod") || boPhan.Contains("giám đốc")))
-                coQuyenDuyet = true;
-            else if (userRole == "NhanSu" && (boPhan.Contains("hr") || boPhan.Contains("nhân sự")))
-                coQuyenDuyet = true;
-            else if (userRole == "KeToan" && (boPhan.Contains("accounting") || boPhan.Contains("kế toán")))
-                coQuyenDuyet = true;
+            // Admin chỉ được xem, KHÔNG được bấm duyệt thay phòng ban
+            if (userRole == "Admin" && khach.NhanVienCanGap != currentName)
+            {
+                coQuyenDuyet = false;
+            }
 
             if (!coQuyenDuyet)
-                return Json(new { success = false, message = "Bạn không có thẩm quyền duyệt hồ sơ này!" });
+                return Json(new { success = false, message = "Quyền truy cập bị từ chối: Admin chỉ có chức năng giám sát, không được phê duyệt thay phòng ban!" });
 
             khach.TrangThaiDuyet = (hanhDong == "Duyet") ? "Đã duyệt" : "Từ chối";
 
@@ -161,22 +154,13 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
                 if (khach.TrangThaiDuyet != "Đã duyệt")
                     return Json(new { success = false, message = "Khách chưa được duyệt!" });
 
-                // Chuẩn hóa tên phòng ban trước khi lưu Lịch Sử
-                string tenPhongBan = khach.BoPhanCanGap;
-                if (!string.IsNullOrEmpty(tenPhongBan))
-                {
-                    if (tenPhongBan.ToLower().Contains("bod")) tenPhongBan = "Ban Giám Đốc";
-                    else if (tenPhongBan.ToLower().Contains("hr")) tenPhongBan = "Phòng Nhân Sự";
-                    else if (tenPhongBan.ToLower().Contains("accounting")) tenPhongBan = "Phòng Kế Toán";
-                }
-
                 var nhatKy = new LichSuCheckIn
                 {
                     HoTen = khach.HoTen,
                     ThoiGian = DateTime.Now,
                     BienSoXe = khach.BienSoXe,
                     HinhAnh = khach.FaceDataPath,
-                    LoaiDoiTuong = "Khách Hẹn (" + tenPhongBan + ")",
+                    LoaiDoiTuong = "Khách Hẹn (" + khach.BoPhanCanGap + ")", // Lấy nguyên gốc tên phòng ban đã lưu
                     PhuongThuc = "Bảo vệ xác nhận",
                     Huong = "Đi Vào",
                     TrangThai = "Thành Công"
@@ -203,28 +187,21 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
             if (userRole != "Admin" && userRole != "BaoVe")
             {
                 if (userRole == "GiamDoc")
-                    query = query.Where(x =>
-                        (!string.IsNullOrEmpty(x.BoPhanCanGap) &&
-                        (x.BoPhanCanGap.ToLower().Contains("bod") || x.BoPhanCanGap.ToLower().Contains("giám đốc")))
-                        || x.NhanVienCanGap == currentName);
+                    query = query.Where(x => x.BoPhanCanGap == "Ban Giám Đốc" || x.BoPhanCanGap == "BOD" || x.NhanVienCanGap == currentName);
                 else if (userRole == "NhanSu")
-                    query = query.Where(x =>
-                        (!string.IsNullOrEmpty(x.BoPhanCanGap) &&
-                        (x.BoPhanCanGap.ToLower().Contains("hr") || x.BoPhanCanGap.ToLower().Contains("nhân sự")))
-                        || x.NhanVienCanGap == currentName);
+                    query = query.Where(x => x.BoPhanCanGap == "Phòng Nhân Sự" || x.BoPhanCanGap == "HR" || x.NhanVienCanGap == currentName);
                 else if (userRole == "KeToan")
-                    query = query.Where(x =>
-                        (!string.IsNullOrEmpty(x.BoPhanCanGap) &&
-                        (x.BoPhanCanGap.ToLower().Contains("accounting") || x.BoPhanCanGap.ToLower().Contains("kế toán")))
-                        || x.NhanVienCanGap == currentName);
+                    query = query.Where(x => x.BoPhanCanGap == "Phòng Kế Toán" || x.BoPhanCanGap == "ACC" || x.NhanVienCanGap == currentName);
                 else
                     query = query.Where(x => x.NhanVienCanGap == currentName);
             }
 
+            // ĐÃ FIX: Cho phép hiển thị toàn bộ lịch sử nếu không chọn ngày cụ thể
             if (selectedDate.HasValue)
+            {
                 query = query.Where(k => k.ThoiGianHen.Date == selectedDate.Value.Date);
-            else
-                query = query.Where(k => k.ThoiGianHen.Date >= DateTime.Today);
+            }
+            // (Đã xóa đoạn else chặn ngày trong quá khứ ở đây)
 
             if (!string.IsNullOrEmpty(searchString))
                 query = query.Where(k => k.HoTen.Contains(searchString));
@@ -275,9 +252,6 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
             {
                 var worksheet = workbook.Worksheets.Add("Hồ Sơ Khách Hàng");
 
-                // -------------------------------------------------------------
-                // 1. THIẾT KẾ PHẦN ĐẦU BÁO CÁO (HEADER REPORT)
-                // -------------------------------------------------------------
                 var titleCompany = worksheet.Range("A1:J1");
                 titleCompany.Merge().Value = "HỆ THỐNG KIỂM SOÁT AN NINH CHK-IN PRO";
                 titleCompany.Style.Font.Bold = true;
@@ -296,9 +270,6 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
                 titleFilter.Style.Font.FontSize = 10;
                 titleFilter.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-                // -------------------------------------------------------------
-                // 2. THIẾT KẾ CỘT TIÊU ĐỀ DỮ LIỆU
-                // -------------------------------------------------------------
                 int headerRowIdx = 6;
                 worksheet.Cell(headerRowIdx, 1).Value = "STT";
                 worksheet.Cell(headerRowIdx, 2).Value = "HỌ VÀ TÊN KHÁCH";
@@ -321,12 +292,8 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
                 headerRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
                 worksheet.Row(headerRowIdx).Height = 25;
 
-                // -------------------------------------------------------------
-                // 3. ĐỔ DỮ LIỆU VÀ CHÈN ẢNH VÀO BẢNG
-                // -------------------------------------------------------------
                 int row = headerRowIdx + 1;
                 int stt = 1;
-
                 string webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
 
                 foreach (var k in khachs)
@@ -341,34 +308,48 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
 
                     string phuongTien = !string.IsNullOrEmpty(k.BienSoXe) ? $"{k.LoaiXe} - {k.BienSoXe}" : "Không đi xe";
                     worksheet.Cell(row, 8).Value = phuongTien;
-
                     worksheet.Cell(row, 9).Value = k.TrangThaiDuyet;
 
-                    // XỬ LÝ CHÈN ẢNH FACE ID VÀO CỘT 10
+                    // ==========================================
+                    // ĐÃ CẬP NHẬT: Định dạng Hàng & Cỡ ảnh như hình mẫu
+                    // ==========================================
+                    worksheet.Row(row).Height = 90; // Mở rộng hàng cực to để chứa ảnh chân dung
+
                     if (!string.IsNullOrEmpty(k.FaceDataPath))
                     {
                         try
                         {
-                            string relativePath = k.FaceDataPath.StartsWith("/") ? k.FaceDataPath.Substring(1) : k.FaceDataPath;
-                            string imgPath = Path.Combine(webRootPath, relativePath.Replace("/", "\\"));
+                            worksheet.Cell(row, 10).Value = "";
 
-                            if (System.IO.File.Exists(imgPath))
+                            // Tọa độ căn giữa ô (Cách trái 11px, Cách trên 5px), Kích thước ảnh 75x110
+                            if (k.FaceDataPath.StartsWith("data:image"))
                             {
-                                var picture = worksheet.AddPicture(imgPath).MoveTo(worksheet.Cell(row, 10));
-                                picture.Width = 45;
-                                picture.Height = 45;
-
-                                worksheet.Row(row).Height = 35;
-                                worksheet.Cell(row, 10).Value = "";
+                                string base64Data = k.FaceDataPath.Substring(k.FaceDataPath.IndexOf(",") + 1);
+                                byte[] imageBytes = Convert.FromBase64String(base64Data);
+                                using (var ms = new MemoryStream(imageBytes))
+                                {
+                                    worksheet.AddPicture(ms).MoveTo(worksheet.Cell(row, 10), 11, 5).WithSize(75, 110);
+                                }
                             }
                             else
                             {
-                                worksheet.Cell(row, 10).Value = "(Có link ảnh)";
+                                string relativePath = k.FaceDataPath.StartsWith("/") ? k.FaceDataPath.Substring(1) : k.FaceDataPath;
+                                string imgPath = Path.Combine(webRootPath, relativePath.Replace("/", "\\"));
+
+                                if (System.IO.File.Exists(imgPath))
+                                {
+                                    worksheet.AddPicture(imgPath).MoveTo(worksheet.Cell(row, 10), 11, 5).WithSize(75, 110);
+                                }
+                                else
+                                {
+                                    worksheet.Cell(row, 10).Value = "(Có link ảnh)";
+                                }
                             }
                         }
                         catch
                         {
-                            worksheet.Cell(row, 10).Value = "(Dữ liệu ảnh)";
+                            worksheet.Cell(row, 10).Value = "(Lỗi ảnh)";
+                            worksheet.Cell(row, 10).Style.Font.FontColor = XLColor.Red;
                         }
                     }
                     else
@@ -378,12 +359,9 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
                         worksheet.Cell(row, 10).Style.Font.FontColor = XLColor.Gray;
                     }
 
-                    worksheet.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                    worksheet.Cell(row, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                    worksheet.Cell(row, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                    worksheet.Cell(row, 9).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                    worksheet.Cell(row, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                    worksheet.Cell(row, 10).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                    var rowRange = worksheet.Range($"A{row}:J{row}");
+                    rowRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    rowRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
                     if (k.TrangThaiDuyet == "Đã duyệt") worksheet.Cell(row, 9).Style.Font.FontColor = XLColor.SeaGreen;
                     else if (k.TrangThaiDuyet == "Từ chối") worksheet.Cell(row, 9).Style.Font.FontColor = XLColor.Red;
@@ -397,11 +375,11 @@ namespace Quan_Ly_xe_Ra_Vao.Controllers
                     var dataRange = worksheet.Range($"A{headerRowIdx + 1}:J{row - 1}");
                     dataRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
                     dataRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-                    dataRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 }
 
+                // Chỉnh cột cho vừa vặn
                 worksheet.Columns(1, 9).AdjustToContents();
-                worksheet.Column(10).Width = 12;
+                worksheet.Column(10).Width = 14; // Cố định bề ngang cột ảnh
 
                 using (var stream = new MemoryStream())
                 {
