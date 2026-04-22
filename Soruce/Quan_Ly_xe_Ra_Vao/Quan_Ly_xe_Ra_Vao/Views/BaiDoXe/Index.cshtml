@@ -4,7 +4,6 @@
 
 @{
     ViewData["Title"] = "Quản Lý Bãi Xe Thông Minh";
-
     string userRole = User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value : "Guest";
 
     string currentTang = ViewBag.CurrentTang ?? "B1";
@@ -13,7 +12,6 @@
     string filterStatus = ViewBag.FilterStatus as string ?? "Tất cả";
     string prefix = (currentTang == "B1") ? "A" : "B";
 
-    // ĐÃ FIX LỖI CS0103: Thêm biến lấy dữ liệu xe đang đậu từ Database
     var danhSachXeDangDau = DbContext.LichSuCheckIns
         .Where(x => x.ViTriDo != null && x.TrangThai != null && x.TrangThai.Contains("đậu"))
         .Select(x => new
@@ -41,8 +39,6 @@
         .Select(g => g.OrderByDescending(x => x.ThoiGian).FirstOrDefault())
         .Where(last => last != null && last.Huong == "Đi Vào").ToList();
 
-    int totalOccupied = xeDangTrongBai.Count;
-    int availableSlots = 240 - totalOccupied;
     var xeTangNay = xeDangTrongBai.Where(x => string.IsNullOrEmpty(x.ViTriDo) || x.ViTriDo.StartsWith(prefix)).ToList();
 
     List<string> usedSlots = xeTangNay.Where(x => !string.IsNullOrEmpty(x.ViTriDo)).Select(x => x.ViTriDo).ToList();
@@ -75,6 +71,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="~/css/smart-parking.css" />
 
 <div class="container-fluid mt-2 animate__animated animate__fadeIn" id="main-container">
 
@@ -87,12 +84,12 @@
         <div class="d-flex gap-2 align-items-center">
             <ul class="nav nav-pills custom-pills me-3" id="pills-tab" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active fw-bold px-4 rounded-1 shadow-sm" id="tab-sodo" data-bs-toggle="pill" data-bs-target="#content-sodo" type="button" role="tab">
+                    <button class="nav-link active fw-bold px-4 rounded-1 shadow-sm" id="tab-sodo" onclick="switchTab('sodo')">
                         <i class="bi bi-grid-3x3-gap-fill"></i> SƠ ĐỒ VỊ TRÍ & LỊCH SỬ
                     </button>
                 </li>
                 <li class="nav-item ms-2" role="presentation">
-                    <button class="nav-link fw-bold px-4 rounded-1 shadow-sm" id="tab-cctv" data-bs-toggle="pill" data-bs-target="#content-cctv" type="button" role="tab" onclick="renderCameras()">
+                    <button class="nav-link fw-bold px-4 rounded-1 shadow-sm" id="tab-cctv" onclick="switchTab('cctv')">
                         <i class="bi bi-camera-video-fill"></i> GIÁM SÁT CHI TIẾT
                     </button>
                 </li>
@@ -108,6 +105,8 @@
                         <li><a class="dropdown-item fw-bold text-primary py-2" href="#" onclick="openFloatingWindow('window-manage-camera')"><i class="bi bi-camera-video me-2"></i>Thêm Camera Giám Sát</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item fw-bold text-success py-2" href="#" onclick="openFloatingWindow('window-manage-parking')"><i class="bi bi-p-square me-2"></i>Thiết lập Ô Đỗ Xe (Tự động)</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item fw-bold text-danger py-2" href="#" onclick="resetAllData()"><i class="bi bi-arrow-clockwise me-2"></i>Khôi phục CSDL Gốc</a></li>
                     </ul>
                 </div>
             }
@@ -115,10 +114,41 @@
     </div>
 
     <div class="tab-content" id="pills-tabContent">
-        <div class="tab-pane fade show active" id="content-sodo" role="tabpanel">
+        <div class="tab-pane fade show active" id="content-sodo">
+            
+            <div class="card border-0 shadow-sm mb-3 bg-white rounded-2 animate__animated animate__fadeInDown">
+                <div class="card-body d-flex justify-content-between align-items-center p-3 flex-wrap gap-3">
+                    <div class="text-center px-4 border-end border-2 flex-fill">
+                        <h6 class="fw-bold text-muted mb-1 text-uppercase">TỔNG BÃI XE</h6>
+                        <h3 class="fw-bold text-primary mb-0 font-monospace" id="ui-total-slots">240</h3>
+                    </div>
+                    <div class="text-center px-4 border-end border-2 flex-fill">
+                        <h6 class="fw-bold text-muted mb-1 text-uppercase">ĐANG TRỐNG</h6>
+                        <h3 class="fw-bold text-success mb-0 font-monospace" id="ui-empty-slots">240</h3>
+                    </div>
+                    <div class="text-center px-4 border-end border-2 flex-fill">
+                        <h6 class="fw-bold text-muted mb-1 text-uppercase">ĐANG ĐẬU</h6>
+                        <h3 class="fw-bold text-danger mb-0 font-monospace" id="occupiedCount">0</h3>
+                    </div>
+                    <div class="text-center px-4 border-end border-2 flex-fill">
+                        <h6 class="fw-bold text-muted mb-1 text-uppercase">ĐỖ SAI QUY ĐỊNH</h6>
+                        <h3 class="fw-bold text-warning mb-0 font-monospace blink-text" id="violationCount">0</h3>
+                    </div>
+                    <div class="flex-grow-1 px-4 min-w-200">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="fw-bold text-muted">Tỉ lệ lấp đầy</small>
+                            <small class="fw-bold text-success"><i class="bi bi-check-circle-fill"></i> Đã Đồng Bộ</small>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 12px;">
+                            <div id="ui-progress-bar" class="progress-bar bg-success progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="row g-3">
-                <div class="col-lg-8">
-                    <div class="card border-0 shadow-sm p-4 h-100 bg-dark" style="background-image: linear-gradient(rgba(59, 130, 246, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.08) 1px, transparent 1px); background-size: 25px 25px;">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm p-4 bg-dark blueprint-frame">
                         <div class="d-flex justify-content-between align-items-center mb-4 bg-black p-3 rounded-2 shadow-sm border border-secondary">
                             <h5 class="fw-bold text-info mb-0 text-uppercase">
                                 <i class="bi bi-grid-3x3-gap"></i> SƠ ĐỒ VỊ TRÍ - TẦNG @currentTang (TRANG @currentPage)
@@ -131,38 +161,14 @@
                             <div class="d-flex gap-2">
                                 <div class="btn-group shadow-sm">
                                     <a href="@Url.Action("Index", new { tang = "B1", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
-                                       class="btn btn-sm @(currentTang == "B1" ? "btn-info text-dark" : "btn-outline-secondary text-light") fw-bold">Khu A (Khách)</a>
+                                       class="btn btn-sm @(currentTang == "B1" ? "btn-info text-dark" : "btn-outline-secondary text-light") fw-bold">Khu A (Khách & VIP)</a>
                                     <a href="@Url.Action("Index", new { tang = "B2", selectedDate = selectedDate, searchName = ViewBag.SearchName })"
                                        class="btn btn-sm @(currentTang == "B2" ? "btn-info text-dark" : "btn-outline-secondary text-light") fw-bold">Khu B (NV)</a>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="dynamic-main-parking-grid" class="w-100 pb-3"></div>
-
-                    </div>
-                </div>
-
-                <div class="col-lg-4 d-flex flex-column gap-3">
-                    <div id="slotDetailCard" class="card border-0 shadow-sm p-4 bg-white text-center d-none animate__animated animate__fadeInRight rounded-2">
-                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-3 text-uppercase">Vị trí <span id="lblSlotId" class="text-primary"></span></h6>
-                        <div class="position-relative d-inline-block mb-3">
-                            <img id="slotImg" src="/images/no-avatar.png" class="rounded-circle shadow border border-3 border-primary" style="width: 120px; height: 120px; object-fit: cover;" onerror="this.src='/images/no-avatar.png'">
-                        </div>
-                        <h4 id="slotUser" class="fw-bold text-dark mb-1 text-capitalize"></h4>
-                        <div id="slotPlate" class="badge bg-primary fs-5 mb-3 px-3 py-2 shadow-sm font-monospace"></div>
-                        <button class="btn btn-sm btn-outline-secondary w-100 rounded-1 mt-2 fw-bold" onclick="resetSlot()">Đóng xem nhanh</button>
-                    </div>
-
-                    <div id="emptySlotNotify" class="p-4 bg-white text-center rounded-2 shadow-sm d-flex flex-column justify-content-center h-100">
-                        <h6 class="fw-bold text-muted text-uppercase mb-3">BÃI ĐỖ XE TỔNG HỢP</h6>
-                        <h1 class="display-1 fw-bold @(availableSlots < 20 ? "text-danger" : "text-success") mb-0" id="ui-empty-slots">@availableSlots</h1>
-                        <p class="text-muted small fw-bold">CHỖ TRỐNG TRÊN TOÀN HỆ THỐNG</p>
-
-                        <div class="progress mb-2 mx-auto w-75 rounded-pill" style="height: 12px;">
-                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: @((availableSlots / 240.0) * 100)%"></div>
-                        </div>
-                        <small class="text-success fw-bold">TRẠNG THÁI: ĐÃ ĐỒNG BỘ</small>
+                        <div id="dynamic-main-parking-grid" class="w-100 pb-3 custom-scrollbar" style="max-height: 600px; overflow-y: auto; overflow-x: hidden; padding-right: 10px;"></div>
                     </div>
                 </div>
 
@@ -196,9 +202,9 @@
                             </form>
                         </div>
                         <div class="card-body p-0">
-                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <div class="table-responsive custom-scrollbar" style="max-height: 400px; overflow-y: auto;">
                                 <table class="table table-hover align-middle mb-0 text-center custom-table">
-                                    <thead class="table-dark small fw-bold text-uppercase sticky-top">
+                                    <thead class="table-light small fw-bold text-uppercase sticky-top">
                                         <tr><th class="ps-4 text-start">Thời gian</th><th class="text-start">Nhân viên</th><th>Loại Xe</th><th>Biển số</th><th>Vị trí</th><th class="pe-4 text-end">Trạng thái</th></tr>
                                     </thead>
                                     <tbody>
@@ -216,17 +222,19 @@
                                                     <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">🚗 Ô TÔ</span></td>
                                                     <td class="font-monospace fw-bold">@item.BienSoXe</td>
                                                     <td class="text-danger fw-bold">@(item.Huong == "Đi Ra" ? "---" : (item.ViTriDo ?? "---"))</td>
-                                                    <td class="pe-4 text-end">@if (item.Huong == "Đi Vào") {
-                                                    <span class="badge bg-success rounded-pill px-3 shadow-sm">Đang đậu</span>
-                                                } else
-                                                {
-
-                                                    <span class="badge bg-warning text-dark rounded-pill px-3 shadow-sm">Đã ra</span>
-                                                }
-    </td>
-                                            </tr>
+                                                    <td class="pe-4 text-end">
+                                                        @if (item.Huong == "Đi Vào")
+                                                        {
+                                                            <span class="badge bg-success rounded-pill px-3 shadow-sm">Đang đậu</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-warning text-dark rounded-pill px-3 shadow-sm">Đã ra</span>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
                                         }
-                                                                                }
                                     </tbody>
                                 </table>
                             </div>
@@ -234,19 +242,34 @@
                     </div>
                 </div>
             </div>
+
+            <div id="slotDetailCard" class="card border-0 shadow-lg p-4 bg-white text-center d-none animate__animated animate__fadeInUp rounded-3" style="position: fixed; bottom: 30px; right: 30px; width: 320px; z-index: 1050;">
+                <h6 class="fw-bold text-muted border-bottom pb-2 mb-3 text-uppercase">Thông Tin Vị Trí <span id="lblSlotId" class="text-primary fs-5"></span></h6>
+                <div class="position-relative d-inline-block mb-3">
+                    <img id="slotImg" src="/images/no-avatar.png" class="rounded-circle shadow border border-3 border-primary" style="width: 130px; height: 130px; object-fit: cover;" onerror="this.src='/images/no-avatar.png'">
+                </div>
+                <h4 id="slotUser" class="fw-bold text-dark mb-1 text-capitalize"></h4>
+                <div id="slotPlate" class="badge bg-primary fs-5 mb-3 px-3 py-2 shadow-sm font-monospace"></div>
+                <button class="btn btn-sm btn-secondary w-100 rounded-1 mt-2 fw-bold" onclick="resetSlot()">Đóng</button>
+            </div>
         </div>
 
-        <div class="tab-pane fade" id="content-cctv" role="tabpanel">
+        <div class="tab-pane fade d-none" id="content-cctv">
             <div class="card border-0 shadow-sm rounded-2 overflow-hidden bg-dark">
                 <div class="card-header bg-black text-white d-flex justify-content-between align-items-center py-3 border-0">
                     <div class="d-flex align-items-center gap-3">
                         <span class="fw-bold text-danger animate__animated animate__pulse animate__infinite"><i class="bi bi-record-circle-fill"></i> LIVE MONITORING</span>
-                        <span class="text-white-50 small fw-bold">| KÉO GÓC ĐỂ CHỈNH KÍCH THƯỚC | KÉO THẢ ĐỂ SẮP XẾP</span>
+                        <span class="text-white-50 small fw-bold d-none d-md-inline">| KÉO THẢ ĐỂ SẮP XẾP ƯU TIÊN</span>
+                    </div>
+                    <div class="btn-group shadow-sm d-none d-md-flex">
+                        <button class="btn btn-sm btn-primary active" id="btn-layout-grid" onclick="changeCamLayout('grid')" title="Lưới Tiêu Chuẩn (5 Cam/Dòng)"><i class="bi bi-grid-3x3-gap-fill me-1"></i> Lưới 5 Ô</button>
+                        <button class="btn btn-sm btn-dark border-secondary" id="btn-layout-focus" onclick="changeCamLayout('focus')" title="Tiêu Điểm (1 Lớn, Nhiều Nhỏ)"><i class="bi bi-layout-sidebar-inset me-1"></i> Tiêu Điểm</button>
+                        <button class="btn btn-sm btn-dark border-secondary" id="btn-layout-list" onclick="changeCamLayout('list')" title="Danh Sách Dọc"><i class="bi bi-view-list me-1"></i> Xếp Dọc</button>
+                        <button class="btn btn-sm btn-dark border-secondary" id="btn-layout-free" onclick="changeCamLayout('free')" title="Tự Do (Kéo góc chỉnh kích thước)"><i class="bi bi-arrows-move me-1"></i> Tự Do</button>
                     </div>
                 </div>
-                <div class="card-body p-4 custom-scrollbar" style="background-color: #0a0a0a; height: 750px; overflow-y: auto; overflow-x: hidden;">
-                    <div class="d-flex flex-wrap gap-3" id="cctv-grid-view">
-                    </div>
+                <div class="card-body p-4 custom-scrollbar" style="background-color: #0a0a0a; height: calc(100vh - 200px); min-height: 650px; overflow-y: auto; overflow-x: hidden;">
+                    <div class="cctv-layout-wrapper cctv-layout-grid gap-3" id="main-camera-grid"></div>
                 </div>
             </div>
         </div>
@@ -296,7 +319,7 @@
                     </div>
                 </div>
                 <div class="text-center mt-3">
-                    <button class="btn btn-primary btn-sm rounded-1 px-4 fw-bold shadow" onclick="submitCreateParking()"><i class="bi bi-magic me-2"></i> KHỞI TẠO BÃI ĐỖ</button>
+                    <button class="btn btn-primary btn-sm rounded-1 px-4 fw-bold shadow" onclick="submitCreateParking()"><i class="bi bi-magic me-2"></i> LƯU VÀ ĐỒNG BỘ</button>
                 </div>
             </div>
         </div>
@@ -313,15 +336,15 @@
                 <button class="btn btn-sm btn-danger rounded-1 border-0" onclick="closeFloatingWindow('window-manage-camera')"><i class="bi bi-x-lg"></i></button>
             </div>
         </div>
-
+        
         <div class="card-body p-3 bg-card-custom d-flex flex-column" style="overflow: hidden; flex: 1;">
             <div class="d-flex justify-content-between mb-3 align-items-center flex-wrap gap-2">
                 <div class="d-flex gap-2 align-items-center">
                     <label class="fw-bold text-muted text-nowrap small"><i class="bi bi-funnel-fill"></i> Lọc Tầng:</label>
-                    <select id="adminCamFilter" class="form-select form-select-sm shadow-sm border-secondary fw-bold" onchange="filterAdminCameras()" style="width: 150px;">
+                    <select id="adminCamFilter" class="form-select form-select-sm shadow-sm border-secondary fw-bold" onchange="syncCameraTable()" style="width: 150px;">
                         <option value="all">Hiển thị Tất Cả</option>
-                        <option value="B1">Tầng Hầm B1</option>
-                        <option value="B2">Tầng Hầm B2</option>
+                        <option value="basement_A">Tầng Hầm B1</option>
+                        <option value="basement_B">Tầng Hầm B2</option>
                     </select>
                 </div>
                 <div class="d-flex gap-2">
@@ -329,766 +352,226 @@
                 </div>
             </div>
 
-            <div class="table-responsive rounded-2 shadow-sm border" style="flex: 1; overflow-y: auto;">
+            <div class="table-responsive rounded-2 shadow-sm border custom-scrollbar" style="flex: 1; overflow-y: auto;">
                 <table class="table table-hover align-middle mb-0 text-center bg-white" id="cameraAdminTable">
                     <thead class="table-dark text-uppercase small sticky-top">
-                        <tr>
-                            <th style="width: 80px;">Sắp xếp</th>
-                            <th class="text-start">Tên Camera (Click sửa)</th>
-                            <th>Khu vực</th>
-                            <th>Xóa</th>
-                        </tr>
+                        <tr><th style="width: 80px;">Sắp xếp</th><th class="text-start">Tên Camera (Click sửa)</th><th>Khu vực</th><th>Xóa</th></tr>
                     </thead>
-                    <tbody>
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
     </div>
-}
 
-<style>
-    .custom-pills .nav-link {
-        color: #495057;
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        transition: 0.2s;
-    }
+    <script>
+        function openFloatingWindow(winId) {
+            const win = document.getElementById(winId);
+            win.classList.remove('d-none', 'animate__zoomOut');
+            win.classList.add('animate__zoomIn');
+            win.style.transform = "translate(-50%, -50%)"; 
+            win.style.top = "50%"; win.style.left = "50%";
 
-        .custom-pills .nav-link:hover, .custom-pills .nav-link.active {
-            color: #fff;
-            background-color: #0d6efd;
-            border-color: #0d6efd;
+            if(winId === 'window-manage-camera') { document.getElementById('adminCamFilter').value = window.APP_CONFIG.currentFloor; syncCameraTable(); }
+            if(winId === 'window-manage-parking') autoConfigParking();
+            
+            makeDraggableWindow(win);
         }
 
-    .custom-table tbody tr:hover {
-        background-color: #f8f9fa;
-        border-left: 4px solid #0d6efd;
-    }
-
-    /* PARKING GRID */
-    .parking-block {
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(13, 202, 240, 0.3);
-        padding: 15px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-    }
-
-    .parking-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-        gap: 12px;
-        min-height: 85px;
-    }
-
-    .parking-slot {
-        height: 85px;
-        border-radius: 6px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 0.75rem;
-        cursor: grab;
-        transition: 0.3s;
-        position: relative;
-    }
-
-        .parking-slot:active {
-            cursor: grabbing;
+        function closeFloatingWindow(winId) {
+            const win = document.getElementById(winId);
+            win.classList.remove('animate__zoomIn', 'floating-maximized');
+            win.classList.add('animate__zoomOut');
+            setTimeout(() => { win.classList.add('d-none'); }, 300);
         }
 
-        .parking-slot:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        function toggleMaximize(winId) {
+            const win = document.getElementById(winId);
+            if (win.classList.contains('floating-maximized')) { win.classList.remove('floating-maximized'); } 
+            else { win.classList.add('floating-maximized'); win.style.top = "0"; win.style.left = "0"; win.style.transform = "none"; }
         }
 
-    .sortable-ghost {
-        opacity: 0.4;
-        background-color: rgba(255,255,255,0.1) !important;
-        border: 2px dashed #0d6efd !important;
-    }
+        function makeDraggableWindow(win) {
+            const header = win.querySelector('.floating-header');
+            const resizers = win.querySelectorAll('.resizer');
+            let isResizing = false; let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 
-    .slot-vip {
-        background: rgba(255, 193, 7, 0.05);
-        border: 2px solid rgba(255, 193, 7, 0.4);
-        color: rgba(255, 193, 7, 0.8);
-    }
-
-    .slot-customer {
-        background: rgba(13, 202, 240, 0.05);
-        border: 2px solid rgba(13, 202, 240, 0.4);
-        color: rgba(13, 202, 240, 0.8);
-    }
-
-    .slot-employee {
-        background: rgba(108, 117, 125, 0.1);
-        border: 2px solid rgba(108, 117, 125, 0.4);
-        color: rgba(108, 117, 125, 0.8);
-    }
-
-    .slot-occupied {
-        background: rgba(25, 135, 84, 0.15) !important;
-        border: 2px solid #198754 !important;
-        color: #198754 !important;
-        box-shadow: inset 0 0 15px rgba(25, 135, 84, 0.2);
-    }
-
-    .btn-delete-slot {
-        width: 22px;
-        height: 22px;
-        transform: translate(30%, -30%);
-        z-index: 5;
-        transition: 0.2s;
-        opacity: 0;
-    }
-
-    .parking-slot:hover .btn-delete-slot {
-        opacity: 1;
-    }
-
-    .btn-delete-slot:hover {
-        transform: translate(30%, -30%) scale(1.2);
-    }
-
-    .mini-driveway {
-        border: 1px dashed rgba(255, 255, 255, 0.2);
-        padding: 5px;
-        border-radius: 4px;
-    }
-
-    .driveway-clean {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 20px;
-        margin: 15px 0;
-        border-top: 2px dashed rgba(255,193,7,0.5);
-        border-bottom: 2px dashed rgba(255,193,7,0.5);
-        background: rgba(255,193,7,0.05);
-        color: rgba(255,193,7,0.8);
-        font-weight: bold;
-        font-size: 0.8rem;
-        letter-spacing: 1px;
-    }
-
-    /* CAMERA FEED (RESIZE 8 HƯỚNG BẰNG CSS) */
-    .cam-feed {
-        background: #1a1a1a;
-        border: 1px solid #333;
-        position: relative;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        display: flex;
-        flex-direction: column;
-        transition: border-color 0.3s, box-shadow 0.3s;
-        cursor: grab;
-        resize: both;
-        overflow: hidden;
-        min-width: 250px;
-        min-height: 200px;
-    }
-
-        .cam-feed:active {
-            cursor: grabbing;
-        }
-
-        .cam-feed:hover {
-            border-color: #0d6efd;
-            box-shadow: 0 0 15px rgba(13, 110, 253, 0.4);
-        }
-
-    .cam-content {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: radial-gradient(circle, #2a2a2a 0%, #000 100%);
-        z-index: 1;
-    }
-
-        .cam-content i {
-            font-size: 4rem;
-        }
-
-    .cam-status {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: rgba(25, 135, 84, 0.8);
-        color: white;
-        padding: 2px 8px;
-        font-size: 0.7rem;
-        font-weight: bold;
-        z-index: 2;
-        pointer-events: none;
-    }
-
-    .cam-title {
-        position: absolute;
-        top: 10px;
-        right: 40px;
-        color: white;
-        font-size: 0.8rem;
-        font-weight: bold;
-        text-shadow: 1px 1px 3px black;
-        z-index: 2;
-        pointer-events: none;
-    }
-
-    .btn-fullscreen {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        width: 25px;
-        height: 25px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: 0.2s;
-        z-index: 5;
-    }
-
-        .btn-fullscreen:hover {
-            background: rgba(255,255,255,0.5);
-            transform: scale(1.1);
-        }
-
-    .cam-overlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(0,0,0,0.8);
-        padding: 5px 15px;
-        font-family: monospace;
-        color: #0dcaf0;
-        font-size: 0.75rem;
-        display: flex;
-        justify-content: space-between;
-        margin: 0;
-        z-index: 2;
-        pointer-events: none;
-    }
-
-    .cam-fullscreen {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 999999 !important;
-        border-radius: 0 !important;
-        background: #000 !important;
-        cursor: default !important;
-        resize: none;
-    }
-
-        .cam-fullscreen .cam-content i {
-            font-size: 15rem !important;
-        }
-
-    /* FLOATING WINDOW (RESIZE MỌI GÓC) */
-    .floating-window {
-        position: fixed;
-        z-index: 9999;
-        background: #fff;
-        border-radius: 4px;
-        box-shadow: 0 10px 50px rgba(0,0,0,0.5);
-        border: 1px solid rgba(0,0,0,0.15);
-        display: flex;
-        flex-direction: column;
-        width: 750px;
-        height: 550px;
-        min-width: 450px;
-        min-height: 350px;
-        top: 50%;
-        left: 50%;
-    }
-
-    .resizer {
-        position: absolute;
-        z-index: 100;
-    }
-
-    .resizer-t {
-        top: -5px;
-        left: 0;
-        width: 100%;
-        height: 10px;
-        cursor: n-resize;
-    }
-
-    .resizer-b {
-        bottom: -5px;
-        left: 0;
-        width: 100%;
-        height: 10px;
-        cursor: s-resize;
-    }
-
-    .resizer-l {
-        top: 0;
-        left: -5px;
-        width: 10px;
-        height: 100%;
-        cursor: w-resize;
-    }
-
-    .resizer-r {
-        top: 0;
-        right: -5px;
-        width: 10px;
-        height: 100%;
-        cursor: e-resize;
-    }
-
-    .resizer-tl {
-        top: -5px;
-        left: -5px;
-        width: 15px;
-        height: 15px;
-        cursor: nw-resize;
-        z-index: 101;
-    }
-
-    .resizer-tr {
-        top: -5px;
-        right: -5px;
-        width: 15px;
-        height: 15px;
-        cursor: ne-resize;
-        z-index: 101;
-    }
-
-    .resizer-bl {
-        bottom: -5px;
-        left: -5px;
-        width: 15px;
-        height: 15px;
-        cursor: sw-resize;
-        z-index: 101;
-    }
-
-    .resizer-br {
-        bottom: -5px;
-        right: -5px;
-        width: 15px;
-        height: 15px;
-        cursor: se-resize;
-        z-index: 101;
-    }
-
-    .floating-header {
-        cursor: grab;
-        flex-shrink: 0;
-    }
-
-        .floating-header:active {
-            cursor: grabbing;
-        }
-
-    .floating-maximized {
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        border-radius: 0 !important;
-        resize: none;
-        transform: none !important;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #adb5bd;
-        border-radius: 4px;
-    }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #6c757d;
-        }
-
-    [data-bs-theme="dark"] .bg-white {
-        background-color: #1e1e1e !important;
-    }
-
-    [data-bs-theme="dark"] .text-dark {
-        color: #f8f9fa !important;
-    }
-
-    [data-bs-theme="dark"] .floating-window {
-        background: #1e1e1e;
-        border: 1px solid #444;
-        box-shadow: 0 15px 50px rgba(0,0,0,0.8);
-    }
-</style>
-
-<script>
-    const isAdmin = '@userRole' === 'Admin';
-    let currentFloorFilter = '@currentTang';
-    let prefixCode = currentFloorFilter === 'B1' ? 'A' : 'B';
-
-    // TÍCH HỢP LOCALSTORAGE ĐỂ ĐỒNG BỘ DATA XUYÊN TRANG
-    let dbCounters = JSON.parse(localStorage.getItem('chkIn_dbCounters')) || { vip: 24, guest: 60, emp: 120 };
-    let cameraList = [];
-
-    let rawData = @Html.Raw(Json.Serialize(danhSachXeDangDau));
-    let parkedCars = {};
-    if (rawData) { rawData.forEach(car => { if(car.viTri) { let slotNormalized = car.viTri.replace(/\s+/g, '').toUpperCase(); parkedCars[slotNormalized] = { role: car.loai, plate: car.bienSo, name: car.ten }; } }); }
-    let totalViolations = 0;
-    let sortableCameraGrid = null;
-
-    function saveCounters() { localStorage.setItem('chkIn_dbCounters', JSON.stringify(dbCounters)); }
-
-    // ==========================================
-    // 1. TẠO BÃI ĐỖ VÀ TỰ ĐỘNG CHIA LƯỚI ĐƯỜNG ĐI
-    // ==========================================
-    function renderMainMap() {
-        const container = document.getElementById('dynamic-main-parking-grid');
-        if (!container) return;
-        container.innerHTML = '';
-
-        let totalSlots = prefixCode === 'A' ? (dbCounters.vip + dbCounters.guest) : dbCounters.emp;
-        let html = '';
-        const slotsPerRow = 12;
-        const rowsPerBlock = 2; // Cứ 2 dòng là chèn 1 đường đi
-        let currentSlot = 1;
-
-        while (currentSlot <= totalSlots) {
-            let endSlot = Math.min(currentSlot + (slotsPerRow * rowsPerBlock) - 1, totalSlots);
-            html += `<div class="parking-block mb-3"><div class="parking-grid">`;
-
-            for (let i = currentSlot; i <= endSlot; i++) {
-                let slotId = `${prefixCode}-${i}`;
-                let parkedCarInfo = parkedCars[slotId];
-                let isOccupied = !!parkedCarInfo;
-
-                let roleClass = ''; let roleLabel = ''; let roleIcon = ''; let intendedRole = '';
-                if (prefixCode === 'A') {
-                    if (i <= dbCounters.vip) { intendedRole = 'VIP'; roleClass = 'slot-vip'; roleLabel = 'VIP/SẾP'; roleIcon = '<i class="bi bi-star-fill mb-1"></i>'; }
-                    else { intendedRole = 'Khách'; roleClass = 'slot-customer'; roleLabel = 'KHÁCH'; roleIcon = '<i class="bi bi-person-badge mb-1"></i>'; }
-                } else {
-                    intendedRole = 'Nhân Viên'; roleClass = 'slot-employee'; roleLabel = 'NHÂN VIÊN'; roleIcon = '<i class="bi bi-person-vcard mb-1"></i>';
+            header.onmousedown = function(e) {
+                if (e.target.closest('button') || win.classList.contains('floating-maximized')) return;
+                e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY;
+                document.onmouseup = closeDragElement; document.onmousemove = elementDrag;
+            };
+            function elementDrag(e) {
+                e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY;
+                if (win.style.transform.includes('translate')) {
+                    const rect = win.getBoundingClientRect(); win.style.transform = "none"; win.style.top = rect.top + "px"; win.style.left = rect.left + "px";
                 }
-
-                let cssClass = isOccupied ? 'slot-occupied' : roleClass;
-                let content = isOccupied
-                    ? `<i class="bi bi-car-front-fill car-icon animate__animated animate__zoomIn text-success"></i><span style="font-size:0.55rem; color:#fff" class="bg-success px-1 rounded mt-1">${parkedCarInfo.plate}</span>`
-                    : `${roleIcon}<span style="font-size: 0.5rem; opacity: 0.8">${roleLabel}</span><span class="fw-bold mt-1" style="font-size: 0.8rem;">${slotId}</span>`;
-
-                let adminDeleteBtn = isAdmin ? `<button class="btn btn-danger position-absolute top-0 end-0 p-0 rounded-circle d-flex align-items-center justify-content-center btn-delete-slot" onclick="deleteSlot('${slotId}', event)" title="Xóa ô đỗ này"><i class="bi bi-x" style="font-size: 14px; margin: 0;"></i></button>` : '';
-
-                html += `<div class="parking-slot ${cssClass} animate__animated animate__fadeIn" onclick="showSlotInfo('${slotId}', '${isOccupied?parkedCarInfo.name:''}', '${isOccupied?parkedCarInfo.plate:''}', '')">${adminDeleteBtn}${content}</div>`;
+                win.style.top = (win.offsetTop - pos2) + "px"; win.style.left = (win.offsetLeft - pos1) + "px";
             }
-            html += `</div></div>`;
-            currentSlot = endSlot + 1;
+            function closeDragElement() { document.onmouseup = null; document.onmousemove = null; }
 
-            if (currentSlot <= totalSlots) {
-                // Chèn đường đi nội bộ
-                html += `<div class="driveway-clean"><i class="bi bi-chevron-double-left fs-3 driveway-arrow left"></i><span><i class="bi bi-car-front"></i> LÀN LƯU THÔNG <i class="bi bi-car-front"></i></span><i class="bi bi-chevron-double-right fs-3 driveway-arrow right"></i></div>`;
+            let original_width = 0, original_height = 0, original_x = 0, original_y = 0, original_mouse_x = 0, original_mouse_y = 0;
+            for (let i = 0; i < resizers.length; i++) {
+                const currentResizer = resizers[i];
+                currentResizer.onmousedown = function(e) {
+                    e.preventDefault(); isResizing = true;
+                    original_width = parseFloat(getComputedStyle(win, null).getPropertyValue('width').replace('px', ''));
+                    original_height = parseFloat(getComputedStyle(win, null).getPropertyValue('height').replace('px', ''));
+                    original_x = win.getBoundingClientRect().left; original_y = win.getBoundingClientRect().top;
+                    original_mouse_x = e.pageX; original_mouse_y = e.pageY;
+                    if (win.style.transform.includes('translate')) { win.style.transform = "none"; win.style.left = original_x + "px"; win.style.top = original_y + "px"; }
+                    window.addEventListener('mousemove', resize); window.addEventListener('mouseup', stopResize);
+                };
+                function resize(e) {
+                    if (currentResizer.classList.contains('resizer-br')) { win.style.width = original_width + (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height + (e.pageY - original_mouse_y)  + 'px'; }
+                    else if (currentResizer.classList.contains('resizer-bl')) { win.style.width = original_width - (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height + (e.pageY - original_mouse_y)  + 'px'; win.style.left = original_x + (e.pageX - original_mouse_x) + 'px'; }
+                    else if (currentResizer.classList.contains('resizer-tr')) { win.style.width = original_width + (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height - (e.pageY - original_mouse_y)  + 'px'; win.style.top = original_y + (e.pageY - original_mouse_y) + 'px'; }
+                    else if (currentResizer.classList.contains('resizer-tl')) { win.style.width = original_width - (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height - (e.pageY - original_mouse_y)  + 'px'; win.style.left = original_x + (e.pageX - original_mouse_x) + 'px'; win.style.top = original_y + (e.pageY - original_mouse_y) + 'px'; }
+                    else if (currentResizer.classList.contains('resizer-r')) { win.style.width = original_width + (e.pageX - original_mouse_x)  + 'px'; }
+                    else if (currentResizer.classList.contains('resizer-l')) { win.style.width = original_width - (e.pageX - original_mouse_x)  + 'px'; win.style.left = original_x + (e.pageX - original_mouse_x) + 'px'; }
+                    else if (currentResizer.classList.contains('resizer-b')) { win.style.height = original_height + (e.pageY - original_mouse_y)  + 'px'; }
+                    else if (currentResizer.classList.contains('resizer-t')) { win.style.height = original_height - (e.pageY - original_mouse_y)  + 'px'; win.style.top = original_y + (e.pageY - original_mouse_y) + 'px'; }
+                }
+                function stopResize() { window.removeEventListener('mousemove', resize); isResizing = false; }
             }
         }
-        container.innerHTML = html;
 
-        // KÍCH HOẠT DRAG & DROP Ô ĐỖ XE (CHỈ ADMIN)
-        if(isAdmin) {
-            document.querySelectorAll('.parking-grid').forEach(grid => {
-                new Sortable(grid, { group: 'shared-parking', animation: 150, ghostClass: 'sortable-ghost' });
+        function autoConfigParking() {
+            const type = document.querySelector('input[name="parkType"]:checked').value;
+            const zoneInput = document.getElementById('autoZone');
+            const idInput = document.getElementById('autoSlotId');
+            if (type === 'Sep') { zoneInput.value = 'Tầng Hầm B1'; idInput.value = 'A-' + (dbCounters.vip + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-warning font-monospace fs-5 rounded-end-1'; } 
+            else if (type === 'Khach') { zoneInput.value = 'Tầng Hầm B1'; idInput.value = 'A-' + (dbCounters.vip + dbCounters.guest + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-info font-monospace fs-5 rounded-end-1'; } 
+            else { zoneInput.value = 'Tầng Hầm B2'; idInput.value = 'B-' + (dbCounters.emp + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-secondary font-monospace fs-5 rounded-end-1'; }
+        }
+
+        function submitCreateParking() {
+            const type = document.querySelector('input[name="parkType"]:checked').value;
+            const slotId = document.getElementById('autoSlotId').value;
+            let floor = type === 'NhanVien' ? 'basement_B' : 'basement_A';
+            let pCode = type === 'NhanVien' ? 'B' : 'A';
+
+            let processCreation = () => {
+                closeFloatingWindow('window-manage-parking'); 
+                cameraList.push({ id: slotId, name: `Cam Ô ${slotId}`, floor: floor });
+                
+                if (pCode === 'A') { slotOrderA.push(slotId); localStorage.setItem('chkIn_slotOrder_A', JSON.stringify(slotOrderA));} 
+                else { slotOrderB.push(slotId); localStorage.setItem('chkIn_slotOrder_B', JSON.stringify(slotOrderB));}
+
+                saveGlobalData();
+                Swal.fire('Thành công!', `Đã tạo vị trí <b>${slotId}</b>.`, 'success').then(() => {
+                    renderMainMap(); if(!document.getElementById('view-camera').classList.contains('d-none')) renderCameras(); 
+                });
+            };
+
+            if (type === 'Sep') {
+                Swal.fire({ title: 'Đang dời chỗ...', html: 'Hệ thống đang tự động dời các xe Khách xuống 1 vị trí.', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+                setTimeout(() => { dbCounters.vip++; dbCounters.guest++; processCreation(); }, 1500);
+            } else if (type === 'Khach') { dbCounters.guest++; processCreation(); }
+            else { dbCounters.emp++; processCreation(); }
+        }
+
+        function syncCameraTable() {
+            if(cameraList.length === 0) initCameraData();
+            const tbody = document.querySelector('#cameraAdminTable tbody');
+            tbody.innerHTML = '';
+            const filterVal = document.getElementById('adminCamFilter').value;
+
+            cameraList.forEach((cam) => {
+                if(filterVal === 'all' || cam.floor === filterVal) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <div class="btn-group btn-group-sm shadow-sm">
+                                <button class="btn btn-light border text-muted" onclick="moveRowUp(this)"><i class="bi bi-chevron-up"></i></button>
+                                <button class="btn btn-light border text-muted" onclick="moveRowDown(this)"><i class="bi bi-chevron-down"></i></button>
+                            </div>
+                        </td>
+                        <td class="text-start fw-bold">
+                            <input type="text" class="form-control form-control-sm border-1 border-light bg-transparent fw-bold text-primary shadow-none" value="${cam.name}" onchange="renameCameraInDB(this, '${cam.id}')">
+                        </td>
+                        <td><span class="badge bg-secondary rounded-1">${cam.floor.replace('basement_A', 'Hầm A').replace('basement_B', 'Hầm B').replace('ground', 'Trệt').replace('floor1', 'Tầng 1').replace('floor2', 'Tầng 2').replace('floor3', 'Tầng 3')}</span></td>
+                        <td><button class="btn btn-sm btn-outline-danger rounded-1" onclick="deleteCameraFromTable(this, '${cam.id}')"><i class="bi bi-trash3-fill"></i></button></td>
+                    `;
+                    tbody.appendChild(tr);
+                }
             });
         }
-    }
 
-    // ==========================================
-    // 2. GIAO DIỆN CAMERA: ĐỒNG BỘ TỨC THÌ
-    // ==========================================
-    function initCameraData() {
-        cameraList = [];
-        let totalSlots = prefixCode === 'A' ? (dbCounters.vip + dbCounters.guest) : dbCounters.emp;
-        for(let i=1; i<=totalSlots; i++){
-            let id = `${prefixCode}-${i}`;
-            cameraList.push({ id: id, name: `Cam Ô ${id}`, floor: currentFloorFilter });
+        function renameCameraInDB(inputEl, id) {
+            const cam = cameraList.find(c => c.id === id);
+            if(cam) cam.name = inputEl.value;
+            saveGlobalData(); 
+            const liveCamText = document.querySelector(`.dynamic-main-cam[data-id="${id}"] .cam-name-text`);
+            if(liveCamText) liveCamText.innerText = inputEl.value;
         }
-        cameraList.unshift({ id: 'MAIN-IN', name: `ALPR Lối Vào ${currentFloorFilter}`, floor: currentFloorFilter });
-        cameraList.unshift({ id: 'MAIN-OUT', name: `ALPR Lối Ra ${currentFloorFilter}`, floor: currentFloorFilter });
-        cameraList.unshift({ id: 'MAIN-PTZ', name: `Toàn Cảnh Bãi ${currentFloorFilter} (PTZ)`, floor: currentFloorFilter });
+
+        function deleteCameraFromTable(btn, id) {
+            const row = btn.closest('tr');
+            row.classList.add('animate__animated', 'animate__fadeOutRight');
+            cameraList = cameraList.filter(c => c.id !== id);
+            saveGlobalData();
+            setTimeout(() => { 
+                row.remove(); 
+                const liveCam = document.querySelector(`.dynamic-main-cam[data-id="${id}"]`);
+                if(liveCam) liveCam.remove();
+            }, 500);
+        }
+
+        function addNewCameraRow() {
+            Swal.fire({
+                title: 'Nhập tên Camera Mới', input: 'text', inputPlaceholder: 'VD: Cam Lối Vào B', showCancelButton: true, confirmButtonText: 'Lưu Camera'
+            }).then((result) => {
+                if(result.isConfirmed && result.value) {
+                    const name = result.value; const id = 'CUSTOM-' + Math.floor(Math.random()*1000);
+                    const floor = window.APP_CONFIG.currentFloor;
+                    cameraList.unshift({ id: id, name: name, floor: floor });
+                    saveGlobalData(); syncCameraTable(); if(!document.getElementById('view-camera').classList.contains('d-none')) renderCameras();
+                    Swal.fire('Thành công', 'Đã thêm Camera vào hệ thống.', 'success');
+                }
+            });
+        }
+
+        function moveRowUp(btn) { const row = btn.closest('tr'); const prev = row.previousElementSibling; if (prev) { row.parentNode.insertBefore(row, prev); saveGlobalData(); } }
+        function moveRowDown(btn) { const row = btn.closest('tr'); const next = row.nextElementSibling; if (next) { row.parentNode.insertBefore(next, row); saveGlobalData(); } }
+        
+        function resetAllData() {
+            Swal.fire({
+                title: 'Khôi phục CSDL Gốc?', text: "Hành động này sẽ xóa toàn bộ cài đặt ô đỗ xe và Camera đã thêm. Về trạng thái 240 chỗ mặc định. Bạn chắc chắn?",
+                icon: 'warning', showCancelButton: true, confirmButtonText: 'KHÔI PHỤC NGAY', confirmButtonColor: '#dc3545'
+            }).then((result) => {
+                if(result.isConfirmed) {
+                    localStorage.removeItem('chkIn_dbCounters');
+                    localStorage.removeItem('chkIn_cameraList');
+                    localStorage.removeItem('chkIn_deletedSlots');
+                    localStorage.removeItem('chkIn_slotOrder_A');
+                    localStorage.removeItem('chkIn_slotOrder_B');
+                    localStorage.removeItem('chkIn_cameraOrder');
+                    location.reload();
+                }
+            });
+        }
+        </script>
     }
 
-    function renderCameras() {
-        if(cameraList.length === 0) initCameraData();
-        const grid = document.getElementById('cctv-grid-view');
-        grid.innerHTML = '';
-
-        cameraList.forEach(cam => {
-            if(cam.floor === currentFloorFilter) {
-                const isMain = cam.id.startsWith('MAIN');
-                const widthStyle = isMain ? 'width: 450px; height: 280px;' : 'width: 300px; height: 200px;';
-
-                const html = `
-                    <div style="display:inline-block;" class="dynamic-cam-item" data-id="${cam.id}">
-                        <div class="cam-feed rounded-2" style="${widthStyle}">
-                            <div class="cam-content"><i class="bi bi-camera-video text-white opacity-25"></i></div>
-                            <div class="cam-status rounded-1"><i class="bi bi-circle-fill text-white small me-1"></i> ONLINE</div>
-                            <div class="cam-title"><i class="bi bi-geo-alt-fill text-info me-1"></i><span class="cam-name-text">${cam.name}</span></div>
-                            <button class="btn-fullscreen rounded-1" onclick="toggleFullscreen(this.parentElement)" title="Phóng to"><i class="bi bi-arrows-fullscreen"></i></button>
-                            <div class="cam-overlay"><span>CHK-IN // ${cam.id}</span><span class="live-clock-cam text-info fw-bold"></span></div>
-                        </div>
-                    </div>`;
-                grid.insertAdjacentHTML('beforeend', html);
+<script>
+    let rawDataMap = @Html.Raw(Json.Serialize(danhSachXeDangDau));
+    let parkedCarsMap = {};
+    if (rawDataMap) {
+        rawDataMap.forEach(car => {
+            if(car.viTri) {
+                let slotNormalized = car.viTri.replace(/\s+/g, '').toUpperCase();
+                parkedCarsMap[slotNormalized] = { role: car.loai, plate: car.bienSo, name: car.ten };
             }
         });
-
-        // Kích hoạt Drag & Drop Camera
-        if(isAdmin) {
-            new Sortable(grid, { animation: 150, ghostClass: 'sortable-ghost', handle: '.cam-feed' });
-        }
     }
 
-    // ==========================================
-    // UI TABS & FULLSCREEN
-    // ==========================================
-    function switchTab(tab) {
-        const btnB = document.getElementById('btn-tab-blueprint'), btnC = document.getElementById('btn-tab-camera');
-        const viewB = document.getElementById('content-sodo'), viewC = document.getElementById('content-cctv');
-        if (tab === 'blueprint') {
-            btnB.className = 'nav-link active fw-bold px-4 rounded-1 shadow-sm'; btnC.className = 'nav-link fw-bold px-4 rounded-1 shadow-sm';
-            viewB.classList.add('show', 'active'); viewC.classList.remove('show', 'active');
-        } else {
-            btnC.className = 'nav-link active fw-bold px-4 rounded-1 shadow-sm'; btnB.className = 'nav-link fw-bold px-4 rounded-1 shadow-sm';
-            viewC.classList.add('show', 'active'); viewB.classList.remove('show', 'active');
-            renderCameras();
-        }
-    }
-
-    window.toggleFullscreen = function(camElement) {
-        if (!document.fullscreenElement) {
-            camElement.classList.add('cam-fullscreen'); camElement.querySelector('.btn-fullscreen').innerHTML = '<i class="bi bi-fullscreen-exit text-danger fs-3"></i>';
-            if (camElement.requestFullscreen) { camElement.requestFullscreen(); } else if (camElement.webkitRequestFullscreen) { camElement.webkitRequestFullscreen(); }
-        } else {
-            if (document.exitFullscreen) { document.exitFullscreen(); }
-        }
-    }
-    document.addEventListener('fullscreenchange', () => {
-        if (!document.fullscreenElement) document.querySelectorAll('.cam-fullscreen').forEach(el => { el.classList.remove('cam-fullscreen'); el.querySelector('.btn-fullscreen').innerHTML = '<i class="bi bi-arrows-fullscreen"></i>'; });
-    });
-
-    setInterval(() => {
-        const now = new Date(); const timeStr = now.toLocaleTimeString('en-US', { hour12: false }) + ':' + now.getMilliseconds().toString().padStart(3, '0').substring(0,2);
-        document.querySelectorAll('.live-clock-cam').forEach(el => el.innerText = timeStr);
-    }, 50);
-
-    document.addEventListener("DOMContentLoaded", () => {
-        renderMainMap();
-    });
-
-    // ==========================================
-    // BỘ CÔNG CỤ CỬA SỔ NỔI CHO ADMIN
-    // ==========================================
-    @if (userRole == "Admin")
-    {
-            <text>
-            function openFloatingWindow(winId) {
-                const win = document.getElementById(winId);
-                win.classList.remove('d-none', 'animate__zoomOut');
-                win.classList.add('animate__zoomIn');
-                win.style.transform = "translate(-50%, -50%)"; // Căn giữa lại màn hình
-                win.style.top = "50%";
-                win.style.left = "50%";
-
-                if(winId === 'window-manage-camera') {
-                    document.getElementById('adminCamFilter').value = currentFloorFilter;
-                    syncCameraTable();
-                }
-                if(winId === 'window-manage-parking') autoConfigParking();
-
-                makeDraggableWindow(win);
-            }
-
-            // TỰ ĐỘNG ĐÓNG WINDOW KHI LÀM XONG
-            function closeFloatingWindow(winId) {
-                const win = document.getElementById(winId);
-                win.classList.remove('animate__zoomIn', 'floating-maximized');
-                win.classList.add('animate__zoomOut');
-                setTimeout(() => { win.classList.add('d-none'); }, 300);
-            }
-
-            function toggleMaximize(winId) {
-                const win = document.getElementById(winId);
-                if (win.classList.contains('floating-maximized')) { win.classList.remove('floating-maximized'); }
-                else { win.classList.add('floating-maximized'); win.style.transform = "none"; }
-            }
-
-            // THUẬT TOÁN RESIZE 8 HƯỚNG VÀ DRAG WINDOW
-            function makeDraggableWindow(win) {
-                const header = win.querySelector('.floating-header');
-                const resizers = win.querySelectorAll('.resizer');
-                let isResizing = false; let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-
-                header.onmousedown = function(e) {
-                    if (e.target.closest('button') || win.classList.contains('floating-maximized')) return;
-                    e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY;
-                    document.onmouseup = closeDragElement; document.onmousemove = elementDrag;
-                };
-                function elementDrag(e) {
-                    e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY;
-                    if (win.style.transform.includes('translate')) {
-                        const rect = win.getBoundingClientRect(); win.style.transform = "none"; win.style.top = rect.top + "px"; win.style.left = rect.left + "px";
-                    }
-                    win.style.top = (win.offsetTop - pos2) + "px"; win.style.left = (win.offsetLeft - pos1) + "px";
-                }
-                function closeDragElement() { document.onmouseup = null; document.onmousemove = null; }
-
-                let original_width = 0, original_height = 0, original_x = 0, original_y = 0, original_mouse_x = 0, original_mouse_y = 0;
-                for (let i = 0; i < resizers.length; i++) {
-                    const currentResizer = resizers[i];
-                    currentResizer.onmousedown = function(e) {
-                        e.preventDefault(); isResizing = true;
-                        original_width = parseFloat(getComputedStyle(win, null).getPropertyValue('width').replace('px', ''));
-                        original_height = parseFloat(getComputedStyle(win, null).getPropertyValue('height').replace('px', ''));
-                        original_x = win.getBoundingClientRect().left; original_y = win.getBoundingClientRect().top;
-                        original_mouse_x = e.pageX; original_mouse_y = e.pageY;
-                        if (win.style.transform.includes('translate')) { win.style.transform = "none"; win.style.left = original_x + "px"; win.style.top = original_y + "px"; }
-                        window.addEventListener('mousemove', resize); window.addEventListener('mouseup', stopResize);
-                    };
-                    function resize(e) {
-                        if (currentResizer.classList.contains('resizer-br')) { win.style.width = original_width + (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height + (e.pageY - original_mouse_y)  + 'px'; }
-                        else if (currentResizer.classList.contains('resizer-bl')) { win.style.width = original_width - (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height + (e.pageY - original_mouse_y)  + 'px'; win.style.left = original_x + (e.pageX - original_mouse_x) + 'px'; }
-                        else if (currentResizer.classList.contains('resizer-tr')) { win.style.width = original_width + (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height - (e.pageY - original_mouse_y)  + 'px'; win.style.top = original_y + (e.pageY - original_mouse_y) + 'px'; }
-                        else if (currentResizer.classList.contains('resizer-tl')) { win.style.width = original_width - (e.pageX - original_mouse_x)  + 'px'; win.style.height = original_height - (e.pageY - original_mouse_y)  + 'px'; win.style.left = original_x + (e.pageX - original_mouse_x) + 'px'; win.style.top = original_y + (e.pageY - original_mouse_y) + 'px'; }
-                        else if (currentResizer.classList.contains('resizer-r')) { win.style.width = original_width + (e.pageX - original_mouse_x)  + 'px'; }
-                        else if (currentResizer.classList.contains('resizer-l')) { win.style.width = original_width - (e.pageX - original_mouse_x)  + 'px'; win.style.left = original_x + (e.pageX - original_mouse_x) + 'px'; }
-                        else if (currentResizer.classList.contains('resizer-b')) { win.style.height = original_height + (e.pageY - original_mouse_y)  + 'px'; }
-                        else if (currentResizer.classList.contains('resizer-t')) { win.style.height = original_height - (e.pageY - original_mouse_y)  + 'px'; win.style.top = original_y + (e.pageY - original_mouse_y) + 'px'; }
-                    }
-                    function stopResize() { window.removeEventListener('mousemove', resize); isResizing = false; }
-                }
-            }
-
-            function autoConfigParking() {
-                const type = document.querySelector('input[name="parkType"]:checked').value;
-                const zoneInput = document.getElementById('autoZone');
-                const idInput = document.getElementById('autoSlotId');
-                if (type === 'Sep') { zoneInput.value = 'Tầng Hầm - Khu A (VIP & Khách)'; idInput.value = 'A-' + (dbCounters.vip + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-warning font-monospace fs-5 rounded-end-1'; }
-                else if (type === 'Khach') { zoneInput.value = 'Tầng Hầm - Khu A (VIP & Khách)'; idInput.value = 'A-' + (dbCounters.vip + dbCounters.guest + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-info font-monospace fs-5 rounded-end-1'; }
-                else { zoneInput.value = 'Tầng Hầm - Khu B (Nhân Viên)'; idInput.value = 'B-' + (dbCounters.emp + 1).toString().padStart(2, '0'); idInput.className = 'form-control fw-bold text-secondary font-monospace fs-5 rounded-end-1'; }
-            }
-
-            // TẠO Ô ĐỖ & ĐÓNG FORM
-            function submitCreateParking() {
-                const type = document.querySelector('input[name="parkType"]:checked').value;
-                const slotId = document.getElementById('autoSlotId').value;
-
-                let processCreation = () => {
-                    closeFloatingWindow('window-manage-parking'); // ĐÓNG FORM NGAY LẬP TỨC
-
-                    Swal.fire('Đồng bộ hoàn tất!', `Đã tạo vị trí <b>${slotId}</b>.`, 'success').then(() => {
-                        renderMainMap(); // Dựng lại lưới kèm đường đi chuẩn 2 dòng
-                    });
-                };
-
-                if (type === 'Sep') {
-                    Swal.fire({ title: 'Đang dời chỗ...', html: 'Hệ thống đang tự động dời các xe Khách xuống 1 vị trí.', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
-                    setTimeout(() => { dbCounters.vip++; saveCounters(); processCreation(); }, 1000);
-                } else if (type === 'Khach') { dbCounters.guest++; saveCounters(); processCreation(); }
-                else { dbCounters.emp++; saveCounters(); processCreation(); }
-            }
-
-            function deleteSlot(slotId, event) {
-                event.stopPropagation();
-                Swal.fire({
-                    title: 'Xóa vị trí?', text: `Gỡ bỏ ô đỗ ${slotId}?`, icon: 'warning',
-                    showCancelButton: true, confirmButtonColor: '#d33', cancelButtonText: 'Hủy', confirmButtonText: 'Xóa ngay'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        if(slotId.startsWith('A')) { dbCounters.guest--; } else { dbCounters.emp--; }
-                        saveCounters(); renderMainMap();
-                    }
-                });
-            }
-
-            // QUẢN TRỊ CAMERA (BẢNG)
-            function syncCameraTable() {
-                if(cameraList.length === 0) initCameraData();
-                const tbody = document.querySelector('#cameraAdminTable tbody');
-                tbody.innerHTML = '';
-                const filterVal = document.getElementById('adminCamFilter').value;
-
-                cameraList.forEach((cam) => {
-                    if(filterVal === 'all' || cam.floor === filterVal) {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>
-                                <div class="btn-group btn-group-sm shadow-sm">
-                                    <button class="btn btn-light border text-muted" onclick="moveRowUp(this)"><i class="bi bi-chevron-up"></i></button>
-                                    <button class="btn btn-light border text-muted" onclick="moveRowDown(this)"><i class="bi bi-chevron-down"></i></button>
-                                </div>
-                            </td>
-                            <td class="text-start fw-bold">
-                                <input type="text" class="form-control form-control-sm border-1 border-light bg-transparent fw-bold text-primary shadow-none" value="${cam.name}" onchange="renameCameraInDB(this, '${cam.id}')">
-                            </td>
-                            <td><span class="badge bg-secondary rounded-1">${cam.floor}</span></td>
-                            <td><button class="btn btn-sm btn-outline-danger rounded-1" onclick="deleteCameraFromTable(this, '${cam.id}')"><i class="bi bi-trash3-fill"></i></button></td>
-                        `;
-                        tbody.appendChild(tr);
-                    }
-                });
-            }
-
-            function filterAdminCameras() { syncCameraTable(); }
-
-            function renameCameraInDB(inputEl, id) {
-                const cam = cameraList.find(c => c.id === id);
-                if(cam) cam.name = inputEl.value;
-                const liveCamText = document.querySelector(`.dynamic-cam-item[data-id="${id}"] .cam-name-text`);
-                if(liveCamText) liveCamText.innerText = inputEl.value;
-            }
-
-            function deleteCameraFromTable(btn, id) {
-                const row = btn.closest('tr');
-                row.classList.add('animate__animated', 'animate__fadeOutRight');
-                cameraList = cameraList.filter(c => c.id !== id);
-                setTimeout(() => { row.remove(); const liveCam = document.querySelector(`.dynamic-cam-item[data-id="${id}"]`); if(liveCam) liveCam.remove(); }, 500);
-            }
-
-            function addNewCameraRow() {
-                Swal.fire({
-                    title: 'Tên Camera Mới', input: 'text', inputPlaceholder: 'VD: Cam Lối Vào B', showCancelButton: true, confirmButtonText: 'Lưu Camera'
-                }).then((result) => {
-                    if(result.isConfirmed && result.value) {
-                        const name = result.value; const id = 'CUSTOM-' + Math.floor(Math.random()*1000);
-                        cameraList.unshift({ id: id, name: name, floor: currentFloorFilter });
-                        syncCameraTable(); renderCameras();
-                        Swal.fire('Thành công', 'Đã thêm Camera vào hệ thống.', 'success');
-                    }
-                });
-            }
-
-            function moveRowUp(btn) { const row = btn.closest('tr'); const prev = row.previousElementSibling; if (prev) row.parentNode.insertBefore(row, prev); }
-            function moveRowDown(btn) { const row = btn.closest('tr'); const next = row.nextElementSibling; if (next) row.parentNode.insertBefore(next, row); }
-            </text>
-    }
-
-    function showSlotInfo(id, name, plate, img) {
-        document.getElementById('slotDetailCard').classList.remove('d-none'); document.getElementById('emptySlotNotify').classList.add('d-none');
-        document.getElementById('lblSlotId').innerText = id;
-        if (name && name !== 'null' && name !== '') { document.getElementById('slotUser').innerText = name; document.getElementById('slotPlate').innerText = plate; document.getElementById('slotImg').src = img || '/images/no-avatar.png'; }
-        else { resetSlot(); Swal.fire({ title: 'Vị trí ' + id, text: 'Vị trí này hiện đang trống.', icon: 'info', timer: 1500, showConfirmButton: false }); }
-    }
-    function resetSlot() { document.getElementById('slotDetailCard').classList.add('d-none'); document.getElementById('emptySlotNotify').classList.remove('d-none'); }
+    // Truyền cấu hình cho file js dùng chung
+    window.APP_CONFIG = {
+        isAdmin: '@userRole' === 'Admin',
+        currentFloor: '@currentTang' === 'B1' ? 'basement_A' : 'basement_B',
+        prefixCode: '@currentTang' === 'B1' ? 'A' : 'B',
+        parkedCars: parkedCarsMap
+    };
 </script>
+
+<script src="~/js/smart-parking.js"></script>

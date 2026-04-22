@@ -1,9 +1,13 @@
-﻿@{
+﻿@using Quan_Ly_xe_Ra_Vao.Data
+@inject ApplicationDbContext DbContext
+
+@{
     ViewData["Title"] = "Trạm Giám Sát Sinh Trắc Học";
     int occupied = ViewBag.OccupiedOto ?? 0;
     int available = 240 - occupied;
 }
 
+<script src="~/js/smart-parking.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -367,9 +371,6 @@
                         scanState = 'IDLE';
                     }, 2500);
                 } else {
-                    // ==========================================
-                    // ĐÃ CẬP NHẬT: KÍCH HOẠT SECURITY AI KHI PHÁT HIỆN NGƯỜI LẠ
-                    // ==========================================
                     if (window.triggerSecurityAIAlert) {
                         window.triggerSecurityAIAlert("CẢNH BÁO: Trạm giám sát phát hiện <b>đối tượng không xác định</b> đang cố gắng truy cập cổng chính. Yêu cầu tổ bảo vệ tăng cường quan sát!");
                     } else {
@@ -407,6 +408,22 @@
             loaiXeBadge.innerText = (data.loaiXe || "---").toUpperCase();
             loaiXeBadge.className = "badge bg-primary rounded-pill px-3 py-2 fs-6 mt-1 shadow-sm";
 
+            // ĐOẠN CODE LIÊN KẾT: GỌI HÀM CỦA SMART-PARKING.JS NẾU CÓ
+            if (typeof window.processCameraScan === "function") {
+                // Xác định loại xe và vai trò từ data (Giả lập logic nhận diện)
+                let isOto = data.loaiXe && data.loaiXe.toLowerCase().includes('tô');
+                let userRole = data.chucVu && data.chucVu.toLowerCase().includes('giám đốc') ? 'Sep' :
+                               (data.chucVu && data.chucVu.toLowerCase().includes('nhân viên') ? 'NhanVien' : 'Khach');
+
+                let assignedSlot = window.processCameraScan(isOto ? 'Oto' : 'XeMay', userRole, data.bienSo, data.hoTen);
+
+                if (assignedSlot) {
+                    document.getElementById('resParkingSlot').innerText = "VỊ TRÍ ĐƯỢC CHỈ ĐỊNH: " + assignedSlot;
+                } else if (!isOto) {
+                     document.getElementById('resParkingSlot').innerText = "KHU VỰC: XE MÁY TỰ DO";
+                }
+            }
+
             openGate();
         });
     }
@@ -433,5 +450,6 @@
         document.getElementById('resName').innerText = "ĐANG CHỜ...";
         document.getElementById('resAvatar').src = "/images/face-id.png";
         document.getElementById('faceDoneOverlay').classList.add('d-none');
+        document.getElementById('resParkingSlot').innerText = "--";
     }
 </script>
