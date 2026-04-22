@@ -351,7 +351,6 @@
                 Swal.fire('Lỗi', 'Vui lòng chụp ảnh khuôn mặt!', 'error'); return;
             }
 
-            // Xử lý báo lỗi nếu thiếu Biển số xe khi đang chọn đi xe
             let isVehicleRequire = document.getElementById('BienSoXe').required;
             if (isVehicleRequire && !document.getElementById('BienSoXe').value) {
                 Swal.fire('Thiếu thông tin', 'Vui lòng nhập Biển số xe để bảo vệ cấp phép qua cổng!', 'warning'); return;
@@ -373,7 +372,7 @@
                 FaceDataPath: faceBase64,
                 LoaiXe: document.getElementById('LoaiXe').value,
                 BienSoXe: document.getElementById('BienSoXe').value,
-                PhongBanCanGap: bophan,
+                BoPhanCanGap: bophan,  // <-- CHỖ NÀY ĐÃ ĐƯỢC SỬA CHO KHỚP VỚI C#
                 NhanVienCanGap: nhanvien,
                 SoLuongNguoi: parseInt(soluong),
                 ThoiGianHen: thoigian,

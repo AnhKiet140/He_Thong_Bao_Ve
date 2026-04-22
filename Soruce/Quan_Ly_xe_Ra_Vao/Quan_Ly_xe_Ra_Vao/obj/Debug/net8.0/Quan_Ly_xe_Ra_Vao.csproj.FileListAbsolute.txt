@@ -310,7 +310,6 @@ D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\n
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\Microsoft.SqlServer.Server.dll
-D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\Microsoft.Win32.SystemEvents.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\Mono.TextTemplating.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.CodeDom.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Composition.AttributedModel.dll
@@ -319,13 +318,10 @@ D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\n
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Composition.Runtime.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Composition.TypedParts.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Configuration.ConfigurationManager.dll
-D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Drawing.Common.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Memory.Data.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Runtime.Caching.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Security.Cryptography.ProtectedData.dll
-D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Security.Permissions.dll
-D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Windows.Extensions.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\cs\Microsoft.CodeAnalysis.resources.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\de\Microsoft.CodeAnalysis.resources.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\es\Microsoft.CodeAnalysis.resources.dll
@@ -384,12 +380,7 @@ D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\n
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
-D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net6.0\Microsoft.Win32.SystemEvents.dll
-D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\unix\lib\net6.0\System.Drawing.Common.dll
-D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Drawing.Common.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
-D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
-D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\obj\Debug\net8.0\Quan_Ly_xe_Ra_Vao.csproj.AssemblyReference.cache
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\obj\Debug\net8.0\rpswa.dswa.cache.json
 D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\obj\Debug\net8.0\Quan_Ly_xe_Ra_Vao.GeneratedMSBuildEditorConfig.editorconfig
@@ -1545,3 +1536,18 @@ D:\Mon Chuyen Nganh\Aligien\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_
 D:\Mon Chuyen Nganh\Aligien\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.dll
 D:\Mon Chuyen Nganh\Aligien\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.PerformanceCounter.dll
 D:\Mon Chuyen Nganh\Aligien\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Threading.AccessControl.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\EPPlus.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\EPPlus.Interfaces.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\Microsoft.Extensions.Configuration.FileExtensions.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\Microsoft.Extensions.Configuration.Json.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\Microsoft.IO.RecyclableMemoryStream.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Diagnostics.EventLog.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Diagnostics.PerformanceCounter.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Security.Cryptography.Pkcs.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Security.Cryptography.Xml.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\System.Threading.AccessControl.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.Messages.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.PerformanceCounter.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
+D:\Net107\He_Thong_Bao_Ve\Soruce\Quan_Ly_xe_Ra_Vao\Quan_Ly_xe_Ra_Vao\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Threading.AccessControl.dll
