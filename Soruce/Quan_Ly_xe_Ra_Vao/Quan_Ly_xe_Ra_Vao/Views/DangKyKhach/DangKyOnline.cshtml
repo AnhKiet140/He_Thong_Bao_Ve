@@ -199,10 +199,10 @@
                             <span class="input-group-text border-end-0 bg-light"><i class="bi bi-building text-secondary"></i></span>
                             <select id="BoPhanCanGap" name="BoPhanCanGap" class="form-select border-start-0" onchange="loadEmployees()" required>
                                 <option value="" selected disabled>-- Chọn phòng ban --</option>
-                                <option value="BOD">Ban Giám Đốc</option>
-                                <option value="HR">Phòng Nhân Sự</option>
-                                <option value="ACC">Phòng Kế Toán</option>
-                                <option value="IT">Phòng Công Nghệ</option>
+                                <option value="Ban Giám Đốc">Ban Giám Đốc (BOD)</option>
+                                <option value="Phòng Nhân Sự">Phòng Nhân Sự (HR)</option>
+                                <option value="Phòng Kế Toán">Phòng Kế Toán (ACC)</option>
+                                <option value="Phòng Công Nghệ">Phòng Công Nghệ (IT)</option>
                             </select>
                         </div>
                     </div>
@@ -242,12 +242,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // --- 1. DỮ LIỆU BỘ PHẬN ---
+        // --- 1. DỮ LIỆU BỘ PHẬN ĐÃ ĐỒNG BỘ VỚI MÃ C# ---
         const departmentData = {
-            "BOD": ["Sếp (Test Giám Đốc)"],
-            "HR": ["Quản Lý (Test Nhân Sự)"],
-            "ACC": ["Kế toán trưởng"],
-            "IT": ["Admin System"]
+            "Ban Giám Đốc": ["Sếp (Test Giám Đốc)"],
+            "Phòng Nhân Sự": ["Quản Lý (Test Nhân Sự)"],
+            "Phòng Kế Toán": ["Kế toán trưởng"],
+            "Phòng Công Nghệ": ["Admin System"]
         };
 
         function loadEmployees() {
@@ -372,7 +372,7 @@
                 FaceDataPath: faceBase64,
                 LoaiXe: document.getElementById('LoaiXe').value,
                 BienSoXe: document.getElementById('BienSoXe').value,
-                BoPhanCanGap: bophan,  // <-- CHỖ NÀY ĐÃ ĐƯỢC SỬA CHO KHỚP VỚI C#
+                BoPhanCanGap: bophan,
                 NhanVienCanGap: nhanvien,
                 SoLuongNguoi: parseInt(soluong),
                 ThoiGianHen: thoigian,

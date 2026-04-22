@@ -25,9 +25,8 @@ cameraList.forEach(c => {
 });
 if (isCamUpdated) { localStorage.setItem('chkIn_cameraList', JSON.stringify(cameraList)); }
 
-// Lấy danh sách ô tô đang đậu từ CSDL tĩnh (nếu có) truyền qua cấu hình
+// Gộp dữ liệu
 let parkedCars = appConfig.parkedCars || {};
-// Gộp thêm xe vừa quét (lưu tạm trong LocalStorage để demo mượt)
 let dynamicParkedCars = JSON.parse(localStorage.getItem('chkIn_parkedCars')) || {};
 parkedCars = { ...parkedCars, ...dynamicParkedCars };
 
@@ -81,8 +80,6 @@ function syncDefaultCameras() {
 // ==========================================
 // ĐỒNG BỘ TRUNG TÂM KIỂM SOÁT VÀ BẢN ĐỒ
 // ==========================================
-
-// Lắng nghe sự thay đổi LocalStorage (Kích hoạt khi mở 2 tab song song)
 window.addEventListener('storage', function (e) {
     if (e.key === 'chkIn_parkedCars') {
         dynamicParkedCars = JSON.parse(e.newValue) || {};
@@ -95,30 +92,52 @@ window.addEventListener('storage', function (e) {
     }
 });
 
-// Hàm gọi từ Trang Trạm Giám Sát
+// HÀM LOẠI BỎ DẤU TIẾNG VIỆT ĐỂ SO SÁNH CHUẨN XÁC
+function removeAccents(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 window.processCameraScan = function (vehicleType, userRole, plateNumber, ownerName) {
     if (vehicleType === 'Oto') {
-        let targetPrefix = (userRole === 'NhanVien') ? 'B' : 'A';
-        let assignedSlot = findEmptySlot(targetPrefix, parkedCars);
+        // Chuẩn hóa role truyền vào để chống lỗi chữ hoa chữ thường / có dấu
+        let safeRole = removeAccents(String(userRole));
+        let targetPrefix = 'A';
+        let standardizedRole = 'Khách';
+
+        // Phân luồng thông minh
+        if (safeRole.includes('nhan vien') || safeRole.includes('nv') || safeRole.includes('nhanvien')) {
+            targetPrefix = 'B'; // Đẩy thẳng xuống Hầm B
+            standardizedRole = 'Nhân Viên';
+        }
+        else if (safeRole.includes('sep') || safeRole.includes('vip') || safeRole.includes('giam doc')) {
+            targetPrefix = 'A';
+            standardizedRole = 'VIP'; // Lát nữa sẽ nhét vào nhóm A1-A24
+        }
+        else {
+            targetPrefix = 'A';
+            standardizedRole = 'Khách'; // Lát nữa sẽ nhét vào nhóm A25-A120
+        }
+
+        let assignedSlot = findEmptySlot(targetPrefix, standardizedRole, parkedCars);
 
         if (assignedSlot) {
-            parkedCars[assignedSlot] = { role: userRole, plate: plateNumber, name: ownerName, time: new Date().toLocaleTimeString() };
-            // Lưu tạm vào LocalStorage để đồng bộ 2 Tab
+            parkedCars[assignedSlot] = { role: standardizedRole, plate: plateNumber, name: ownerName, time: new Date().toLocaleTimeString() };
+
             let currentDynamic = JSON.parse(localStorage.getItem('chkIn_parkedCars')) || {};
             currentDynamic[assignedSlot] = parkedCars[assignedSlot];
             localStorage.setItem('chkIn_parkedCars', JSON.stringify(currentDynamic));
 
-            // Render lại bản đồ ngay lập tức trên trang hiện tại (nếu đang xem)
             if (typeof renderMainMap === 'function') renderMainMap();
 
             Swal.fire({
                 icon: 'success', title: 'Nhận diện thành công!',
-                html: `Xe: <b>${plateNumber}</b><br>Chủ xe: <b>${ownerName}</b> (${userRole})<br>Chỉ định ô đỗ: <b class="text-primary fs-4">${assignedSlot}</b>`,
+                html: `Xe: <b>${plateNumber}</b><br>Chủ xe: <b>${ownerName}</b> (${standardizedRole})<br>Chỉ định ô đỗ: <b class="text-primary fs-4">${assignedSlot}</b>`,
                 timer: 4000
             });
             return assignedSlot;
         } else {
-            Swal.fire('Hết chỗ!', `Khu vực Hầm ${targetPrefix} đã đầy!`, 'error');
+            let tenHam = targetPrefix === 'A' ? "Hầm A (Khách/VIP)" : "Hầm B (Nhân Viên)";
+            Swal.fire('Hết chỗ!', `Khu vực ${tenHam} đã kín chỗ!`, 'error');
             return null;
         }
     }
@@ -126,21 +145,32 @@ window.processCameraScan = function (vehicleType, userRole, plateNumber, ownerNa
         let currentMoto = parseInt(localStorage.getItem('chkIn_motoCount')) || 0;
         localStorage.setItem('chkIn_motoCount', currentMoto + 1);
 
-        // Render lại bản đồ xe máy ngay lập tức
         if (typeof renderMotoMap === 'function') renderMotoMap();
 
         Swal.fire({
             icon: 'info', title: 'Nhận diện Xe Máy',
-            html: `Xe: <b>${plateNumber}</b><br>Chủ xe: <b>${ownerName}</b> (${userRole})<br>Chỉ định: <b class="text-success fs-5">Khu vực Xe Máy</b>`,
+            html: `Xe: <b>${plateNumber}</b><br>Chủ xe: <b>${ownerName}</b><br>Chỉ định: <b class="text-success fs-5">Khu vực Xe Máy</b>`,
             timer: 3000
         });
         return "XE MÁY";
     }
 }
 
-function findEmptySlot(prefix, currentData) {
+// TÌM CHỖ TRỐNG THÔNG MINH (TRÁNH KHÁCH CHIẾM CHỖ SẾP)
+function findEmptySlot(prefix, role, currentData) {
+    let startIdx = 1;
     let maxSlots = prefix === 'A' ? (dbCounters.vip + dbCounters.guest) : dbCounters.emp;
-    for (let i = 1; i <= maxSlots; i++) {
+
+    // Nếu vào hầm A, phải chia phe rõ ràng
+    if (prefix === 'A') {
+        if (role === 'VIP') {
+            maxSlots = dbCounters.vip; // Chỉ quét từ ô 1 đến 24
+        } else {
+            startIdx = dbCounters.vip + 1; // Khách chỉ được cấp từ ô 25 trở đi
+        }
+    }
+
+    for (let i = startIdx; i <= maxSlots; i++) {
         let slotId = `${prefix}-${i}`;
         if (!currentData[slotId] && !deletedSlots.includes(slotId)) return slotId;
     }
@@ -148,31 +178,7 @@ function findEmptySlot(prefix, currentData) {
 }
 
 // ==========================================
-// ZOOM BẢN ĐỒ
-// ==========================================
-let scale = 1; let panning = false; let pointX = 0; let pointY = 0; let startX, startY;
-const frame = document.getElementById('blueprint-frame');
-const zoomWrapper = document.getElementById('map-zoom-wrapper');
-if (frame && zoomWrapper) {
-    function setTransform() { zoomWrapper.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
-    frame.addEventListener('mousedown', (e) => { if (e.target.closest('button') || e.target.closest('.cam-marker') || e.target.closest('.slot-cam') || e.target.closest('.parking-slot')) return; e.preventDefault(); panning = true; frame.style.cursor = 'grabbing'; startX = e.clientX - pointX; startY = e.clientY - pointY; });
-    frame.addEventListener('mousemove', (e) => { if (!panning) return; pointX = e.clientX - startX; pointY = e.clientY - startY; setTransform(); });
-    frame.addEventListener('mouseup', () => { panning = false; frame.style.cursor = 'grab'; });
-    frame.addEventListener('mouseleave', () => { panning = false; frame.style.cursor = 'grab'; });
-    frame.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const xs = (e.clientX - frame.getBoundingClientRect().left - pointX) / scale; const ys = (e.clientY - frame.getBoundingClientRect().top - pointY) / scale;
-        const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY); (delta > 0) ? (scale *= 1.1) : (scale /= 1.1);
-        scale = Math.max(0.5, Math.min(scale, 3));
-        pointX = e.clientX - frame.getBoundingClientRect().left - xs * scale; pointY = e.clientY - frame.getBoundingClientRect().top - ys * scale;
-        setTransform();
-    });
-    window.zoomMap = function (amount) { scale += amount; scale = Math.max(0.5, Math.min(scale, 3)); setTransform(); }
-    window.resetZoom = function () { scale = 1; pointX = 0; pointY = 0; setTransform(); }
-}
-
-// ==========================================
-// VẼ BÃI XE Ô TÔ
+// VẼ BÃI XE VÀ BÁO CÁO VI PHẠM
 // ==========================================
 function buildExpectedSlotOrder(prefix, maxCount, currentOrder) {
     let expectedSlots = [];
@@ -202,8 +208,7 @@ window.renderMainMap = function () {
     const elVio = document.getElementById('violationCount'); if (elVio) elVio.innerText = totalViolations;
     const elProg = document.getElementById('ui-progress-bar'); if (elProg) elProg.style.width = (((totalAllSlots - totalOccupied) / totalAllSlots) * 100) + '%';
 
-    // Gọi hàm render xe máy luôn cho Bản Đồ An Ninh
-    renderMotoMap();
+    if (typeof renderMotoMap === 'function') renderMotoMap();
 
     if (appConfig.isAdmin) {
         document.querySelectorAll('.parking-grid').forEach(grid => {
@@ -245,6 +250,8 @@ function renderGridForFloor(prefix, container) {
             let isViolation = false;
 
             let roleClass = ''; let roleLabel = ''; let roleIcon = ''; let intendedRole = '';
+
+            // Cài đặt vị trí mặc định cho giao diện
             if (prefix === 'A') {
                 if (slotNum <= dbCounters.vip) { intendedRole = 'VIP'; roleClass = 'slot-vip'; roleLabel = 'VIP/SẾP'; roleIcon = '<i class="bi bi-star-fill mb-1"></i>'; }
                 else { intendedRole = 'Khách'; roleClass = 'slot-customer'; roleLabel = 'KHÁCH'; roleIcon = '<i class="bi bi-person-badge mb-1"></i>'; }
@@ -252,11 +259,20 @@ function renderGridForFloor(prefix, container) {
                 intendedRole = 'Nhân Viên'; roleClass = 'slot-employee'; roleLabel = 'NHÂN VIÊN'; roleIcon = '<i class="bi bi-person-vcard mb-1"></i>';
             }
 
+            // KIỂM TRA ĐỖ SAI QUY ĐỊNH (LOẠI BỎ DẤU ĐỂ CHỐNG LỖI)
             if (isOccupied) {
-                let actualRole = parkedCarInfo.role.toLowerCase();
-                if (intendedRole === 'VIP' && !actualRole.includes('giám đốc') && !actualRole.includes('vip')) { isViolation = true; totalViolations++; }
-                if (intendedRole === 'Khách' && actualRole.includes('nhân viên')) { isViolation = true; totalViolations++; }
-                if (intendedRole === 'Nhân Viên' && actualRole.includes('khách')) { isViolation = true; totalViolations++; }
+                let actualSafe = removeAccents(parkedCarInfo.role);
+                let intendedSafe = removeAccents(intendedRole);
+
+                if (intendedSafe === 'vip' && !actualSafe.includes('vip') && !actualSafe.includes('sep') && !actualSafe.includes('giam doc')) {
+                    isViolation = true; totalViolations++;
+                }
+                if (intendedSafe === 'khach' && (actualSafe.includes('nhan vien') || actualSafe.includes('nv'))) {
+                    isViolation = true; totalViolations++;
+                }
+                if (intendedSafe === 'nhan vien' && (actualSafe.includes('khach') || actualSafe.includes('vip') || actualSafe.includes('sep'))) {
+                    isViolation = true; totalViolations++;
+                }
             }
 
             let cssClass = isOccupied ? (isViolation ? 'slot-violation' : 'slot-occupied') : roleClass;
@@ -285,28 +301,22 @@ function renderGridForFloor(prefix, container) {
     container.innerHTML = html;
 }
 
-// ==========================================
-// VẼ KHU VỰC XE MÁY (Dành cho Bản đồ An Ninh)
-// ==========================================
 window.renderMotoMap = function () {
     let motoCount = parseInt(localStorage.getItem('chkIn_motoCount')) || 0;
-
-    // Cập nhật số liệu hiển thị lớn
     let uiMoto = document.getElementById('ui-moto-count');
     if (uiMoto) uiMoto.innerText = motoCount;
 
-    // Vẽ icon xếp hàng
     let motoGrid = document.getElementById('moto-parking-grid');
     if (motoGrid) {
         motoGrid.innerHTML = '';
         for (let i = 0; i < motoCount; i++) {
-            motoGrid.innerHTML += `<i class="bi bi-bicycle text-success animate__animated animate__zoomIn m-2" style="font-size: 2.5rem; filter: drop-shadow(0 0 5px rgba(25, 135, 84, 0.8));"></i>`;
+            motoGrid.innerHTML += `<i class="bi bi-bicycle text-success animate__animated animate__zoomIn m-2" style="font-size: 3.5rem; filter: drop-shadow(0 0 5px rgba(25, 135, 84, 0.8));"></i>`;
         }
     }
 }
 
 // ==========================================
-// VẼ CAMERA VÀ UI
+// VẼ CAMERA V VÀ LAYOUT
 // ==========================================
 window.changeCamLayout = function (type) {
     const grid = document.getElementById('main-camera-grid') || document.getElementById('cctv-grid-view');
@@ -347,7 +357,7 @@ window.renderCameras = function () {
                     <div class="cam-content"><i class="bi bi-camera-video text-white opacity-25"></i></div>
                     <div class="cam-status rounded-1"><i class="bi bi-circle-fill text-white small me-1"></i> ONLINE</div>
                     <div class="cam-title"><i class="bi bi-geo-alt-fill text-danger me-1"></i><span class="cam-name-text">${cam.name}</span></div>
-                    <button class="btn-fullscreen rounded-1" onclick="toggleFullscreen(this.parentElement)"><i class="bi bi-arrows-fullscreen"></i></button>
+                    <button class="btn-fullscreen rounded-1" onclick="toggleFullscreen(this.parentElement)" title="Phóng to"><i class="bi bi-arrows-fullscreen"></i></button>
                     <div class="cam-overlay"><span>CHK-IN // ${cam.id}</span><span class="live-clock-cam text-info fw-bold"></span></div>
                 </div>
             </div>`;
@@ -370,6 +380,29 @@ window.renderCameras = function () {
     }
 }
 
+// ZOOM BẢN ĐỒ
+let scale = 1; let panning = false; let pointX = 0; let pointY = 0; let startX, startY;
+const frame = document.getElementById('blueprint-frame');
+const zoomWrapper = document.getElementById('map-zoom-wrapper');
+if (frame && zoomWrapper) {
+    function setTransform() { zoomWrapper.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
+    frame.addEventListener('mousedown', (e) => { if (e.target.closest('button') || e.target.closest('.cam-marker') || e.target.closest('.slot-cam') || e.target.closest('.parking-slot')) return; e.preventDefault(); panning = true; frame.style.cursor = 'grabbing'; startX = e.clientX - pointX; startY = e.clientY - pointY; });
+    frame.addEventListener('mousemove', (e) => { if (!panning) return; pointX = e.clientX - startX; pointY = e.clientY - startY; setTransform(); });
+    frame.addEventListener('mouseup', () => { panning = false; frame.style.cursor = 'grab'; });
+    frame.addEventListener('mouseleave', () => { panning = false; frame.style.cursor = 'grab'; });
+    frame.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const xs = (e.clientX - frame.getBoundingClientRect().left - pointX) / scale; const ys = (e.clientY - frame.getBoundingClientRect().top - pointY) / scale;
+        const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY); (delta > 0) ? (scale *= 1.1) : (scale /= 1.1);
+        scale = Math.max(0.5, Math.min(scale, 3));
+        pointX = e.clientX - frame.getBoundingClientRect().left - xs * scale; pointY = e.clientY - frame.getBoundingClientRect().top - ys * scale;
+        setTransform();
+    });
+    window.zoomMap = function (amount) { scale += amount; scale = Math.max(0.5, Math.min(scale, 3)); setTransform(); }
+    window.resetZoom = function () { scale = 1; pointX = 0; pointY = 0; setTransform(); }
+}
+
+// TIỆN ÍCH UI
 window.switchTab = function (tab) {
     const btnB = document.getElementById('btn-tab-blueprint') || document.getElementById('tab-sodo');
     const btnC = document.getElementById('btn-tab-camera') || document.getElementById('tab-cctv');
@@ -410,7 +443,6 @@ window.toggleFullscreen = function (camElement) {
         if (document.exitFullscreen) { document.exitFullscreen(); }
     }
 }
-
 document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement) document.querySelectorAll('.cam-fullscreen').forEach(el => { el.classList.remove('cam-fullscreen'); el.querySelector('.btn-fullscreen').innerHTML = '<i class="bi bi-arrows-fullscreen"></i>'; });
 });
@@ -420,10 +452,9 @@ setInterval(() => {
     document.querySelectorAll('.live-clock-cam').forEach(el => el.innerText = timeStr);
 }, 50);
 
-// KHỞI ĐỘNG
 document.addEventListener("DOMContentLoaded", () => {
     syncDefaultCameras();
-    if (typeof switchFloor === 'function') { switchFloor(); }
+    if (window.switchFloor) { switchFloor(); }
     else { renderMainMap(); }
 });
 
